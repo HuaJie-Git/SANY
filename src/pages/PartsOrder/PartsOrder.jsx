@@ -12,49 +12,49 @@ const PartsOrder = ({ onBack }) => {
       id: 1,
       code: 'YLJ008157110',
       name: '噪音标识',
-      image: '/images/配件/噪音标识.jpg'
+      image: 'images/配件/噪音标识.jpg'
     },
     {
       id: 2,
       code: 'YLJ006374374',
       name: '安装带',
-      image: '/images/配件/安装带.jpg'
+      image: 'images/配件/安装带.jpg'
     },
     {
       id: 3,
       code: 'ZZX005635140',
       name: '链条',
-      image: '/images/配件/链条.jpg'
+      image: 'images/配件/链条.jpg'
     },
     {
       id: 4,
       code: 'ZZX008325559',
       name: '轮罩左后连接板',
-      image: '/images/配件/轮罩左后连接板.jpg'
+      image: 'images/配件/轮罩左后连接板.jpg'
     },
     {
       id: 5,
       code: 'YLJ006508846',
       name: '冷凝器安装支板一',
-      image: '/images/配件/冷凝器安装支板一.jpg'
+      image: 'images/配件/冷凝器安装支板一.jpg'
     },
     {
       id: 6,
       code: 'YLJ006455641',
       name: '中冷器进气管',
-      image: '/images/配件/中冷器进气管.jpg'
+      image: 'images/配件/中冷器进气管.jpg'
     },
     {
       id: 7,
       code: 'YLJ006508847',
       name: '冷凝器安装支板二',
-      image: '/images/配件/冷凝器安装支板二.jpg'
+      image: 'images/配件/冷凝器安装支板二.jpg'
     },
     {
       id: 8,
       code: 'YLJ006455642',
       name: '中冷器出气管',
-      image: '/images/配件/中冷器出气管.jpg'
+      image: 'images/配件/中冷器出气管.jpg'
     }
   ];
 

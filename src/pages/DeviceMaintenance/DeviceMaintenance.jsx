@@ -14,7 +14,7 @@ const DeviceMaintenance = ({ onBack }) => {
       lastMaintenanceTime: '2026-05-19 08:00:00',
       status: 'overdue',
       statusText: '超期 666 km',
-      image: '/images/设备保养/挖机.jpg'
+      image: 'images/设备保养/挖机.jpg'
     },
     {
       id: 2,
@@ -22,7 +22,7 @@ const DeviceMaintenance = ({ onBack }) => {
       lastMaintenanceTime: '2026-03-12 08:00:00',
       status: 'warning',
       statusText: '剩余 25 h',
-      image: '/images/设备保养/压路机.jpg'
+      image: 'images/设备保养/压路机.jpg'
     },
     {
       id: 3,
@@ -30,7 +30,7 @@ const DeviceMaintenance = ({ onBack }) => {
       lastMaintenanceTime: '--',
       status: 'normal',
       statusText: '剩余 96 h',
-      image: '/images/设备保养/起重机.jpg'
+      image: 'images/设备保养/起重机.jpg'
     },
     {
       id: 4,
@@ -38,7 +38,7 @@ const DeviceMaintenance = ({ onBack }) => {
       lastMaintenanceTime: '--',
       status: 'normal',
       statusText: '剩余 104 h',
-      image: '/images/设备保养/挖机.jpg'
+      image: 'images/设备保养/挖机.jpg'
     },
     {
       id: 5,
@@ -46,7 +46,7 @@ const DeviceMaintenance = ({ onBack }) => {
       lastMaintenanceTime: '2026-05-26 08:00:00',
       status: 'normal',
       statusText: '剩余 108 h',
-      image: '/images/设备保养/压路机.jpg'
+      image: 'images/设备保养/压路机.jpg'
     },
     {
       id: 6,
@@ -54,7 +54,7 @@ const DeviceMaintenance = ({ onBack }) => {
       lastMaintenanceTime: '2024-09-26 08:00:00',
       status: 'overdue',
       statusText: '超期 1200 h',
-      image: '/images/设备保养/起重机.jpg'
+      image: 'images/设备保养/起重机.jpg'
     }
   ];
 

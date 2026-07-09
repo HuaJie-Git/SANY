@@ -18,7 +18,7 @@ const Asset = () => {
       id: 1,
       name: '三一挖掘机',
       code: 'KT10SESE50393',
-      image: '/images/审核/挖掘机.jpg',
+      image: 'images/审核/挖掘机.jpg',
       status: 'offline',
       statusText: '离线',
       statusColor: 'text-gray-400'
@@ -27,7 +27,7 @@ const Asset = () => {
       id: 2,
       name: '三一起重机',
       code: 'KT10SESE50394',
-      image: '/images/审核/起重机.jpg',
+      image: 'images/审核/起重机.jpg',
       status: 'online',
       statusText: '行驶',
       statusColor: 'text-green-500'
@@ -36,7 +36,7 @@ const Asset = () => {
       id: 3,
       name: '三一泵车',
       code: 'KT10SESE50395',
-      image: '/images/审核/搅拌车.jpg',
+      image: 'images/审核/搅拌车.jpg',
       status: 'offline',
       statusText: '离线',
       statusColor: 'text-gray-400'
@@ -45,7 +45,7 @@ const Asset = () => {
       id: 4,
       name: '三一挖掘机',
       code: 'KT10SESE50396',
-      image: '/images/审核/挖掘机2.jpg',
+      image: 'images/审核/挖掘机2.jpg',
       status: 'online',
       statusText: '行驶',
       statusColor: 'text-green-500'
@@ -54,7 +54,7 @@ const Asset = () => {
       id: 5,
       name: '三一起重机',
       code: 'KT10SESE50397',
-      image: '/images/审核/起重机.jpg',
+      image: 'images/审核/起重机.jpg',
       status: 'offline',
       statusText: '离线',
       statusColor: 'text-gray-400'
@@ -63,7 +63,7 @@ const Asset = () => {
       id: 6,
       name: '三一泵车',
       code: 'KT10SESE50398',
-      image: '/images/审核/搅拌车.jpg',
+      image: 'images/审核/搅拌车.jpg',
       status: 'online',
       statusText: '行驶',
       statusColor: 'text-green-500'
@@ -72,7 +72,7 @@ const Asset = () => {
       id: 7,
       name: '三一挖掘机',
       code: 'KT10SESE50399',
-      image: '/images/审核/挖掘机.jpg',
+      image: 'images/审核/挖掘机.jpg',
       status: 'offline',
       statusText: '离线',
       statusColor: 'text-gray-400'
@@ -81,7 +81,7 @@ const Asset = () => {
       id: 8,
       name: '三一起重机',
       code: 'KT10SESE50400',
-      image: '/images/审核/起重机.jpg',
+      image: 'images/审核/起重机.jpg',
       status: 'online',
       statusText: '行驶',
       statusColor: 'text-green-500'

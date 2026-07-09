@@ -15,32 +15,32 @@ const RecentDetail = ({ onBack }) => {
   // 各分类下的数据
   const categoryData = {
     asset: [
-      { id: 1, name: 'SANY SY365挖掘机', code: 'EX-2024-001', status: '在线', image: '/images/审核/挖掘机.jpg' },
-      { id: 2, name: 'SANY 起重机', code: 'EX-2025-002', status: '离线', image: '/images/审核/起重机.jpg' },
-      { id: 3, name: 'SANY 泵车', code: 'EX-2024-003', status: '在线', image: '/images/审核/搅拌车.jpg' },
-      { id: 4, name: 'SANY 挖掘机', code: 'EX-2024-004', status: '离线', image: '/images/审核/挖掘机2.jpg' },
-      { id: 5, name: 'SANY 起重机', code: 'EX-2025-005', status: '在线', image: '/images/审核/起重机.jpg' },
+      { id: 1, name: 'SANY SY365挖掘机', code: 'EX-2024-001', status: '在线', image: 'images/审核/挖掘机.jpg' },
+      { id: 2, name: 'SANY 起重机', code: 'EX-2025-002', status: '离线', image: 'images/审核/起重机.jpg' },
+      { id: 3, name: 'SANY 泵车', code: 'EX-2024-003', status: '在线', image: 'images/审核/搅拌车.jpg' },
+      { id: 4, name: 'SANY 挖掘机', code: 'EX-2024-004', status: '离线', image: 'images/审核/挖掘机2.jpg' },
+      { id: 5, name: 'SANY 起重机', code: 'EX-2025-005', status: '在线', image: 'images/审核/起重机.jpg' },
     ],
     audit: [
-      { id: 1, name: '冷却水温高', code: 'EX-2024-003', status: '待处理', summary: '冷却液温度高于85℃', image: '/images/审核/搅拌车.jpg' },
-      { id: 2, name: '液压油温度高', code: 'EX-2024-006', status: '已处理', summary: '液压油温度高于90℃', image: '/images/审核/挖掘机.jpg' },
-      { id: 3, name: '发动机异常', code: 'EX-2024-007', status: '待处理', summary: '发动机转速异常', image: '/images/审核/起重机.jpg' },
+      { id: 1, name: '冷却水温高', code: 'EX-2024-003', status: '待处理', summary: '冷却液温度高于85℃', image: 'images/审核/搅拌车.jpg' },
+      { id: 2, name: '液压油温度高', code: 'EX-2024-006', status: '已处理', summary: '液压油温度高于90℃', image: 'images/审核/挖掘机.jpg' },
+      { id: 3, name: '发动机异常', code: 'EX-2024-007', status: '待处理', summary: '发动机转速异常', image: 'images/审核/起重机.jpg' },
     ],
     content: [
-      { id: 1, name: '三一SY365挖掘机操作指南', type: '文章', date: '2026-07-01', views: 1234, image: '/images/机手社区/挖掘机/挖掘机_01.jpg' },
-      { id: 2, name: '设备保养小技巧', type: '视频', date: '2026-06-28', views: 5678, image: '/images/机手社区/泵车/泵车_04.jpg' },
-      { id: 3, name: '三一起重机操作经验分享', type: '文章', date: '2026-06-25', views: 2345, image: '/images/机手社区/三一起重机/三一起重机_01.jpg' },
+      { id: 1, name: '三一SY365挖掘机操作指南', type: '文章', date: '2026-07-01', views: 1234, image: 'images/机手社区/挖掘机/挖掘机_01.jpg' },
+      { id: 2, name: '设备保养小技巧', type: '视频', date: '2026-06-28', views: 5678, image: 'images/机手社区/泵车/泵车_04.jpg' },
+      { id: 3, name: '三一起重机操作经验分享', type: '文章', date: '2026-06-25', views: 2345, image: 'images/机手社区/三一起重机/三一起重机_01.jpg' },
     ],
     activity: [
-      { id: 1, name: '三一周年庆', status: '进行中', startDate: '2026-07-01', endDate: '2026-07-31', participants: 1234, image: '/images/优惠活动/挖掘机/挖掘机_01.jpg' },
-      { id: 2, name: '夏季促销活动', status: '已结束', startDate: '2026-06-01', endDate: '2026-06-30', participants: 5678, image: '/images/优惠活动/矿卡/矿卡_03.png' },
-      { id: 3, name: '新用户注册礼', status: '进行中', startDate: '2026-07-01', endDate: '2026-12-31', participants: 890, image: '/images/优惠活动/三一起重机/三一起重机_01.jpg' },
+      { id: 1, name: '三一周年庆', status: '进行中', startDate: '2026-07-01', endDate: '2026-07-31', participants: 1234, image: 'images/优惠活动/挖掘机/挖掘机_01.jpg' },
+      { id: 2, name: '夏季促销活动', status: '已结束', startDate: '2026-06-01', endDate: '2026-06-30', participants: 5678, image: 'images/优惠活动/矿卡/矿卡_03.png' },
+      { id: 3, name: '新用户注册礼', status: '进行中', startDate: '2026-07-01', endDate: '2026-12-31', participants: 890, image: 'images/优惠活动/三一起重机/三一起重机_01.jpg' },
     ],
     accessory: [
-      { id: 1, name: '液压油滤芯', code: 'AC-2024-001', type: '液压配件', stock: '有货', image: '/images/配件/OIP.webp' },
-      { id: 2, name: '空气滤芯', code: 'AC-2024-002', type: '过滤配件', stock: '有货', image: '/images/配件/OIP (1).webp' },
-      { id: 3, name: '机油滤芯', code: 'AC-2024-003', type: '过滤配件', stock: '缺货', image: '/images/配件/OIP (2).webp' },
-      { id: 4, name: '燃油滤芯', code: 'AC-2024-004', type: '过滤配件', stock: '有货', image: '/images/配件/OIP (3).webp' },
+      { id: 1, name: '液压油滤芯', code: 'AC-2024-001', type: '液压配件', stock: '有货', image: 'images/配件/OIP.webp' },
+      { id: 2, name: '空气滤芯', code: 'AC-2024-002', type: '过滤配件', stock: '有货', image: 'images/配件/OIP (1).webp' },
+      { id: 3, name: '机油滤芯', code: 'AC-2024-003', type: '过滤配件', stock: '缺货', image: 'images/配件/OIP (2).webp' },
+      { id: 4, name: '燃油滤芯', code: 'AC-2024-004', type: '过滤配件', stock: '有货', image: 'images/配件/OIP (3).webp' },
     ],
   };
 
