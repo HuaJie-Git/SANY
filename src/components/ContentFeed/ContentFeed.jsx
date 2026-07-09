@@ -7,10 +7,10 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedContentType, setSelectedContentType] = useState('');
   const [communityItems, setCommunityItems] = useState([
-    { id: 101, type: 'community', image: '/images/机手社区/挖掘机/挖掘机_03.jpg', title: '今天在工地拍到的SANY挖掘机，太帅...', author: '机手小王', date: '2026-04-13', likes: 128, comments: 23, isLiked: false, isCollected: false },
-    { id: 102, type: 'community', image: '/images/机手社区/三一起重机/三一起重机_03.jpg', title: '分享一下我的操作经验，新手必看', author: '老司机李', date: '2026-04-12', likes: 256, comments: 45, isLiked: true, isCollected: true },
-    { id: 103, type: 'community_video', image: '/images/机手社区/三一起重机/三一起重机_06.jpg', title: '吊装作业全过程记录', author: '操作达人', date: '2026-04-11', likes: 89, comments: 12, isLiked: false, isCollected: false },
-    { id: 104, type: 'community', image: '/images/机手社区/三一重卡/三一重卡_03.jpg', title: '设备保养小技巧分享', author: '维修专家', date: '2026-04-10', likes: 312, comments: 67, isLiked: true, isCollected: false },
+    { id: 101, type: 'community', image: 'images/机手社区/挖掘机/挖掘机_03.jpg', title: '今天在工地拍到的SANY挖掘机，太帅...', author: '机手小王', date: '2026-04-13', likes: 128, comments: 23, isLiked: false, isCollected: false },
+    { id: 102, type: 'community', image: 'images/机手社区/三一起重机/三一起重机_03.jpg', title: '分享一下我的操作经验，新手必看', author: '老司机李', date: '2026-04-12', likes: 256, comments: 45, isLiked: true, isCollected: true },
+    { id: 103, type: 'community_video', image: 'images/机手社区/三一起重机/三一起重机_06.jpg', title: '吊装作业全过程记录', author: '操作达人', date: '2026-04-11', likes: 89, comments: 12, isLiked: false, isCollected: false },
+    { id: 104, type: 'community', image: 'images/机手社区/三一重卡/三一重卡_03.jpg', title: '设备保养小技巧分享', author: '维修专家', date: '2026-04-10', likes: 312, comments: 67, isLiked: true, isCollected: false },
   ]);
 
   const handleLike = (itemId) => {
@@ -41,11 +41,11 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
 
   // 轮播图内容 - 使用本地图片
   const carouselItems = [
-    { id: 1, image: '/images/机手社区/挖掘机/挖掘机_01.jpg', title: '三一SY365挖掘机，高效作业首选' },
-    { id: 2, image: '/images/机手社区/三一起重机/三一起重机_01.jpg', title: '三一起重机，精准高效' },
-    { id: 3, image: '/images/机手社区/泵车/泵车_04.jpg', title: '混凝土泵车，城市建设利器' },
-    { id: 4, image: '/images/机手社区/三一重卡/三一重卡_01.jpg', title: '三一重卡，运输主力' },
-    { id: 5, image: '/images/机手社区/矿卡/矿卡_02.jpg', title: '矿卡，矿山作业专家' },
+    { id: 1, image: 'images/机手社区/挖掘机/挖掘机_01.jpg', title: '三一SY365挖掘机，高效作业首选' },
+    { id: 2, image: 'images/机手社区/三一起重机/三一起重机_01.jpg', title: '三一起重机，精准高效' },
+    { id: 3, image: 'images/机手社区/泵车/泵车_04.jpg', title: '混凝土泵车，城市建设利器' },
+    { id: 4, image: 'images/机手社区/三一重卡/三一重卡_01.jpg', title: '三一重卡，运输主力' },
+    { id: 5, image: 'images/机手社区/矿卡/矿卡_02.jpg', title: '矿卡，矿山作业专家' },
   ];
 
   const [currentCarousel, setCurrentCarousel] = useState(0);
@@ -60,17 +60,17 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
 
   // 全部Tab内容（不含轮播图）- 使用本地图片
   const allTabItems = [
-    { id: 2, type: 'article', image: '/images/机手社区/三一起重机/三一起重机_05.jpg', title: '三一E6电动正面吊投入使用，助力绿色智慧升级', date: '2026-04-13', views: 1233 },
-    { id: 3, type: 'video', image: '/images/机手社区/泵车/泵车_04.jpg', title: '工业级5G硬件，实现人机协同级的实时操控', date: '2026-04-13', views: 1233 },
-    { id: 4, type: 'article', image: '/images/机手社区/三一重卡/三一重卡_03.jpg', title: '越南电动重卡市场已全面从"观望"迈入"行动"', date: '2026-04-13', views: 1233 },
-    { id: 5, type: 'article', image: '/images/机手社区/挖掘机/挖掘机_04.jpg', title: 'Bonjour! 三一即将登台法国巴黎！...', date: '2026-04-13', views: 1233 },
-    { id: 6, type: 'article', image: '/images/机手社区/矿卡/矿卡_04.jpg', title: '三一挖掘机家族再添新成员', date: '2026-04-13', views: 1233 },
+    { id: 2, type: 'article', image: 'images/机手社区/三一起重机/三一起重机_05.jpg', title: '三一E6电动正面吊投入使用，助力绿色智慧升级', date: '2026-04-13', views: 1233 },
+    { id: 3, type: 'video', image: 'images/机手社区/泵车/泵车_04.jpg', title: '工业级5G硬件，实现人机协同级的实时操控', date: '2026-04-13', views: 1233 },
+    { id: 4, type: 'article', image: 'images/机手社区/三一重卡/三一重卡_03.jpg', title: '越南电动重卡市场已全面从"观望"迈入"行动"', date: '2026-04-13', views: 1233 },
+    { id: 5, type: 'article', image: 'images/机手社区/挖掘机/挖掘机_04.jpg', title: 'Bonjour! 三一即将登台法国巴黎！...', date: '2026-04-13', views: 1233 },
+    { id: 6, type: 'article', image: 'images/机手社区/矿卡/矿卡_04.jpg', title: '三一挖掘机家族再添新成员', date: '2026-04-13', views: 1233 },
   ];
 
   // 活动内容 - 使用本地图片
   const activityItems = [
-    { id: 201, type: 'activity', image: '/images/机手社区/矿卡/矿卡_03.jpg', title: '三一周年庆活动', date: '2026-04-13', views: 5000, status: '进行中' },
-    { id: 202, type: 'activity', image: '/images/机手社区/挖掘机/挖掘机_04.jpg', title: '春季设备巡检活动', date: '2026-04-10', views: 3200, status: '已结束' },
+    { id: 201, type: 'activity', image: 'images/机手社区/矿卡/矿卡_03.jpg', title: '三一周年庆活动', date: '2026-04-13', views: 5000, status: '进行中' },
+    { id: 202, type: 'activity', image: 'images/机手社区/挖掘机/挖掘机_04.jpg', title: '春季设备巡检活动', date: '2026-04-10', views: 3200, status: '已结束' },
   ];
 
   const getContentByTab = () => {

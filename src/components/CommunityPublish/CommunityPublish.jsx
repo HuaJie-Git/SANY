@@ -53,15 +53,15 @@ const CommunityPublish = ({ onClose }) => {
   };
 
   const handleTakePhoto = () => {
-    const mockPhoto = '/images/img_excavator.jpg';
+    const mockPhoto = 'images/img_excavator.jpg';
     setSelectedImages([mockPhoto]);
     setStep(2);
   };
 
   const handleSelectFromAlbum = () => {
     const mockImages = [
-      '/images/img_excavator.jpg',
-      '/images/img_crane.jpg',
+      'images/img_excavator.jpg',
+      'images/img_crane.jpg',
     ];
     setSelectedImages(mockImages);
     setStep(2);

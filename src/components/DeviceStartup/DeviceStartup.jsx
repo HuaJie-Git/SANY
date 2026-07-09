@@ -65,7 +65,7 @@ const DeviceStartup = ({ onShowList }) => {
           <div className="flex items-center gap-2">
             <div className="w-[40px] h-[30px] rounded overflow-hidden">
               <img
-                src="/images/机手社区/挖掘机/挖掘机_02.jpg"
+                src="images/机手社区/挖掘机/挖掘机_02.jpg"
                 alt="设备图片"
                 className="w-full h-full object-cover"
               />

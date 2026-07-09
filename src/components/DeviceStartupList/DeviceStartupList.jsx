@@ -11,7 +11,7 @@ const DeviceStartupList = ({ onBack }) => {
     {
       id: 1,
       model: 'DG1081CF0320',
-      image: '/images/机手社区/三一起重机/三一起重机_01.jpg',
+      image: 'images/机手社区/三一起重机/三一起重机_01.jpg',
       workHours: '1.59h',
       energy: '20L',
       hourlyData: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -21,7 +21,7 @@ const DeviceStartupList = ({ onBack }) => {
     {
       id: 2,
       model: 'BC5341CC2402',
-      image: '/images/机手社区/泵车/泵车_04.jpg',
+      image: 'images/机手社区/泵车/泵车_04.jpg',
       workHours: '2.3h',
       energy: '25L',
       hourlyData: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -31,7 +31,7 @@ const DeviceStartupList = ({ onBack }) => {
     {
       id: 3,
       model: 'DG1071CF0216',
-      image: '/images/机手社区/三一起重机/三一起重机_03.jpg',
+      image: 'images/机手社区/三一起重机/三一起重机_03.jpg',
       workHours: '0.84h',
       energy: '12L',
       hourlyData: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
