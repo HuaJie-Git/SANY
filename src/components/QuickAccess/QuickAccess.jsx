@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-const QuickAccess = () => {
+const QuickAccess = ({ onNavigate }) => {
   const [currentScreen, setCurrentScreen] = useState(0);
   const scrollRef = useRef(null);
 
@@ -43,6 +43,34 @@ const QuickAccess = () => {
       const screenWidth = 343;
       const newScreen = Math.round(scrollLeft / screenWidth);
       setCurrentScreen(newScreen);
+    }
+  };
+
+  // 需要手机号验证的功能列表
+  const phoneRequiredFunctions = ['我要配件', '我要召请', '设备保养'];
+
+  // 处理功能点击
+  const handleFunctionClick = (itemName) => {
+    // 检查是否是需要手机号验证的功能
+    if (phoneRequiredFunctions.includes(itemName)) {
+      // 跳转到对应的功能页面
+      // 在功能页面里会检查手机号并显示弹窗
+      switch (itemName) {
+        case '我要配件':
+          onNavigate && onNavigate('parts');
+          break;
+        case '我要召请':
+          onNavigate && onNavigate('service');
+          break;
+        case '设备保养':
+          onNavigate && onNavigate('maintenance');
+          break;
+        default:
+          break;
+      }
+    } else {
+      // 其他功能，可以在这里处理
+      console.log(`跳转到: ${itemName}`);
     }
   };
 
@@ -202,7 +230,7 @@ const QuickAccess = () => {
   };
 
   return (
-    <div className="px-4 pt-3 pb-1 bg-white">
+    <div className="relative px-4 pt-3 pb-1 bg-white">
       {/* 横向滚动区域 - 动态高度 */}
       <div
         ref={scrollRef}
@@ -223,6 +251,7 @@ const QuickAccess = () => {
                 key={item.id}
                 className={`flex flex-col items-center flex-shrink-0 ${item.isHalfHidden ? 'opacity-60' : ''}`}
                 style={{ width: '64px' }}
+                onClick={() => handleFunctionClick(item.name)}
               >
                 {renderIcon(item.icon)}
                 <span className="text-[11px] text-text-primary mt-1 text-center">{item.name}</span>

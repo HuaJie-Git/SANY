@@ -49,8 +49,38 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
   ];
 
   const [currentCarousel, setCurrentCarousel] = useState(0);
+  const [currentAd, setCurrentAd] = useState(0);
+  const [showAdCloseMenu, setShowAdCloseMenu] = useState(false);
+  const [adClosed, setAdClosed] = useState(false);
 
-  // 自动轮播 - 间隔3秒
+  // 广告埋点
+  const trackAdEvent = (eventType, adId, option) => {
+    console.log(`[广告埋点] 事件: ${eventType}, 广告ID: ${adId}, 选项: ${option}`);
+    // TODO: 接入实际埋点SDK
+  };
+
+  const handleAdClose = (option) => {
+    trackAdEvent('ad_feedback', adItems[currentAd].id, option);
+    setShowAdCloseMenu(false);
+    setAdClosed(true);
+  };
+
+  // 广告轮播数据
+  const adItems = [
+    { id: 1, image: 'images/sany_crane.jpg', title: '三一重工 · 智造精品', subtitle: '全球工程机械制造商50强' },
+    { id: 2, image: 'images/sany_pump.jpg', title: '三一泵车 · 建设未来', subtitle: '混凝土机械全球领先品牌' },
+    { id: 3, image: 'images/sany_excavator2.jpg', title: '三一挖掘机 · 效率之王', subtitle: '节能高效 智能操控' },
+  ];
+
+  // 广告自动轮播
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentAd((prev) => (prev + 1) % adItems.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [adItems.length]);
+
+  // 内容轮播 - 间隔3秒
   React.useEffect(() => {
     const timer = setInterval(() => {
       setCurrentCarousel((prev) => (prev + 1) % carouselItems.length);
@@ -142,10 +172,10 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
       );
     };
 
-    // 机手社区卡片 - 172px × 270px
+    // 机手社区卡片
     if (item.type === 'community' || item.type === 'community_video') {
       return (
-        <div className="bg-white rounded-[11px] overflow-hidden shadow-sm mb-2 cursor-pointer" onClick={handleClick}>
+        <div className="bg-white rounded-[11px] overflow-hidden shadow-sm cursor-pointer" onClick={handleClick}>
           <div className="relative">
             <img
               src={item.image}
@@ -200,14 +230,22 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
       );
     }
 
-    // 普通卡片 - 172px × 270px
+    // 普通卡片 - 不同类型不同高度，形成瀑布流
+    const getImageHeight = () => {
+      switch (item.type) {
+        case 'video': return 'h-[180px]';
+        case 'article': return 'h-[140px]';
+        default: return 'h-[160px]';
+      }
+    };
+
     return (
-      <div className="bg-white rounded-[11px] overflow-hidden shadow-sm mb-2 cursor-pointer" onClick={handleClick}>
+      <div className="bg-white rounded-[11px] overflow-hidden shadow-sm cursor-pointer" onClick={handleClick}>
         <div className="relative">
           <img
             src={item.image}
             alt={item.title}
-            className="w-full h-[170px] object-cover"
+            className={`w-full ${getImageHeight()} object-cover`}
           />
           {item.type === 'video' && (
             <div className="absolute inset-0 flex items-center justify-center">
@@ -275,90 +313,137 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
 
   return (
     <div className="px-4 py-3 relative">
-      {/* Tab 切换 */}
-      <div className="flex gap-4 mb-3 border-b border-gray-100 overflow-x-auto">
-        {tabs.map((tab) => (
-          <div
-            key={tab}
-            className={`pb-2 cursor-pointer whitespace-nowrap ${
-              activeTab === tab
-                ? 'text-brand-red font-medium border-b-2 border-brand-red'
-                : 'text-text辅助'
-            }`}
-            onClick={() => setActiveTab(tab)}
-          >
-            {tab}
-          </div>
-        ))}
+      {/* Tab 切换 - 吸顶效果 */}
+      <div className="sticky top-0 bg-white z-10 -mx-4 px-4 py-2 border-b border-gray-100">
+        <div className="flex gap-1">
+          {tabs.map((tab) => (
+            <div
+              key={tab}
+              className={`pb-2 cursor-pointer whitespace-nowrap ${
+                tab.length <= 2 ? 'px-2' : 'px-3'
+              } ${
+                activeTab === tab
+                  ? 'text-brand-red font-medium border-b-2 border-brand-red'
+                  : 'text-text辅助'
+              }`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab}
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* 内容列表 - 双列瀑布流 */}
-      <div className="grid grid-cols-[167px_167px] gap-2">
-        {/* 轮播图 - 只在全部Tab显示，放在第一列 */}
-        {activeTab === '全部' && (
-          <div className="mb-2">
-            <div className="relative rounded-[11px] overflow-hidden">
-              <img
-                src={carouselItems[currentCarousel].image}
-                alt={carouselItems[currentCarousel].title}
-                className="w-full h-[200px] object-cover"
-              />
-              {/* 轮播标签 */}
-              <div className="absolute top-2 left-2 bg-black/50 text-white text-[10px] px-2 py-0.5 rounded">
-                轮播
+      {/* 内容区域 - 自适应瀑布流 */}
+      <div className="mt-3">
+        {/* 瀑布流内容 - 所有卡片统一间距，浏览器自动排列 */}
+        <div className="columns-2 gap-2">
+          {/* 轮播小卡片 - 只在全部Tab显示，跟其他卡片一样大小 */}
+          {activeTab === '全部' && (
+            <div className="break-inside-avoid mb-2">
+              <div className="bg-white rounded-[11px] overflow-hidden shadow-sm cursor-pointer">
+                <div className="relative">
+                  <img
+                    src={carouselItems[currentCarousel].image}
+                    alt={carouselItems[currentCarousel].title}
+                    className="w-full h-[140px] object-cover"
+                  />
+                  <div className="absolute top-2 left-2 bg-black/50 text-white text-[10px] px-2 py-0.5 rounded">
+                    轮播
+                  </div>
+                  {/* 标题覆盖在图片底部 */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                    <div className="text-white text-[12px] font-medium line-clamp-2">{carouselItems[currentCarousel].title}</div>
+                  </div>
+                  {/* 轮播指示器 - 覆盖在图片底部 */}
+                  <div className="absolute bottom-1 left-0 right-0 flex justify-center gap-1">
+                    {carouselItems.map((_, index) => (
+                      <div
+                        key={index}
+                        className={`w-[4px] h-[4px] rounded-full cursor-pointer ${
+                          currentCarousel === index ? 'bg-white' : 'bg-white/50'
+                        }`}
+                        onClick={() => setCurrentCarousel(index)}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
-              {/* 标题 */}
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
-                <div className="text-white text-[12px] font-medium line-clamp-2">{carouselItems[currentCarousel].title}</div>
+            </div>
+          )}
+
+          {/* 其他内容卡片 */}
+          {getContentByTab().map((item) => (
+            <div key={item.id} className="break-inside-avoid mb-2">{renderCard(item, activeTab)}</div>
+          ))}
+        </div>
+      </div>
+
+      {/* 广告轮播 - 全部Tab显示 */}
+      {activeTab === '全部' && !adClosed && (
+        <div className="mt-2 relative">
+          <div className="rounded-[11px] overflow-hidden shadow-sm cursor-pointer">
+            <div className="w-full h-[100px] relative">
+              <img
+                src={adItems[currentAd].image}
+                alt="广告"
+                className="w-full h-full object-cover"
+              />
+              {/* 渐变遮罩 + 广告文案 */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent flex items-center">
+                <div className="px-4">
+                  <div className="text-white text-[16px] font-bold">{adItems[currentAd].title}</div>
+                  <div className="text-white/80 text-[11px] mt-1">{adItems[currentAd].subtitle}</div>
+                </div>
+              </div>
+              {/* 关闭按钮 - 右上角 */}
+              <div
+                className="absolute top-1.5 right-1.5 w-5 h-5 bg-black/30 rounded-full flex items-center justify-center"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  trackAdEvent('ad_close_click', adItems[currentAd].id);
+                  setShowAdCloseMenu(!showAdCloseMenu);
+                }}
+              >
+                <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round">
+                  <path d="M2 2l8 8M10 2l-8 8"/>
+                </svg>
               </div>
             </div>
             {/* 轮播指示器 */}
-            <div className="flex justify-center gap-1 mt-2">
-              {carouselItems.map((_, index) => (
+            <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 flex gap-1">
+              {adItems.map((_, index) => (
                 <div
                   key={index}
-                  className={`w-[5px] h-[5px] rounded-full cursor-pointer ${
-                    currentCarousel === index ? 'bg-brand-red' : 'bg-gray-300'
+                  className={`w-[4px] h-[4px] rounded-full cursor-pointer ${
+                    currentAd === index ? 'bg-white' : 'bg-white/40'
                   }`}
-                  onClick={() => setCurrentCarousel(index)}
+                  onClick={() => setCurrentAd(index)}
                 />
               ))}
             </div>
-          </div>
-        )}
-
-        {/* 其他内容卡片 */}
-        {getContentByTab().map((item) => (
-          <div key={item.id}>{renderCard(item, activeTab)}</div>
-        ))}
-      </div>
-
-      {/* 广告位 - 全部Tab显示 */}
-      {activeTab === '全部' && (
-        <div className="mt-2 bg-white rounded-[11px] overflow-hidden shadow-sm relative">
-          <div className="w-full h-[100px] relative">
-            <img
-              src="https://images.unsplash.com/photo-1621922688758-50e6069f6e3a?w=686&h=200&fit=crop"
-              alt="广告"
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'flex';
-              }}
-            />
-            <div className="w-full h-full bg-gradient-to-r from-red-100 to-red-200 items-center justify-center hidden">
-              <svg width="60" height="40" viewBox="0 0 60 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="5" y="20" width="50" height="15" rx="2" fill="#333"/>
-                <rect x="10" y="10" width="20" height="15" rx="2" fill="#555"/>
-                <circle cx="15" cy="38" r="5" fill="#333"/>
-                <circle cx="45" cy="38" r="5" fill="#333"/>
-                <rect x="30" y="5" width="25" height="8" rx="1" fill="#666"/>
-              </svg>
+            <div className="absolute bottom-1.5 right-2 bg-black/40 text-white/80 text-[9px] px-1.5 py-0.5 rounded">
+              广告
             </div>
           </div>
-          <div className="absolute bottom-2 right-2 bg-black/50 text-white text-[10px] px-2 py-0.5 rounded">
-            广告
-          </div>
+
+          {/* 关闭反馈菜单 - 放在外层，不受overflow限制 */}
+          {showAdCloseMenu && (
+            <div className="absolute top-2 right-1.5 bg-white rounded-lg shadow-lg z-50 py-1 w-[120px]">
+              {['不感兴趣', '不再推送', '减少推送'].map((option) => (
+                <div
+                  key={option}
+                  className="px-3 py-2 text-[12px] text-gray-700 hover:bg-gray-50 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAdClose(option);
+                  }}
+                >
+                  {option}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -366,9 +451,9 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
       {activeTab === '全部' && (
         <div className="mt-2">
           <div className="text-[14px] font-medium text-text-primary mb-2">为你推荐</div>
-          <div className="grid grid-cols-[167px_167px] gap-2">
+          <div className="columns-2 gap-2">
             {allTabItems.slice(0, 2).map((item) => (
-              <div key={`recommend-${item.id}`}>{renderCard(item, '全部')}</div>
+              <div key={`recommend-${item.id}`} className="break-inside-avoid mb-2">{renderCard(item, '全部')}</div>
             ))}
           </div>
         </div>
@@ -387,6 +472,10 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
         </div>
       )}
 
+      {/* 底部提示语 - 到底了 */}
+      <div className="text-center py-6 text-[12px] text-gray-400">
+        — 已经到底了，看看其他版块的信息吧 —
+      </div>
     </div>
   );
 };

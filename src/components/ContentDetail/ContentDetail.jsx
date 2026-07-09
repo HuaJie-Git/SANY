@@ -166,7 +166,10 @@ const ContentDetail = ({ item, onClose, contentType, onLike, onCollect }) => {
 
           {/* 互动数据 */}
           <div className="flex items-center gap-4 text-[12px] text-text辅助 mb-4">
-            <span>👁 {item.views || 0} 浏览</span>
+            <span className="flex items-center gap-1">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8a8a8a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              {item.views || 0} 浏览
+            </span>
             {item.likes && <span>❤️ {item.likes} 点赞</span>}
             {item.comments && <span>💬 {item.comments} 评论</span>}
           </div>

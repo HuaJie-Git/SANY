@@ -1,25 +1,27 @@
-import React from 'react';
+import React, { useRef } from 'react';
 
-const RecentView = () => {
+const RecentView = ({ onNavigate }) => {
+  const scrollRef = useRef(null);
+  
   const items = [
     {
       id: 1,
       type: 'asset',
-      image: 'images/机手社区/挖掘机/挖掘机_01.jpg',
-      name: 'SANY SY365挖掘机',
-      code: '资产编号：EX-2024-001',
+      image: 'images/优惠活动/挖掘机/挖掘机_08.jpg',
+      name: 'SANY 挖掘机',
+      code: 'PY2342343284324',
     },
     {
       id: 2,
       type: 'asset',
-      image: 'images/机手社区/三一起重机/三一起重机_01.jpg',
+      image: 'images/优惠活动/三一起重机/三一起重机_08.jpg',
       name: 'SANY 起重机',
-      code: '资产编号：EX-2025-002',
+      code: 'PY2342343284327',
     },
     {
       id: 3,
       type: 'audit',
-      image: 'images/机手社区/泵车/泵车_04.jpg',
+      image: 'images/审核/搅拌车.jpg',
       name: '冷却水温高',
       code: '设备编号：EX-2024-003',
       status: '待处理',
@@ -28,18 +30,52 @@ const RecentView = () => {
     {
       id: 4,
       type: 'accessory',
-      image: 'images/机手社区/三一重卡/三一重卡_01.jpg',
+      image: 'images/配件/OIP.webp',
       name: '液压油滤芯',
       code: '配件编号：AC-2024-001',
     },
     {
       id: 5,
       type: 'activity',
-      image: 'images/机手社区/矿卡/矿卡_03.jpg',
+      image: 'images/优惠活动/三一起重机/三一起重机_01.jpg',
       name: '三一周年庆',
       code: '活动状态：进行中',
+      status: '进行中',
+      startDate: '2026-07-01',
+      endDate: '2026-07-31',
+      isRecommended: true,
     },
   ];
+
+  // 点击卡片事件处理 - 跳转到卡片详情页
+  const handleCardClick = (item) => {
+    if (onNavigate) {
+      onNavigate('recentCard', item);
+    }
+  };
+
+  // 点击详情事件处理 - 跳转到最近查看列表详情页
+  const handleDetailClick = () => {
+    if (onNavigate) {
+      onNavigate('recentList');
+    }
+  };
+
+  // 监听滚动，当滑动到第5个图时，再往右滑进入详情页
+  const handleScroll = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      // 当滚动到最右边时，进入详情页（需要滑动到目标区域看全文字后松手）
+      if (scrollLeft + clientWidth >= scrollWidth - 5) {
+        // 延迟跳转，让用户看全文字后松手
+        setTimeout(() => {
+          if (onNavigate) {
+            onNavigate('recentList');
+          }
+        }, 300);
+      }
+    }
+  };
 
   const renderCard = (item) => {
     const renderImage = () => {
@@ -110,7 +146,10 @@ const RecentView = () => {
     switch (item.type) {
       case 'asset':
         return (
-          <div className="w-[160px] h-[168px] bg-white rounded-[11px] overflow-hidden shadow-sm flex-shrink-0">
+          <div
+            className="w-[160px] h-[168px] bg-white rounded-[11px] overflow-hidden shadow-sm flex-shrink-0 cursor-pointer"
+            onClick={() => handleCardClick(item)}
+          >
             {renderImage()}
             {renderFallback()}
             <div className="p-2">
@@ -121,22 +160,28 @@ const RecentView = () => {
         );
       case 'audit':
         return (
-          <div className="w-[160px] h-[168px] bg-white rounded-[11px] overflow-hidden shadow-sm flex-shrink-0">
+          <div
+            className="w-[160px] h-[168px] bg-white rounded-[11px] overflow-hidden shadow-sm flex-shrink-0 cursor-pointer relative"
+            onClick={() => handleCardClick(item)}
+          >
             {renderImage()}
             {renderFallback()}
+            {/* 状态角标 - 右上角 */}
+            <div className="absolute top-0 right-0 bg-brand-red text-white text-[10px] px-2 py-0.5 rounded-bl-lg">
+              {item.status}
+            </div>
             <div className="p-2">
-              <div className="flex items-center justify-between">
-                <div className="text-[14px] font-medium text-text-primary truncate">{item.name}</div>
-                <span className="text-[10px] text-brand-red bg-red-50 px-1 rounded">{item.status}</span>
-              </div>
+              <div className="text-[14px] font-medium text-text-primary truncate">{item.name}</div>
               <div className="text-[12px] text-text-secondary truncate">{item.code}</div>
-              <div className="text-[11px] text-text辅助 truncate">{item.summary}</div>
             </div>
           </div>
         );
       case 'accessory':
         return (
-          <div className="w-[160px] h-[168px] bg-white rounded-[11px] overflow-hidden shadow-sm flex-shrink-0">
+          <div
+            className="w-[160px] h-[168px] bg-white rounded-[11px] overflow-hidden shadow-sm flex-shrink-0 cursor-pointer"
+            onClick={() => handleCardClick(item)}
+          >
             {renderImage()}
             {renderFallback()}
             <div className="p-2">
@@ -147,12 +192,26 @@ const RecentView = () => {
         );
       case 'activity':
         return (
-          <div className="w-[160px] h-[168px] bg-white rounded-[11px] overflow-hidden shadow-sm flex-shrink-0">
+          <div
+            className="w-[160px] h-[168px] bg-white rounded-[11px] overflow-hidden shadow-sm flex-shrink-0 cursor-pointer relative"
+            onClick={() => handleCardClick(item)}
+          >
             {renderImage()}
             {renderFallback()}
+            {/* 推荐角标 */}
+            {item.isRecommended && (
+              <div className="absolute top-0 right-0 bg-brand-red text-white text-[10px] px-2 py-0.5 rounded-bl-lg">
+                推荐
+              </div>
+            )}
             <div className="p-2">
               <div className="text-[14px] font-medium text-text-primary truncate">{item.name}</div>
-              <div className="text-[12px] text-text-secondary truncate">{item.code}</div>
+              <div className="flex items-center gap-1 mt-1">
+                {item.status && (
+                  <span className="text-[10px] text-green-600 bg-green-50 px-1 rounded">{item.status}</span>
+                )}
+                <span className="text-[10px] text-gray-400">07.01-07.31</span>
+              </div>
             </div>
           </div>
         );
@@ -165,12 +224,31 @@ const RecentView = () => {
     <div className="px-4 py-3">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-[16px] font-medium text-text-primary">最近查看</h3>
-        <span className="text-[12px] text-text辅助 cursor-pointer">详情 &gt;</span>
+        <span
+          className="text-[12px] text-text辅助 cursor-pointer"
+          onClick={handleDetailClick}
+        >
+          详情 &gt;
+        </span>
       </div>
-      <div className="flex overflow-x-auto gap-3 pb-2">
+      <div
+        ref={scrollRef}
+        className="flex overflow-x-auto gap-3 pb-2 relative"
+        onScroll={handleScroll}
+      >
         {items.map((item) => (
           <div key={item.id}>{renderCard(item)}</div>
         ))}
+        {/* 滑动提示箭头 */}
+        <div
+          className="flex-shrink-0 w-[100px] h-[180px] bg-gray-50 rounded-[11px] flex flex-col items-center justify-center cursor-pointer"
+          onClick={handleDetailClick}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
+          </svg>
+          <div className="text-[11px] text-gray-400 mt-2 text-center leading-tight">左滑<br/>查看更多</div>
+        </div>
       </div>
     </div>
   );

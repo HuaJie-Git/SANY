@@ -2,12 +2,9 @@ import React from 'react';
 
 const TopNav = ({ onSearchClick, onNotificationClick, onMoreClick, onScanClick }) => {
   return (
-    <div
-      className="w-full"
-      style={{ background: 'linear-gradient(180deg, #181C26 0%, #BC000F 100%)' }}
-    >
-      {/* 导航栏 */}
-      <div className="h-[80px] flex items-center justify-between px-4 pt-[20px]">
+    <div className="w-full">
+      {/* 导航栏 - 不再需要渐变背景，由PhoneFrame统一提供 */}
+      <div className="h-[60px] flex items-center justify-between px-4 pt-1">
         {/* Logo */}
         <div className="flex items-center">
           <span className="text-white text-[20px] font-bold italic">San</span>
@@ -26,15 +23,12 @@ const TopNav = ({ onSearchClick, onNotificationClick, onMoreClick, onScanClick }
           <span className="text-white/70 text-[12px] flex-1">搜索</span>
           {/* 扫码图标在搜索框内 */}
           <div className="cursor-pointer" onClick={onScanClick}>
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M2 6V2H6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M12 2H16V6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M16 12V16H12" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M6 16H2V12" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <rect x="5" y="5" width="3" height="3" fill="white"/>
-              <rect x="10" y="5" width="3" height="3" fill="white"/>
-              <rect x="5" y="10" width="3" height="3" fill="white"/>
-              <rect x="10" y="10" width="3" height="3" fill="white"/>
+            <svg width="18" height="18" viewBox="0 0 1024 1024" fill="white">
+              <path d="M928.016126 543.908618 95.983874 543.908618c-17.717453 0-31.994625-14.277171-31.994625-31.994625S78.26642 479.919368 95.983874 479.919368l832.032253 0c17.717453 0 31.994625 14.277171 31.994625 31.994625S945.73358 543.908618 928.016126 543.908618z"/>
+              <path d="M832.032253 928.016126 639.892491 928.016126c-17.717453 0-31.994625-14.277171-31.994625-31.994625s14.277171-31.994625 31.994625-31.994625l191.967747 0c17.717453 0 31.994625-14.277171 31.994625-31.994625l0-159.973123c0-17.717453 14.277171-31.994625 31.994625-31.994625s31.994625 14.277171 31.994625 31.994625l0 159.973123C928.016126 884.840585 884.840585 928.016126 832.032253 928.016126z"/>
+              <path d="M351.94087 928.016126l-159.973123 0c-52.980346 0-95.983874-43.003528-95.983874-95.983874l0-159.973123c0-17.717453 14.277171-31.994625 31.994625-31.994625s31.994625 14.277171 31.994625 31.994625l0 159.973123c0 17.717453 14.449185 31.994625 31.994625 31.994625l159.973123 0c17.717453 0 31.994625 14.277171 31.994625 31.994625C383.935495 913.738955 369.658324 928.016126 351.94087 928.016126z"/>
+              <path d="M127.978498 383.935495c-17.717453 0-31.994625-14.277171-31.994625-31.994625l0-159.973123c0-52.980346 43.003528-95.983874 95.983874-95.983874l159.973123 0c17.717453 0 31.994625 14.277171 31.994625 31.994625S369.658324 159.973123 351.94087 159.973123l-159.973123 0c-17.545439 0-31.994625 14.449185-31.994625 31.994625l0 159.973123C159.973123 369.658324 145.695952 383.935495 127.978498 383.935495z"/>
+              <path d="M896.021502 383.935495c-17.717453 0-31.994625-14.277171-31.994625-31.994625l0-159.973123c0-17.545439-14.277171-31.994625-31.994625-31.994625L639.892491 159.973123c-17.717453 0-31.994625-14.277171-31.994625-31.994625s14.277171-31.994625 31.994625-31.994625l191.967747 0c52.980346 0 95.983874 43.003528 95.983874 95.983874l0 159.973123C928.016126 369.658324 913.738955 383.935495 896.021502 383.935495z"/>
             </svg>
           </div>
         </div>

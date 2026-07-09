@@ -1,6 +1,6 @@
 import React from 'react';
 
-const AuditEvents = () => {
+const AuditEvents = ({ onCategoryClick }) => {
   const events = [
     {
       id: 1,
@@ -47,7 +47,8 @@ const AuditEvents = () => {
         {events.map((event, index) => (
           <div
             key={event.id}
-            className={`p-4 ${index !== events.length - 1 ? 'border-b border-gray-100' : ''}`}
+            className={`p-4 ${index !== events.length - 1 ? 'border-b border-gray-100' : ''} cursor-pointer`}
+            onClick={() => onCategoryClick && onCategoryClick(event.name)}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
