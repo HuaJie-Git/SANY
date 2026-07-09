@@ -74,21 +74,6 @@ const Home = () => {
     }
   };
 
-  // 渲染回顶部按钮
-  const renderBackToTop = () => {
-    if (!isScrolled) return null;
-    return (
-      <div
-        className="fixed bottom-[80px] right-4 w-[44px] h-[44px] bg-white rounded-full shadow-lg flex items-center justify-center cursor-pointer z-50 border border-gray-100"
-        onClick={scrollToTop}
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 19V5M5 12l7-7 7 7" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </div>
-    );
-  };
-
   // 审核事件分类点击 - 跳转到审核页面对应Tab
   const handleAuditCategoryClick = (categoryName) => {
     setAuditInitialTab(categoryName);
@@ -370,9 +355,6 @@ const Home = () => {
     >
       {/* 中间内容区域 - 可滚动 */}
       <div ref={contentRef} className="bg-bg-gray h-full overflow-y-auto">
-        {/* 回顶部按钮 */}
-        {renderBackToTop()}
-
         {/* 快捷功能入口 */}
         <QuickAccess onNavigate={setCurrentPage} />
 

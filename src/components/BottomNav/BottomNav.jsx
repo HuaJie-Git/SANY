@@ -14,6 +14,14 @@ const BottomNav = ({ activeTab, onTabChange, isScrolled, onScrollToTop, showProf
 
     switch (icon) {
       case 'home':
+        // 如果滚动到一定位置，显示回顶部图标
+        if (isScrolled) {
+          return (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 19V5M5 12l7-7 7 7" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          );
+        }
         return (
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M3 9.5L12 3L21 9.5V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9.5Z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -45,7 +53,13 @@ const BottomNav = ({ activeTab, onTabChange, isScrolled, onScrollToTop, showProf
   };
 
   const handleTabClick = (tabId) => {
-    onTabChange(tabId);
+    if (tabId === 'home' && isScrolled) {
+      // 如果点击的是首页图标且已滚动，执行回顶部
+      onScrollToTop && onScrollToTop();
+    } else {
+      // 否则正常切换Tab
+      onTabChange(tabId);
+    }
   };
 
   return (
@@ -74,7 +88,7 @@ const BottomNav = ({ activeTab, onTabChange, isScrolled, onScrollToTop, showProf
                 )}
               </div>
               <span className={`text-[10px] mt-1 ${activeTab === tab.id ? 'text-brand-red font-medium' : 'text-gray-500'}`}>
-                {tab.name}
+                {tab.id === 'home' && isScrolled ? '回顶部' : tab.name}
               </span>
             </>
           )}
