@@ -206,6 +206,7 @@ const DeviceMaintenance = ({ onBack }) => {
         visible={showPhoneBindModal}
         onClose={() => setShowPhoneBindModal(false)}
         onSuccess={handlePhoneBindSuccess}
+        sourcePage="DeviceMaintenance"
       />
     </div>
   );

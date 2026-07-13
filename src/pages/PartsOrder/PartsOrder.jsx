@@ -211,6 +211,7 @@ const PartsOrder = ({ onBack }) => {
         visible={showPhoneBindModal}
         onClose={() => setShowPhoneBindModal(false)}
         onSuccess={handlePhoneBindSuccess}
+        sourcePage="PartsOrder"
       />
     </div>
   );

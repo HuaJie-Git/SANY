@@ -204,6 +204,7 @@ const ServiceRequest = ({ onBack }) => {
         visible={showPhoneBindModal}
         onClose={() => setShowPhoneBindModal(false)}
         onSuccess={handlePhoneBindSuccess}
+        sourcePage="ServiceRequest"
       />
     </div>
   );

@@ -1,35 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import RoleGuideModal from '../../components/RoleGuideModal/RoleGuideModal';
-import { getRecommendedRole } from '../../utils/roleRecommendation';
 import { trackRoleGuide } from '../../utils/tracking';
-
-// 模拟设备数据（实际项目中应从API获取）
-const mockDeviceData = {
-  totalCount: 3,
-  brands: ['SANY'],
-  sanyCount: 3
-};
 
 const Profile = ({ userRole, onRoleConfirm }) => {
   const [showGuideBar, setShowGuideBar] = useState(!userRole);
   const [showModal, setShowModal] = useState(false);
   const [modalClosed, setModalClosed] = useState(false); // 弹窗是否被关闭过
-  const [recommendedRole, setRecommendedRole] = useState(null); // 推荐角色
 
   // 当用户角色状态变化时，更新提示条显示状态
   useEffect(() => {
     setShowGuideBar(!userRole);
     if (userRole) setModalClosed(false);
-  }, [userRole]);
-
-  // 计算推荐角色（实际项目中应从API获取设备数据）
-  useEffect(() => {
-    if (!userRole) {
-      // 调用推荐算法
-      const recommendation = getRecommendedRole(mockDeviceData);
-      setRecommendedRole(recommendation);
-      console.log('角色推荐结果:', recommendation);
-    }
   }, [userRole]);
 
   // 进入页面自动弹出角色引导弹窗（未填写角色时）
@@ -188,30 +169,11 @@ const Profile = ({ userRole, onRoleConfirm }) => {
 
   return (
     <div className="h-full bg-gray-100 overflow-y-auto">
-      {/* 角色引导提示条 */}
-      {showGuideBar && (
-        <div
-          onClick={handleGuideBarClick}
-          className="mx-4 mt-3 px-4 py-3 bg-gradient-to-r from-yellow-400 to-amber-400 rounded-xl flex items-center justify-between cursor-pointer shadow-md active:scale-[0.98] transition-transform"
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">👋</span>
-            <span className="text-sm font-semibold text-gray-900">
-              Hi！告诉我们你是谁，解锁专属服务 →
-            </span>
-          </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2">
-            <path d="M9 18l6-6-6-6" />
-          </svg>
-        </div>
-      )}
-
       {/* 角色引导弹窗 */}
       <RoleGuideModal
         visible={showModal}
         onClose={handleModalClose}
         onConfirm={handleRoleConfirm}
-        recommendedRoleId={recommendedRole?.roleId}
       />
 
       {/* 星星积分区域 - 顶上去，不再有用户信息区域 */}

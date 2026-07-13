@@ -189,7 +189,7 @@ const PhoneBindModal = ({ visible, onClose, onSuccess, containerRef, sourcePage 
         {/* 标题栏 */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
           <div className="w-6" /> {/* 占位，保持标题居中 */}
-          <h3 className="text-base font-medium text-center flex-1">设置手机号</h3>
+          <h3 className="text-base font-medium text-center flex-1">绑定手机号</h3>
           <button
             onClick={() => {
               // 埋点：点击关闭
@@ -208,7 +208,10 @@ const PhoneBindModal = ({ visible, onClose, onSuccess, containerRef, sourcePage 
         <div className="px-4 py-4">
           {/* 说明文字 */}
           <p className="text-sm text-gray-500 text-center mb-4">
-            为了给您提供更好的服务，请输入手机号
+            {sourcePage === 'ServiceRequest' && '获取工程师响应'}
+            {sourcePage === 'PartsOrder' && '快速订购原厂配件'}
+            {sourcePage === 'DeviceMaintenance' && '申请专业保养服务'}
+            {!sourcePage && '继续操作'}
           </p>
 
           {/* 手机号输入 */}

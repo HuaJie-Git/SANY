@@ -1,15 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { getRecommendedRoleIndex, reorderRolesByRecommendation } from '../../utils/roleRecommendation';
 import { trackRoleGuide } from '../../utils/tracking';
 
-// 角色列表数据
+// 角色列表数据（固定顺序，不使用推荐算法重排）
 const DEFAULT_ROLES = [
   { id: 'owner', name: '设备所有者', color: '#2196F3', iconType: 'house' },
   { id: 'manager', name: '设备管理员', color: '#9C27B0', iconType: 'gear' },
   { id: 'operator', name: '设备操作手', color: '#FF9800', iconType: 'joystick' },
-  { id: 'mechanic', name: '设备维修员', color: '#4CAF50', iconType: 'wrench' },
-  { id: 'purchaser', name: '设备采购员', color: '#E91E63', iconType: 'cart' },
   { id: 'dealer', name: '三一代理商', color: '#F44336', iconType: 'store' },
+  { id: 'mechanic', name: '设备维修员', color: '#4CAF50', iconType: 'wrench' },
   { id: 'employee', name: '三一员工', color: '#1565C0', iconType: 'logo' },
 ];
 
@@ -80,7 +78,7 @@ const RoleIcon = ({ type, color, size = 64 }) => {
   return iconMap[type] || null;
 };
 
-const RoleGuideModal = ({ visible, onClose, onConfirm, recommendedRoleId }) => {
+const RoleGuideModal = ({ visible, onClose, onConfirm }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [touchStart, setTouchStart] = useState(null);
@@ -89,19 +87,17 @@ const RoleGuideModal = ({ visible, onClose, onConfirm, recommendedRoleId }) => {
   const containerRef = useRef(null);
   const autoPlayRef = useRef(null);
 
-  // 根据推荐角色重排角色列表
-  const ROLES = reorderRolesByRecommendation(DEFAULT_ROLES, recommendedRoleId);
+  // 使用固定顺序的角色列表
+  const ROLES = DEFAULT_ROLES;
 
-  // 弹窗打开时，跳转到推荐角色位置
+  // 弹窗打开时，重置到第一个位置
   useEffect(() => {
-    if (visible && recommendedRoleId) {
-      const recommendedIndex = getRecommendedRoleIndex(recommendedRoleId, ROLES);
-      setCurrentIndex(recommendedIndex);
-      console.log('推荐角色:', recommendedRoleId, '索引:', recommendedIndex);
+    if (visible) {
+      setCurrentIndex(0);
       // 埋点：弹窗展示
-      trackRoleGuide.modalShow(recommendedRoleId);
+      trackRoleGuide.modalShow(ROLES[0]?.id);
     }
-  }, [visible, recommendedRoleId]);
+  }, [visible]);
 
   // 自动轮播逻辑
   useEffect(() => {
@@ -192,9 +188,8 @@ const RoleGuideModal = ({ visible, onClose, onConfirm, recommendedRoleId }) => {
         {/* 标题区域 */}
         <div className="pt-8 pb-4 text-center">
           <h2 className="text-xl font-bold text-gray-900">
-            Hi！猜猜你是谁 🎯
+            请选择角色，解锁专属服务
           </h2>
-          <p className="text-sm text-gray-500 mt-1">选择你的角色，解锁专属服务</p>
         </div>
 
         {/* 角色卡片轮播区域 */}
@@ -270,13 +265,12 @@ const RoleGuideModal = ({ visible, onClose, onConfirm, recommendedRoleId }) => {
 
                 {/* 角色描述 */}
                 <div className="text-xs text-gray-500 mb-5 text-center">
-                  {role.id === 'owner' && '管理您的设备资产，享受专属权益'}
-                  {role.id === 'manager' && '统筹设备运维，提升管理效率'}
-                  {role.id === 'operator' && '专业操作指导，安全高效作业'}
-                  {role.id === 'mechanic' && '维修知识库，快速解决问题'}
-                  {role.id === 'purchaser' && '采购优惠信息，精准匹配需求'}
-                  {role.id === 'dealer' && '代理专属服务，助力业务增长'}
-                  {role.id === 'employee' && '员工内部通道，便捷办公体验'}
+                  {role.id === 'owner' && '管理设备资产'}
+                  {role.id === 'manager' && '统筹运维管理'}
+                  {role.id === 'operator' && '专业操作指导'}
+                  {role.id === 'dealer' && '代理专属服务'}
+                  {role.id === 'mechanic' && '维修知识支持'}
+                  {role.id === 'employee' && '员工专属通道'}
                 </div>
 
                 {/* 确定按钮 */}
