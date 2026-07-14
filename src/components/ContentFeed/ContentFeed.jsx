@@ -6,6 +6,7 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
   const [activeTab, setActiveTab] = useState('全部');
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedContentType, setSelectedContentType] = useState('');
+  const [showCameraPermission, setShowCameraPermission] = useState(false); // 相机权限弹窗
   const [communityItems, setCommunityItems] = useState([
     { id: 101, type: 'community', image: 'images/机手社区/挖掘机/挖掘机_03.jpg', title: '今天在工地拍到的SANY挖掘机，太帅...', author: '机手小王', date: '2026-04-13', likes: 128, comments: 23, isLiked: false, isCollected: false },
     { id: 102, type: 'community', image: 'images/机手社区/三一起重机/三一起重机_03.jpg', title: '分享一下我的操作经验，新手必看', author: '老司机李', date: '2026-04-12', likes: 256, comments: 45, isLiked: true, isCollected: true },
@@ -38,6 +39,19 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
   };
 
   const tabs = ['全部', '活动', '优惠', '行业动态', '机手社区'];
+
+  // 处理点击发布按钮
+  const handlePublishClick = () => {
+    // 模拟检查相机和相册权限（实际项目中应使用真实API）
+    const hasCameraPermission = false; // 模拟未开启权限
+
+    if (!hasCameraPermission) {
+      setShowCameraPermission(true);
+      return;
+    }
+
+    setShowPublishPage(true);
+  };
 
   // 轮播图内容 - 使用本地图片
   const carouselItems = [
@@ -298,6 +312,47 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
     return <CommunityPublish onClose={() => setShowPublishPage(false)} />;
   }
 
+  // 权限提示弹窗
+  if (showCameraPermission) {
+    return (
+      <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center">
+        <div className="bg-white rounded-2xl w-[300px] overflow-hidden">
+          {/* 标题 */}
+          <div className="pt-6 pb-2 text-center">
+            <h3 className="text-[18px] font-bold text-gray-900">权限申请</h3>
+          </div>
+
+          {/* 内容 */}
+          <div className="px-6 pb-4 text-center">
+            <p className="text-[14px] text-gray-500 leading-relaxed">
+              需要相机和相册权限
+            </p>
+          </div>
+
+          {/* 按钮 */}
+          <div className="flex border-t border-gray-100">
+            <button
+              className="flex-1 py-4 text-[16px] text-gray-500 border-r border-gray-100"
+              onClick={() => setShowCameraPermission(false)}
+            >
+              取消
+            </button>
+            <button
+              className="flex-1 py-4 text-[16px] text-red-500 font-medium"
+              onClick={() => {
+                // 模拟跳转设置（实际项目中应调用真实API）
+                setShowCameraPermission(false);
+                setShowPublishPage(true);
+              }}
+            >
+              前往设置
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // 如果显示详情页，直接返回详情页
   if (selectedItem) {
     return (
@@ -463,7 +518,7 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
       {activeTab === '机手社区' && (
         <div
           className="absolute bottom-[60px] right-4 w-[56px] h-[56px] bg-brand-red rounded-full flex items-center justify-center shadow-lg cursor-pointer z-40"
-          onClick={() => setShowPublishPage(true)}
+          onClick={handlePublishClick}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 5V19" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

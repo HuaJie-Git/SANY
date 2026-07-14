@@ -6,6 +6,7 @@ const CommunityPublish = ({ onClose }) => {
   const [videoFile, setVideoFile] = useState(null);
   const [content, setContent] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('');
+  const [showCameraPermission, setShowCameraPermission] = useState(false); // 相机权限弹窗
 
   // 视频录制状态
   const [isRecording, setIsRecording] = useState(false);
@@ -53,6 +54,14 @@ const CommunityPublish = ({ onClose }) => {
   };
 
   const handleTakePhoto = () => {
+    // 模拟相机权限检查（实际项目中应使用真实API）
+    const hasCameraPermission = false; // 模拟未开启权限
+
+    if (!hasCameraPermission) {
+      setShowCameraPermission(true);
+      return;
+    }
+
     const mockPhoto = 'images/img_excavator.jpg';
     setSelectedImages([mockPhoto]);
     setStep(2);
@@ -107,6 +116,47 @@ const CommunityPublish = ({ onClose }) => {
     alert('发布成功，等待审核');
     onClose();
   };
+
+  // ====== 权限提示弹窗 ======
+  if (showCameraPermission) {
+    return (
+      <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center">
+        <div className="bg-white rounded-2xl w-[300px] overflow-hidden">
+          {/* 标题 */}
+          <div className="pt-6 pb-2 text-center">
+            <h3 className="text-[18px] font-bold text-gray-900">权限申请</h3>
+          </div>
+
+          {/* 内容 */}
+          <div className="px-6 pb-4 text-center">
+            <p className="text-[14px] text-gray-500 leading-relaxed">
+              需要相机和相册权限
+            </p>
+          </div>
+
+          {/* 按钮 */}
+          <div className="flex border-t border-gray-100">
+            <button
+              className="flex-1 py-4 text-[16px] text-gray-500 border-r border-gray-100"
+              onClick={() => setShowCameraPermission(false)}
+            >
+              取消
+            </button>
+            <button
+              className="flex-1 py-4 text-[16px] text-red-500 font-medium"
+              onClick={() => {
+                // 模拟跳转设置（实际项目中应调用真实API）
+                setShowCameraPermission(false);
+                alert('正在跳转系统设置...');
+              }}
+            >
+              前往设置
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ====== 第三步：录制视频（倒计时30秒） ======
   if (step === 3) {

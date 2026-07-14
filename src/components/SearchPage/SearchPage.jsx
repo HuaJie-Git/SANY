@@ -5,10 +5,113 @@ const SearchPage = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState('资产');
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState({});
+  const [showCameraModal, setShowCameraModal] = useState(false);
+  const [cameraPermission, setCameraPermission] = useState('prompt'); // 'prompt', 'granted', 'denied'
+  const [language, setLanguage] = useState('zh'); // 'zh', 'en', 'ja', 'ko'
 
   const tabs = ['资产', '品牌', '设备类型', '配件', '设备分组'];
   const inputRef = useRef(null);
   const debounceTimer = useRef(null);
+
+  // ====== 多语言权限提示语 ======
+  const permissionTexts = {
+    zh: {
+      title: '需要相机权限',
+      message: '扫码功能需要访问您的相机，请允许访问。',
+      allow: '允许',
+      deny: '拒绝',
+      settings: '前往设置',
+      cancel: '取消',
+      enableNow: '立即开启',
+      featureList: '此功能需要使用相机以提供：',
+      features: ['扫描二维码', '识别设备条码', '快速搜索设备'],
+    },
+    en: {
+      title: 'Camera Permission Required',
+      message: 'Scan feature needs access to your camera. Please allow access.',
+      allow: 'Allow',
+      deny: 'Deny',
+      settings: 'Go to Settings',
+      cancel: 'Cancel',
+      enableNow: 'Enable Now',
+      featureList: 'This feature uses your camera for:',
+      features: ['Scan QR codes', 'Recognize device barcodes', 'Quick device search'],
+    },
+    ja: {
+      title: 'カメラの権限が必要です',
+      message: 'スキャン機能はカメラへのアクセスが必要です。アクセスを許可してください。',
+      allow: '許可',
+      deny: '拒否',
+      settings: '設定を開く',
+      cancel: 'キャンセル',
+      enableNow: '今すぐ有効にする',
+      featureList: 'この機能はカメラを使用します：',
+      features: ['QRコードのスキャン', 'デバイスバーコードの認識', 'デバイスのクイック検索'],
+    },
+    ko: {
+      title: '카메라 권한이 필요합니다',
+      message: '스캔 기능은 카메라 접근이 필요합니다. 접근을 허용해 주세요.',
+      allow: '허용',
+      deny: '거부',
+      settings: '설정으로 이동',
+      cancel: '취소',
+      enableNow: '지금 활성화',
+      featureList: '이 기능은 카메라를 사용합니다:',
+      features: ['QR코드 스캔', '장비 바코드 인식', '장비 빠른 검색'],
+    },
+  };
+
+  const texts = permissionTexts[language];
+
+  // ====== 请求相机权限 ======
+  const requestCameraPermission = async () => {
+    try {
+      // 检查浏览器是否支持权限API
+      if (navigator.permissions && navigator.permissions.query) {
+        const result = await navigator.permissions.query({ name: 'camera' });
+        setCameraPermission(result.state);
+
+        if (result.state === 'granted') {
+          // 已有权限，直接打开扫码
+          openScanner();
+        } else if (result.state === 'prompt') {
+          // 需要请求权限
+          setShowCameraModal(true);
+        } else {
+          // 权限被拒绝，引导用户去设置
+          setShowCameraModal(true);
+        }
+      } else {
+        // 不支持权限API，直接请求
+        setShowCameraModal(true);
+      }
+    } catch (error) {
+      console.error('权限查询失败:', error);
+      setShowCameraModal(true);
+    }
+  };
+
+  // ====== 打开扫码器 ======
+  const openScanner = () => {
+    // 这里可以集成实际的扫码SDK，如zxing-js、html5-qrcode等
+    alert('扫码功能已启动（需要集成扫码SDK）');
+    setShowCameraModal(false);
+  };
+
+  // ====== 处理权限请求 ======
+  const handlePermissionRequest = async () => {
+    try {
+      // 尝试访问摄像头
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      // 获取到权限，关闭弹窗并打开扫码
+      stream.getTracks().forEach(track => track.stop()); // 停止摄像头
+      setCameraPermission('granted');
+      openScanner();
+    } catch (error) {
+      console.error('权限请求失败:', error);
+      setCameraPermission('denied');
+    }
+  };
 
   // ====== 各 Tab 的默认数据（进入搜索页时展示） ======
   const defaultData = {
@@ -379,6 +482,34 @@ const SearchPage = ({ onClose }) => {
               </svg>
             </div>
           )}
+        </div>
+        {/* 扫码按钮 */}
+        <div
+          className="cursor-pointer ml-3 w-[40px] h-[40px] bg-gray-100 rounded-full flex items-center justify-center"
+          onClick={requestCameraPermission}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M3 7V5C3 3.89543 3.89543 3 5 3H7" stroke="#333" strokeWidth="2" strokeLinecap="round"/>
+            <path d="M17 3H19C20.1046 3 21 3.89543 21 5V7" stroke="#333" strokeWidth="2" strokeLinecap="round"/>
+            <path d="M21 17V19C21 20.1046 20.1046 21 19 21H17" stroke="#333" strokeWidth="2" strokeLinecap="round"/>
+            <path d="M7 21H5C3.89543 21 3 20.1046 3 19V17" stroke="#333" strokeWidth="2" strokeLinecap="round"/>
+            <rect x="7" y="7" width="10" height="10" rx="1" stroke="#333" strokeWidth="2"/>
+            <path d="M10 7V17" stroke="#333" strokeWidth="1.5"/>
+            <path d="M14 7V17" stroke="#333" strokeWidth="1.5"/>
+            <path d="M7 10H17" stroke="#333" strokeWidth="1.5"/>
+            <path d="M7 14H17" stroke="#333" strokeWidth="1.5"/>
+          </svg>
+        </div>
+        {/* 语言切换按钮 */}
+        <div
+          className="cursor-pointer ml-2 px-2 py-1 bg-gray-100 rounded text-[12px] text-gray-600"
+          onClick={() => {
+            const languages = ['zh', 'en', 'ja', 'ko'];
+            const currentIndex = languages.indexOf(language);
+            setLanguage(languages[(currentIndex + 1) % languages.length]);
+          }}
+        >
+          {language.toUpperCase()}
         </div>
       </div>
 
