@@ -3,6 +3,7 @@ import PhoneFrame from '../../components/PhoneFrame/PhoneFrame';
 import TopNav from '../../components/TopNav/TopNav';
 import QuickAccess from '../../components/QuickAccess/QuickAccess';
 import RecentView from '../../components/RecentView/RecentView';
+import MyTasksSummary from '../../components/MyTasks/MyTasksSummary';
 import DeviceStartup from '../../components/DeviceStartup/DeviceStartup';
 import DeviceStartupList from '../../components/DeviceStartupList/DeviceStartupList';
 import AuditEvents from '../../components/AuditEvents/AuditEvents';
@@ -19,6 +20,7 @@ import AIAssistant from '../AIAssistant/AIAssistant';
 import DeviceDetail from '../DeviceDetail/DeviceDetail';
 import RecentDetail from '../RecentDetail/RecentDetail';
 import RecentCardDetail from '../RecentCardDetail/RecentCardDetail';
+import TaskList from '../TaskList/TaskList';
 
 const Home = () => {
   const [activeTab, setActiveTab] = useState('home');
@@ -32,6 +34,8 @@ const Home = () => {
   const [auditInitialTab, setAuditInitialTab] = useState('exception'); // 审核页面初始Tab
   const [isScrolled, setIsScrolled] = useState(false); // 是否滚动到一定位置
   const [userRole, setUserRole] = useState(null); // 用户角色，null表示未填写
+  const [showTaskList, setShowTaskList] = useState(false); // 是否显示任务列表
+  const [selectedTask, setSelectedTask] = useState(null); // 选中的任务
   const contentRef = useRef(null); // 内容区域ref
 
   const handleSearchClick = () => {
@@ -79,6 +83,25 @@ const Home = () => {
     setAuditInitialTab(categoryName);
     setActiveTab('audit');
   };
+
+  // 如果显示任务列表页 - 禁用渐变背景
+  if (showTaskList) {
+    return (
+      <PhoneFrame
+        topNav={null}
+        bottomNav={null}
+        hideGradient={true}
+      >
+        <TaskList
+          onBack={() => setShowTaskList(false)}
+          onTaskClick={(task) => {
+            setSelectedTask(task);
+            setShowTaskList(false);
+          }}
+        />
+      </PhoneFrame>
+    );
+  }
 
   // 如果显示最近查看列表详情页 - 禁用渐变背景
   if (showRecentList) {
@@ -366,6 +389,16 @@ const Home = () => {
             setSelectedRecentItem(item);
           }
         }} />
+
+        {/* 我的任务 */}
+        <MyTasksSummary
+          tenantType="enterprise"
+          onTaskListClick={() => setShowTaskList(true)}
+          onTaskClick={(task) => {
+            console.log('点击任务:', task);
+            // 实际项目中跳转到任务详情页
+          }}
+        />
 
         {/* 设备开机动态 */}
         <DeviceStartup onShowList={() => setShowDeviceStartupList(true)} />

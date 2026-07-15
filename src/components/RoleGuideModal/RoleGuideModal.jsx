@@ -188,7 +188,7 @@ const RoleGuideModal = ({ visible, onClose, onConfirm }) => {
         {/* 标题区域 */}
         <div className="pt-8 pb-4 text-center">
           <h2 className="text-xl font-bold text-gray-900">
-            请选择角色，解锁专属服务
+            解锁专属服务
           </h2>
         </div>
 
