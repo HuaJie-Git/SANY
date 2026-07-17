@@ -221,7 +221,7 @@ const RecentView = ({ onNavigate }) => {
   };
 
   return (
-    <div className="px-4 py-3">
+    <div className="px-4 pt-4 pb-0">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-[16px] font-medium text-text-primary">最近查看</h3>
         <span
@@ -233,7 +233,7 @@ const RecentView = ({ onNavigate }) => {
       </div>
       <div
         ref={scrollRef}
-        className="flex overflow-x-auto gap-3 pb-2 relative"
+        className="flex overflow-x-auto gap-3 pb-1 relative"
         onScroll={handleScroll}
       >
         {items.map((item) => (

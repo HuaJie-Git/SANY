@@ -1,17 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import CommunityPublish from '../CommunityPublish/CommunityPublish';
 import ContentDetail from '../ContentDetail/ContentDetail';
+import CommunityTab from './CommunityTab';
+import PostDetail from './PostDetail';
+import TopicDetailPage from './TopicDetailPage';
+import ViewCountBadge from './ViewCountBadge';
+import { getTopicById, posts as allPosts } from './communityData';
 
-const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
+const ContentFeed = forwardRef(({ showPublishPage, setShowPublishPage, setIsCommunityPublishEligible, setIsCommunityPublishViewportActive }, ref) => {
   const [activeTab, setActiveTab] = useState('全部');
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedContentType, setSelectedContentType] = useState('');
-  const [showCameraPermission, setShowCameraPermission] = useState(false); // 相机权限弹窗
+  const [showCameraPermission, setShowCameraPermission] = useState(false);
+  const [selectedPost, setSelectedPost] = useState(null);
+  const [topicDetail, setTopicDetail] = useState(null); // { topicName, source }
+  const [communitySubTab, setCommunitySubTab] = useState('我的'); // 社区二级Tab
+  const tabContainerRef = useRef(null);
   const [communityItems, setCommunityItems] = useState([
-    { id: 101, type: 'community', image: 'images/机手社区/挖掘机/挖掘机_03.jpg', title: '今天在工地拍到的SANY挖掘机，太帅...', author: '机手小王', date: '2026-04-13', likes: 128, comments: 23, isLiked: false, isCollected: false },
-    { id: 102, type: 'community', image: 'images/机手社区/三一起重机/三一起重机_03.jpg', title: '分享一下我的操作经验，新手必看', author: '老司机李', date: '2026-04-12', likes: 256, comments: 45, isLiked: true, isCollected: true },
-    { id: 103, type: 'community_video', image: 'images/机手社区/三一起重机/三一起重机_06.jpg', title: '吊装作业全过程记录', author: '操作达人', date: '2026-04-11', likes: 89, comments: 12, isLiked: false, isCollected: false },
-    { id: 104, type: 'community', image: 'images/机手社区/三一重卡/三一重卡_03.jpg', title: '设备保养小技巧分享', author: '维修专家', date: '2026-04-10', likes: 312, comments: 67, isLiked: true, isCollected: false },
+    { id: 101, type: 'community', topicId: 1, image: 'images/机手社区/挖掘机/挖掘机_03.jpg', title: '今天在工地拍到的SANY挖掘机，太帅...', author: '机手小王', date: '2026-04-13', likes: 128, comments: 23, views: 1280, isLiked: false, isCollected: false },
+    { id: 102, type: 'community', topicId: 1, image: 'images/机手社区/三一起重机/三一起重机_03.jpg', title: '分享一下我的操作经验，新手必看', author: '老司机李', date: '2026-04-12', likes: 256, comments: 45, views: 2340, isLiked: true, isCollected: true },
+    { id: 103, type: 'community_video', topicId: 3, image: 'images/机手社区/三一起重机/三一起重机_06.jpg', title: '吊装作业全过程记录', author: '操作达人', date: '2026-04-11', likes: 89, comments: 12, views: 680, isLiked: false, isCollected: false },
+    { id: 104, type: 'community', topicId: 2, image: 'images/机手社区/三一重卡/三一重卡_03.jpg', title: '设备保养小技巧分享', author: '维修专家', date: '2026-04-10', likes: 312, comments: 67, views: 856, isLiked: true, isCollected: false },
   ]);
 
   const handleLike = (itemId) => {
@@ -38,7 +47,30 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
     }
   };
 
-  const tabs = ['全部', '活动', '优惠', '行业动态', '机手社区'];
+  const tabs = ['全部', '活动', '优惠(占位)', '行业动态(占位)', '社区'];
+  const communityTabs = ['全部', '热门话题', '设备操作', '保养技巧', '工程现场', '安全规范', '新手入门'];
+
+  // Tab点击时滚动到可见区域
+  const handleTabClick = (tab) => {
+    setActiveTab(tab);
+    // 滚动Tab到可见区域
+    if (tabContainerRef.current) {
+      const tabElement = tabContainerRef.current.querySelector(`[data-tab="${tab}"]`);
+      if (tabElement) {
+        const container = tabContainerRef.current;
+        const tabRect = tabElement.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        // 如果Tab在容器左边，滚动到左边
+        if (tabRect.left < containerRect.left) {
+          container.scrollLeft -= (containerRect.left - tabRect.left + 16);
+        }
+        // 如果Tab在容器右边，滚动到左边第一个位置
+        if (tabRect.right > containerRect.right) {
+          container.scrollLeft += (tabRect.right - containerRect.left + 16);
+        }
+      }
+    }
+  };
 
   // 处理点击发布按钮
   const handlePublishClick = () => {
@@ -52,6 +84,66 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
 
     setShowPublishPage(true);
   };
+
+  // 处理点击社区帖子 - 进入帖子详情
+  const handlePostClick = (post) => {
+    // 从共享数据源获取最新帖子数据（可能被点赞等操作更新）
+    const latestPost = allPosts.find((p) => p.id === post.id) || post;
+    setSelectedPost(latestPost);
+  };
+
+  // 处理点击话题 - 进入话题详情页（source: 'directory' | 'postDetail' | 'communityTab'）
+  const handleTopicClick = (topicName, source = 'communityTab') => {
+    setTopicDetail({ topicName, source });
+  };
+
+  // 话题详情页返回 - 根据来源回到对应页面
+  const handleTopicBack = () => {
+    setTopicDetail(null);
+    // 由 useEffect 根据 communitySubTab 重新计算资格
+  };
+
+  // 暴露handlePublishClick给父组件
+  useImperativeHandle(ref, () => ({
+    handlePublishClick,
+  }));
+
+  // ─── 社区发布按钮资格：ContentFeed 内部计算，上报 Home ───
+  // 我的/关注/具体话题 Tab → true
+  // 全部话题目录 → false
+  // TopicDetailPage（任何来源）→ true
+  // PostDetail → false
+  // CommunityPublish → false（由 Home 的 showPublishPage 控制）
+  // 非社区大类 → false
+  useEffect(() => {
+    if (activeTab !== '社区') {
+      setIsCommunityPublishEligible?.(false);
+      return;
+    }
+    // PostDetail 显示 → 不可发布
+    if (selectedPost) {
+      setIsCommunityPublishEligible?.(false);
+      return;
+    }
+    // TopicDetailPage 显示 → 可发布（不论来源）
+    if (topicDetail) {
+      setIsCommunityPublishEligible?.(true);
+      return;
+    }
+    // 社区根页面：全部话题目录不可发布，其他可发布
+    setIsCommunityPublishEligible?.(communitySubTab !== '全部话题');
+  }, [activeTab, selectedPost, topicDetail, communitySubTab, setIsCommunityPublishEligible]);
+
+  // TopicDetailPage → viewportActive=true; PostDetail → viewportActive=false
+  // CommunityTab 的滚动触发也会设置 viewportActive（社区根页面）
+  useEffect(() => {
+    if (topicDetail) {
+      setIsCommunityPublishViewportActive?.(true);
+    } else if (selectedPost) {
+      setIsCommunityPublishViewportActive?.(false);
+    }
+    // topicDetail 和 selectedPost 都为 null 时，不覆盖 CommunityTab 的滚动触发结果
+  }, [topicDetail, selectedPost, setIsCommunityPublishViewportActive]);
 
   // 轮播图内容 - 使用本地图片
   const carouselItems = [
@@ -121,7 +213,7 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
     switch (activeTab) {
       case '全部':
         return allTabItems;
-      case '机手社区':
+      case '社区':
         return communityItems;
       case '活动':
         return activityItems;
@@ -186,7 +278,7 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
       );
     };
 
-    // 机手社区卡片
+    // 社区卡片
     if (item.type === 'community' || item.type === 'community_video') {
       return (
         <div className="bg-white rounded-[11px] overflow-hidden shadow-sm cursor-pointer" onClick={handleClick}>
@@ -205,9 +297,17 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
                 </div>
               </div>
             )}
+            {/* 浏览量徽标 */}
+            <ViewCountBadge views={item.views} />
           </div>
           <div className="p-2">
-            <div className="text-[13px] font-medium text-text-primary line-clamp-2 mb-1">{item.title}</div>
+            {/* 话题标签 - 单行省略，通过 topicId 从共享数据源获取话题名称 */}
+            {item.topicId && (() => {
+              const t = getTopicById(item.topicId);
+              return t ? <div className="text-[11px] text-brand-red mb-0.5 truncate">{t.name}</div> : null;
+            })()}
+            {/* 标题 - 最多2行省略 */}
+            <div className="text-[13px] font-medium text-text-primary leading-[1.35] line-clamp-2 break-words mb-1">{item.title}</div>
             <div className="flex items-center justify-between text-[11px] text-text辅助 mb-2">
               <span>{item.author}</span>
               <span>{item.date}</span>
@@ -289,18 +389,14 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
               {item.status}
             </div>
           )}
+          {/* 浏览量徽标 */}
+          {item.views != null && <ViewCountBadge views={item.views} />}
         </div>
         <div className="p-2">
-          <div className="text-[13px] font-medium text-text-primary line-clamp-2 mb-1">{item.title}</div>
-          <div className="flex items-center justify-between text-[11px] text-text辅助">
+          {/* 标题 - 最多2行省略 */}
+          <div className="text-[13px] font-medium text-text-primary leading-[1.35] line-clamp-2 break-words mb-1">{item.title}</div>
+          <div className="text-[11px] text-text辅助">
             <span>{item.date}</span>
-            <div className="flex items-center gap-1">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M6 2.5C3.5 2.5 1.5 5 1.5 5C1.5 5 3.5 7.5 6 7.5C8.5 7.5 10.5 5 10.5 5C10.5 5 8.5 2.5 6 2.5Z" stroke="#999" strokeWidth="1"/>
-                <circle cx="6" cy="5" r="1.5" stroke="#999" strokeWidth="1"/>
-              </svg>
-              <span>{item.views}</span>
-            </div>
           </div>
         </div>
       </div>
@@ -353,6 +449,31 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
     );
   }
 
+  // 如果显示话题详情页（三级页面，全屏覆盖）
+  if (topicDetail) {
+    return (
+      <TopicDetailPage
+        topicName={topicDetail.topicName}
+        onBack={handleTopicBack}
+        onPostClick={handlePostClick}
+      />
+    );
+  }
+
+  // 如果显示社区帖子详情页
+  if (selectedPost) {
+    return (
+      <PostDetail
+        post={selectedPost}
+        onBack={() => setSelectedPost(null)}
+        onTopicClick={(topicName) => {
+          setSelectedPost(null);
+          handleTopicClick(topicName, 'postDetail');
+        }}
+      />
+    );
+  }
+
   // 如果显示详情页，直接返回详情页
   if (selectedItem) {
     return (
@@ -368,20 +489,21 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
 
   return (
     <div className="px-4 py-3 relative">
-      {/* Tab 切换 - 吸顶效果 */}
+      {/* Tab 切换 - 吸顶效果，可滑动，半隐藏 */}
       <div className="sticky top-0 bg-white z-10 -mx-4 px-4 py-2 border-b border-gray-100">
-        <div className="flex gap-1">
+        <div ref={tabContainerRef} className="flex gap-1 overflow-x-auto scrollbar-hide">
           {tabs.map((tab) => (
             <div
               key={tab}
-              className={`pb-2 cursor-pointer whitespace-nowrap ${
+              data-tab={tab}
+              className={`pb-2 cursor-pointer whitespace-nowrap transition-all duration-300 flex-shrink-0 ${
                 tab.length <= 2 ? 'px-2' : 'px-3'
               } ${
                 activeTab === tab
                   ? 'text-brand-red font-medium border-b-2 border-brand-red'
                   : 'text-text辅助'
               }`}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => handleTabClick(tab)}
             >
               {tab}
             </div>
@@ -391,7 +513,13 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
 
       {/* 内容区域 - 自适应瀑布流 */}
       <div className="mt-3">
+        {/* 社区Tab - 显示话题和内容 */}
+        {activeTab === '社区' && (
+          <CommunityTab onPostClick={handlePostClick} onTopicClick={handleTopicClick} setCommunitySubTab={setCommunitySubTab} setViewportActive={setIsCommunityPublishViewportActive} />
+        )}
+
         {/* 瀑布流内容 - 所有卡片统一间距，浏览器自动排列 */}
+        {activeTab !== '社区' && (
         <div className="columns-2 gap-2">
           {/* 轮播小卡片 - 只在全部Tab显示，跟其他卡片一样大小 */}
           {activeTab === '全部' && (
@@ -432,6 +560,7 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
             <div key={item.id} className="break-inside-avoid mb-2">{renderCard(item, activeTab)}</div>
           ))}
         </div>
+        )}
       </div>
 
       {/* 广告轮播 - 全部Tab显示 */}
@@ -514,25 +643,12 @@ const ContentFeed = ({ showPublishPage, setShowPublishPage }) => {
         </div>
       )}
 
-      {/* 发布按钮 - 只在机手社区Tab显示 */}
-      {activeTab === '机手社区' && (
-        <div
-          className="absolute bottom-[60px] right-4 w-[56px] h-[56px] bg-brand-red rounded-full flex items-center justify-center shadow-lg cursor-pointer z-40"
-          onClick={handlePublishClick}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 5V19" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M5 12H19" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </div>
-      )}
-
       {/* 底部提示语 - 到底了 */}
       <div className="text-center py-6 text-[12px] text-gray-400">
         — 已经到底了，看看其他版块的信息吧 —
       </div>
     </div>
   );
-};
+});
 
 export default ContentFeed;

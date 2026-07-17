@@ -36,7 +36,10 @@ const Home = () => {
   const [userRole, setUserRole] = useState(null); // 用户角色，null表示未填写
   const [showTaskList, setShowTaskList] = useState(false); // 是否显示任务列表
   const [selectedTask, setSelectedTask] = useState(null); // 选中的任务
+  const [isCommunityPublishEligible, setIsCommunityPublishEligible] = useState(false); // 页面资格
+  const [isCommunityPublishViewportActive, setIsCommunityPublishViewportActive] = useState(false); // 滚动视口激活
   const contentRef = useRef(null); // 内容区域ref
+  const contentFeedRef = useRef(null); // ContentFeed ref
 
   const handleSearchClick = () => {
     setShowSearchPage(true);
@@ -76,6 +79,11 @@ const Home = () => {
     if (contentRef.current) {
       contentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  // 发布按钮点击 - 委托给ContentFeed处理权限检查
+  const handlePublishClick = () => {
+    contentFeedRef.current?.handlePublishClick();
   };
 
   // 审核事件分类点击 - 跳转到审核页面对应Tab
@@ -375,9 +383,23 @@ const Home = () => {
       bottomNav={
         <BottomNav activeTab={activeTab} onTabChange={setActiveTab} isScrolled={isScrolled} onScrollToTop={scrollToTop} showProfileDot={!userRole} />
       }
+      floatingButton={
+        // 发布按钮：底部导航在 home + 非发布流程 + ContentFeed 上报社区可发布
+        activeTab === 'home' && !showPublishPage && isCommunityPublishEligible && isCommunityPublishViewportActive ? (
+          <div
+            className="w-[56px] h-[56px] bg-brand-red rounded-full flex items-center justify-center shadow-lg cursor-pointer"
+            onClick={handlePublishClick}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 5V19" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M5 12H19" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+        ) : null
+      }
     >
       {/* 中间内容区域 - 可滚动 */}
-      <div ref={contentRef} className="bg-bg-gray h-full overflow-y-auto">
+      <div ref={contentRef} data-scroll-container className="bg-bg-gray h-full overflow-y-auto">
         {/* 快捷功能入口 */}
         <QuickAccess onNavigate={setCurrentPage} />
 
@@ -408,8 +430,11 @@ const Home = () => {
 
         {/* 内容信息流 */}
         <ContentFeed
+          ref={contentFeedRef}
           showPublishPage={showPublishPage}
           setShowPublishPage={setShowPublishPage}
+          setIsCommunityPublishEligible={setIsCommunityPublishEligible}
+          setIsCommunityPublishViewportActive={setIsCommunityPublishViewportActive}
         />
       </div>
     </PhoneFrame>

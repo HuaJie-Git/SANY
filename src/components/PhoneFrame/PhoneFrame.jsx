@@ -1,6 +1,6 @@
 import React from 'react';
 
-const PhoneFrame = ({ topNav, bottomNav, children, hideGradient = false }) => {
+const PhoneFrame = ({ topNav, bottomNav, children, hideGradient = false, floatingButton }) => {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-8">
       {/* iPhone 手机框 */}
@@ -22,7 +22,7 @@ const PhoneFrame = ({ topNav, bottomNav, children, hideGradient = false }) => {
                 {/* 右侧状态图标 - 高亮白色 */}
                 <div className="flex items-center gap-1">
                   {/* 信号强度 */}
-                  <svg width="15" height="10" viewBox="0 0 15 10" fill="white" style={{ filter: 'brightness(1.3)' }}>
+                  <svg width="15" height="10" viewBox="0 0 15 10" fill="white" style={{ filter: 'brightness(1.3)' }} className="flex-shrink-0">
                     <rect x="0" y="6" width="2.5" height="4" rx="0.5"/>
                     <rect x="4" y="4" width="2.5" height="6" rx="0.5"/>
                     <rect x="8" y="2" width="2.5" height="8" rx="0.5"/>
@@ -30,7 +30,7 @@ const PhoneFrame = ({ topNav, bottomNav, children, hideGradient = false }) => {
                   </svg>
 
                   {/* WiFi */}
-                  <svg width="12" height="9" viewBox="0 0 12 9" fill="none" stroke="white" strokeWidth="1.2" style={{ filter: 'brightness(1.3)' }}>
+                  <svg width="20" height="14" viewBox="0 0 12 9" fill="none" stroke="white" strokeWidth="1.5" style={{ filter: 'brightness(1.3)' }} className="flex-shrink-0">
                     <path d="M6 7.5a0.8 0.8 0 100 1.6 0.8 0.8 0 000-1.6z" fill="white" stroke="none"/>
                     <path d="M3.8 5.8a3.2 3.2 0 014.4 0" strokeLinecap="round"/>
                     <path d="M1.5 3.5a6 6 0 019 0" strokeLinecap="round"/>
@@ -58,6 +58,13 @@ const PhoneFrame = ({ topNav, bottomNav, children, hideGradient = false }) => {
             <div className="flex-shrink-0">
               {bottomNav}
             </div>
+
+            {/* 悬浮按钮 - 在手机框内，底部导航上方，不随内容滚动 */}
+            {floatingButton && (
+              <div className="absolute bottom-[84px] right-4 z-40">
+                {floatingButton}
+              </div>
+            )}
           </div>
         </div>
 

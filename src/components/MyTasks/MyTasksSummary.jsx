@@ -170,9 +170,9 @@ const MyTasksSummary = ({ tenantType = 'enterprise', onTaskListClick, onTaskClic
   // 渲染加载状态
   if (loading) {
     return (
-      <div className="bg-white mx-4 mt-3 rounded-xl p-4 shadow-sm">
+      <div className="px-4 py-3">
         <div className="flex items-center justify-between mb-3">
-          <div className="text-base font-medium text-gray-900">我的任务</div>
+          <div className="text-[16px] font-medium text-text-primary">我的任务</div>
         </div>
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
@@ -188,11 +188,14 @@ const MyTasksSummary = ({ tenantType = 'enterprise', onTaskListClick, onTaskClic
   }
 
   return (
-    <div className="bg-white mx-4 mt-3 rounded-xl p-4 shadow-sm">
+    <div className="px-4 py-3">
       {/* 标题栏 */}
       <div className="flex items-center justify-between mb-3">
-        <div className="text-base font-medium text-gray-900">我的任务</div>
-        <div className="text-xs text-gray-500 cursor-pointer flex items-center" onClick={onTaskListClick}>
+        <div className="text-[16px] font-medium text-text-primary">我的任务</div>
+        <div
+          className="text-[12px] text-text辅助 cursor-pointer flex items-center"
+          onClick={onTaskListClick}
+        >
           更多
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M9 18l6-6-6-6" />
@@ -201,6 +204,7 @@ const MyTasksSummary = ({ tenantType = 'enterprise', onTaskListClick, onTaskClic
       </div>
 
       {/* 任务列表 */}
+      <div className="bg-white rounded-[11px] overflow-hidden shadow-sm">
       {tasks.length === 0 ? (
         // 空状态
         <div className="text-center py-6">
@@ -213,11 +217,11 @@ const MyTasksSummary = ({ tenantType = 'enterprise', onTaskListClick, onTaskClic
           <div className="text-sm text-red-500 cursor-pointer" onClick={onTaskListClick}>查看任务</div>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="divide-y divide-gray-100">
           {tasks.map((task) => (
             <div
               key={task.taskId}
-              className="border border-gray-100 rounded-lg p-3 cursor-pointer hover:bg-gray-50 transition-colors"
+              className="px-3 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
               onClick={() => onTaskClick && onTaskClick(task)}
             >
               {/* 第一行：优先级 + 标题 + 状态 */}
@@ -260,6 +264,7 @@ const MyTasksSummary = ({ tenantType = 'enterprise', onTaskListClick, onTaskClic
           )}
         </div>
       )}
+      </div>
     </div>
   );
 };
