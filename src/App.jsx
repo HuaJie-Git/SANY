@@ -7,9 +7,12 @@ import ContentManagement from './pages/Admin/ContentManagement';
 import ContentAudit from './pages/Admin/ContentAudit';
 import './index.css';
 
+// basename: localhost 开发时为 '/'，GitHub Pages 构建时为 '/SANY/'
+const basename = import.meta.env.PROD ? (import.meta.env.BASE_URL || '/') : '/';
+
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/admin" element={<AdminLayout />}>
