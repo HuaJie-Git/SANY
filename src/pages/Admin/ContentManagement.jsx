@@ -103,9 +103,6 @@ const ContentManagement = () => {
         <button className="h-9 px-4 border border-gray-300 rounded text-[13px] text-gray-600 hover:bg-gray-50 flex items-center gap-1" onClick={() => setShowExportDialog(true)}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>导出
         </button>
-        <button className="h-9 px-4 bg-[#1890ff] text-white rounded text-[13px] font-medium hover:bg-[#40a9ff] flex items-center gap-1">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>新增
-        </button>
         <button className="h-9 px-5 bg-[#ff4d4f] text-white rounded text-[13px] font-medium hover:bg-[#ff7875] flex items-center gap-1.5 shadow-sm" onClick={() => setShowOfficialDialog(true)}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>官方发布
         </button>
@@ -218,6 +215,12 @@ const ContentManagement = () => {
               <div className="flex"><span className="w-[80px] text-gray-500 flex-shrink-0">发送人</span><span className="text-gray-900">{detailItem.senderName}</span></div>
               <div className="flex"><span className="w-[80px] text-gray-500 flex-shrink-0">联系方式</span><span className="text-gray-900">{detailItem.contact}</span></div>
               <div className="flex"><span className="w-[80px] text-gray-500 flex-shrink-0">发送时间</span><span className="text-gray-900">{detailItem.date}</span></div>
+              {detailItem.targetRegions && detailItem.targetRegions.length > 0 && (
+                <div className="flex"><span className="w-[80px] text-gray-500 flex-shrink-0">目标国区</span><span className="text-gray-900">{detailItem.targetRegions.join('、')}</span></div>
+              )}
+              {detailItem.targetRoles && detailItem.targetRoles.length > 0 && (
+                <div className="flex"><span className="w-[80px] text-gray-500 flex-shrink-0">目标角色</span><span className="text-gray-900">{detailItem.targetRoles.join('、')}</span></div>
+              )}
               <hr className="border-gray-100" />
               <div className="text-[14px] font-medium text-gray-900">删除记录</div>
               <div className="flex"><span className="w-[80px] text-gray-500 flex-shrink-0">删除状态</span>

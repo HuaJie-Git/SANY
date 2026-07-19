@@ -17,6 +17,8 @@ const OfficialPublishDialog = ({ onClose, onSuccess }) => {
     content: '',
     publishMode: 'immediate',
     scheduledTime: '',
+    targetRegions: [],  // 目标国区
+    targetRoles: [],    // 目标角色
   });
 
   // 媒体：图片
@@ -144,6 +146,8 @@ const OfficialPublishDialog = ({ onClose, onSuccess }) => {
       image: finalImage,
       duration: form.type === 'video' ? videoDuration || undefined : undefined,
       topicCode: selectedTopic?.code,
+      targetRegions: form.targetRegions,
+      targetRoles: form.targetRoles,
     });
 
     onSuccess();
@@ -282,6 +286,50 @@ const OfficialPublishDialog = ({ onClose, onSuccess }) => {
                 <input type="datetime-local" value={form.scheduledTime} onChange={(e) => updateField('scheduledTime', e.target.value)} className="w-full h-9 px-3 border border-gray-300 rounded text-[13px] focus:outline-none focus:border-[#1890ff]" />
               </div>
             )}
+          </div>
+
+          <hr className="border-gray-100" />
+
+          {/* ─── 可见范围 ─── */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[13px] text-gray-700 mb-1">目标国区</label>
+              <div className="flex flex-wrap gap-2">
+                {['中国', '东南亚', '南亚', '欧洲', '北美', '中东', '非洲', '其他'].map((r) => (
+                  <label key={r} className="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" checked={form.targetRegions.includes(r)} onChange={() => {
+                      setForm((prev) => ({
+                        ...prev,
+                        targetRegions: prev.targetRegions.includes(r)
+                          ? prev.targetRegions.filter((x) => x !== r)
+                          : [...prev.targetRegions, r],
+                      }));
+                    }} className="w-3.5 h-3.5 rounded border-gray-300 text-[#1890ff]" />
+                    <span className="text-[12px] text-gray-600">{r}</span>
+                  </label>
+                ))}
+              </div>
+              {form.targetRegions.length === 0 && <div className="text-[11px] text-gray-400 mt-1">未选择 = 全量可见</div>}
+            </div>
+            <div>
+              <label className="block text-[13px] text-gray-700 mb-1">目标角色</label>
+              <div className="flex flex-wrap gap-2">
+                {['机手', '维修人员', '管理人员', '代理商', '企业用户'].map((r) => (
+                  <label key={r} className="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" checked={form.targetRoles.includes(r)} onChange={() => {
+                      setForm((prev) => ({
+                        ...prev,
+                        targetRoles: prev.targetRoles.includes(r)
+                          ? prev.targetRoles.filter((x) => x !== r)
+                          : [...prev.targetRoles, r],
+                      }));
+                    }} className="w-3.5 h-3.5 rounded border-gray-300 text-[#1890ff]" />
+                    <span className="text-[12px] text-gray-600">{r}</span>
+                  </label>
+                ))}
+              </div>
+              {form.targetRoles.length === 0 && <div className="text-[11px] text-gray-400 mt-1">未选择 = 全量可见</div>}
+            </div>
           </div>
 
           <hr className="border-gray-100" />
