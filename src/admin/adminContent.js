@@ -7,6 +7,9 @@ import {
   getTopicById,
 } from '../components/ContentFeed/communityData';
 
+// 标准删除原因
+export const DELETE_REASONS = ['违规内容', '虚假/误导', '广告/垃圾信息', '侵权', '其他'];
+
 // 初始化：从社区帖子生成后台内容列表
 const initContentItems = () =>
   communityPosts.map((p) => {
@@ -31,23 +34,53 @@ const initContentItems = () =>
       date: p.date,
       auditStatus: p.auditStatus || 'approved',
       auditHistory: [],
+      deleteStatus: '正常', // 正常 / 删除 / 被删除
+      deleteReason: '',
+      deleteTime: '',
+      deleter: '',
     };
   });
 
-let _contentItems = initContentItems();
+// 添加一些预设删除状态的演示数据
+const addDemoDeletedItems = (items) => {
+  // 标记一条为"删除"（运营人员执行）
+  if (items.length > 5) {
+    items[5].deleteStatus = '删除';
+    items[5].deleteReason = '广告/垃圾信息：内容包含外部推广链接';
+    items[5].deleteTime = '2026-07-18 14:30:00';
+    items[5].deleter = '管理员';
+  }
+  // 标记一条为"被删除"（其他主体/既有记录）
+  if (items.length > 8) {
+    items[8].deleteStatus = '被删除';
+    items[8].deleteReason = '违规内容：违反社区规范';
+    items[8].deleteTime = '2026-07-17 09:15:00';
+    items[8].deleter = '系统管理员';
+  }
+  return items;
+};
+
+let _contentItems = addDemoDeletedItems(initContentItems());
 let _nextContentId = 1000;
 
 export const getContentItems = () => _contentItems;
 
 // 获取待审核内容（仅用户投稿，官方不进入审核队列）
 export const getPendingAuditItems = () =>
-  _contentItems.filter((c) => c.sender === '用户' && c.auditStatus === 'pending');
+  _contentItems.filter((c) => c.sender === '用户' && c.auditStatus === 'pending' && c.deleteStatus === '正常');
 
-export const deleteContentItem = (id) => {
-  _contentItems = _contentItems.filter((c) => c.id !== id);
-  // 同步删除社区前台
+// 软删除内容（内容管理中使用）
+export const softDeleteContent = (id, operator, reason) => {
+  const item = _contentItems.find((c) => c.id === id);
+  if (!item) return false;
+  item.deleteStatus = '删除';
+  item.deleteReason = reason;
+  item.deleteTime = new Date().toISOString().replace('T', ' ').slice(0, 19);
+  item.deleter = operator;
+  // 同步到社区前台 — 删除帖子
   const idx = communityPosts.findIndex((p) => p.id === id);
   if (idx !== -1) communityPosts.splice(idx, 1);
+  return true;
 };
 
 // 审核通过
@@ -56,7 +89,6 @@ export const approveContent = (id, auditor) => {
   if (!item) return false;
   item.auditStatus = 'approved';
   item.auditHistory.push({ action: '通过', auditor, time: new Date().toISOString().slice(0, 19), reason: '' });
-  // 同步到社区前台
   const post = communityPosts.find((p) => p.id === id);
   if (post) post.auditStatus = 'approved';
   return true;
@@ -68,75 +100,49 @@ export const rejectContent = (id, auditor, reason) => {
   if (!item) return false;
   item.auditStatus = 'rejected';
   item.auditHistory.push({ action: '不通过', auditor, time: new Date().toISOString().slice(0, 19), reason });
-  // 同步到社区前台
   const post = communityPosts.find((p) => p.id === id);
   if (post) post.auditStatus = 'rejected';
   return true;
 };
 
-// 删除内容（审核中/通过/不通过均可用）
+// 删除内容（审核中使用）
 export const auditDeleteContent = (id, auditor, reason) => {
   const item = _contentItems.find((c) => c.id === id);
   if (!item) return false;
   item.auditStatus = 'deleted';
-  item.auditHistory.push({ action: '删除', auditor, time: new Date().toISOString().slice(0, 19), reason });
-  // 同步到社区前台 — 删除帖子
+  item.deleteStatus = '删除';
+  item.deleteReason = reason;
+  item.deleteTime = new Date().toISOString().replace('T', ' ').slice(0, 19);
+  item.deleter = auditor;
+  item.auditHistory.push({ action: '删除', auditor, time: item.deleteTime, reason });
   const idx = communityPosts.findIndex((p) => p.id === id);
   if (idx !== -1) communityPosts.splice(idx, 1);
   return true;
 };
 
-// 官方发布 — 新增内容并同步到社区前台
-export const officialPublish = ({
-  title,
-  content,
-  topicId,
-  type,
-  image,
-  duration,
-  topicCode,
-}) => {
+// 官方发布
+export const officialPublish = ({ title, content, topicId, type, image, duration, topicCode }) => {
   const topic = getTopicById(topicId);
   const newId = _nextContentId++;
-
   const newItem = {
     id: newId,
     topicCode: topicCode || (topic ? `QZ2025${String(topic.id).padStart(6, '0')}` : '—'),
     topicName: topic ? `#${topic.name}` : '—',
-    sender: '官方',
-    content: title,
-    contentBody: content || '',
-    views: 0,
-    likes: 0,
-    commentCount: 0,
-    senderName: '三一官方',
-    contact: '400-887-0000',
-    type,
-    image: image || topic?.icon || 'images/机手社区/三一重卡/三一重卡_01.jpg',
-    duration: duration || null,
-    authorId: 'sany-official',
+    sender: '官方', content: title, contentBody: content || '',
+    views: 0, likes: 0, commentCount: 0,
+    senderName: '三一官方', contact: '400-887-0000',
+    type, image: image || topic?.icon || 'images/机手社区/三一重卡/三一重卡_01.jpg',
+    duration: duration || null, authorId: 'sany-official',
     date: new Date().toISOString().slice(0, 10),
-    auditStatus: 'approved', // 官方发布直接通过
-    auditHistory: [],
+    auditStatus: 'approved', auditHistory: [],
+    deleteStatus: '正常', deleteReason: '', deleteTime: '', deleter: '',
   };
   _contentItems.unshift(newItem);
-
   communityPosts.unshift({
-    id: newId,
-    authorId: 'sany-official',
-    topicId,
-    title,
-    content,
-    image: newItem.image,
-    views: 0,
-    likes: 0,
-    comments: 0,
-    date: newItem.date,
-    type,
-    duration: duration || undefined,
-    auditStatus: 'approved',
-    isLiked: false,
+    id: newId, authorId: 'sany-official', topicId, title, content,
+    image: newItem.image, views: 0, likes: 0, comments: 0,
+    date: newItem.date, type, duration: duration || undefined,
+    auditStatus: 'approved', isLiked: false,
   });
-
   return newItem;
 };
