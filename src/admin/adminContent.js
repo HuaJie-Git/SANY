@@ -45,7 +45,7 @@ const initContentItems = () =>
 
 // 为已审核的演示数据补齐审核记录
 const addDemoAuditHistory = (items) => {
-  // id=105 是审核不通过的示例帖子，补齐审核记录
+  // id=105 审核不通过
   const rejected = items.find((c) => c.id === 105);
   if (rejected && rejected.auditHistory.length === 0) {
     rejected.auditHistory.push({
@@ -55,6 +55,20 @@ const addDemoAuditHistory = (items) => {
       reason: '内容不符合社区规范，包含敏感信息',
     });
   }
+  // 为几条审核通过的帖子补齐审核记录
+  const approvedIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+  const auditors = ['管理员', '内容审核员A', '内容审核员B'];
+  approvedIds.forEach((id, idx) => {
+    const item = items.find((c) => c.id === id);
+    if (item && item.auditStatus === 'approved' && item.auditHistory.length === 0) {
+      item.auditHistory.push({
+        action: '通过',
+        auditor: auditors[idx % auditors.length],
+        time: `2026-07-${String(10 + (idx % 9)).padStart(2, '0')} ${String(9 + (idx % 12)).padStart(2, '0')}:${String(10 + idx * 7 % 50).padStart(2, '0')}:00`,
+        reason: '',
+      });
+    }
+  });
   return items;
 };
 
