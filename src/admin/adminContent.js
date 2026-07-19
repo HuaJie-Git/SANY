@@ -43,31 +43,31 @@ const initContentItems = () =>
     };
   });
 
-// 为已审核的演示数据补齐审核记录
+// 为已审核的演示数据补齐审核记录（遍历所有，不白名单 ID）
 const addDemoAuditHistory = (items) => {
-  // id=105 审核不通过
-  const rejected = items.find((c) => c.id === 105);
-  if (rejected && rejected.auditHistory.length === 0) {
-    rejected.auditHistory.push({
-      action: '不通过',
-      auditor: '管理员',
-      time: '2026-07-14 16:20:00',
-      reason: '内容不符合社区规范，包含敏感信息',
-    });
-  }
-  // 为几条审核通过的帖子补齐审核记录
-  const approvedIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
   const auditors = ['管理员', '内容审核员A', '内容审核员B'];
-  approvedIds.forEach((id, idx) => {
-    const item = items.find((c) => c.id === id);
-    if (item && item.auditStatus === 'approved' && item.auditHistory.length === 0) {
+  let counter = 0;
+  items.forEach((item) => {
+    if (item.auditHistory.length > 0) return; // 已有记录则跳过
+    if (item.auditStatus === 'rejected') {
+      item.auditHistory.push({
+        action: '不通过',
+        auditor: '管理员',
+        time: '2026-07-14 16:20:00',
+        reason: '内容不符合社区规范，包含敏感信息',
+      });
+    } else if (item.auditStatus === 'approved') {
+      const day = 10 + (counter % 9);
+      const hour = 9 + (counter % 12);
+      const min = (counter * 7) % 50;
       item.auditHistory.push({
         action: '通过',
-        auditor: auditors[idx % auditors.length],
-        time: `2026-07-${String(10 + (idx % 9)).padStart(2, '0')} ${String(9 + (idx % 12)).padStart(2, '0')}:${String(10 + idx * 7 % 50).padStart(2, '0')}:00`,
+        auditor: auditors[counter % auditors.length],
+        time: `2026-07-${String(day).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}:00`,
         reason: '',
       });
     }
+    counter++;
   });
   return items;
 };
