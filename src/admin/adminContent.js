@@ -34,7 +34,7 @@ const initContentItems = () =>
       date: p.date,
       auditStatus: p.auditStatus || 'approved',
       auditHistory: [],
-      deleteStatus: '正常', // 正常 / 删除 / 被删除
+      deleteStatus: '正常', // 正常 / 已删除
       deleteReason: '',
       deleteTime: '',
       deleter: '',
@@ -43,16 +43,15 @@ const initContentItems = () =>
 
 // 添加一些预设删除状态的演示数据
 const addDemoDeletedItems = (items) => {
-  // 标记一条为"删除"（运营人员执行）
+  // 标记两条为"已删除"演示数据
   if (items.length > 5) {
-    items[5].deleteStatus = '删除';
+    items[5].deleteStatus = '已删除';
     items[5].deleteReason = '广告/垃圾信息：内容包含外部推广链接';
     items[5].deleteTime = '2026-07-18 14:30:00';
     items[5].deleter = '管理员';
   }
-  // 标记一条为"被删除"（其他主体/既有记录）
   if (items.length > 8) {
-    items[8].deleteStatus = '被删除';
+    items[8].deleteStatus = '已删除';
     items[8].deleteReason = '违规内容：违反社区规范';
     items[8].deleteTime = '2026-07-17 09:15:00';
     items[8].deleter = '系统管理员';
@@ -73,7 +72,7 @@ export const getPendingAuditItems = () =>
 export const softDeleteContent = (id, operator, reason) => {
   const item = _contentItems.find((c) => c.id === id);
   if (!item) return false;
-  item.deleteStatus = '删除';
+  item.deleteStatus = '已删除';
   item.deleteReason = reason;
   item.deleteTime = new Date().toISOString().replace('T', ' ').slice(0, 19);
   item.deleter = operator;
@@ -110,7 +109,7 @@ export const auditDeleteContent = (id, auditor, reason) => {
   const item = _contentItems.find((c) => c.id === id);
   if (!item) return false;
   item.auditStatus = 'deleted';
-  item.deleteStatus = '删除';
+  item.deleteStatus = '已删除';
   item.deleteReason = reason;
   item.deleteTime = new Date().toISOString().replace('T', ' ').slice(0, 19);
   item.deleter = auditor;

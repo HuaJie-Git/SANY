@@ -54,8 +54,7 @@ const ContentManagement = () => {
   };
 
   const getDeleteStatusStyle = (status) => {
-    if (status === '删除') return 'bg-red-100 text-red-600';
-    if (status === '被删除') return 'bg-orange-100 text-orange-600';
+    if (status === '已删除') return 'bg-red-100 text-red-600';
     return 'bg-green-100 text-green-600';
   };
 
@@ -89,7 +88,7 @@ const ContentManagement = () => {
           <div className="flex items-center gap-2">
             <label className="text-[13px] text-gray-600 whitespace-nowrap">状态：</label>
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="h-8 px-3 border border-gray-300 rounded text-[13px] w-[100px] focus:outline-none focus:border-[#1890ff]">
-              <option value="">全部</option><option value="正常">正常</option><option value="删除">删除</option><option value="被删除">被删除</option>
+              <option value="">全部</option><option value="正常">正常</option><option value="已删除">已删除</option>
             </select>
           </div>
           <div className="flex items-center gap-2 ml-auto">
@@ -127,7 +126,6 @@ const ContentManagement = () => {
               <th className="px-3 py-3 text-left font-medium text-gray-600">评论数</th>
               <th className="px-3 py-3 text-left font-medium text-gray-600">发送人</th>
               <th className="px-3 py-3 text-left font-medium text-gray-600">联系方式</th>
-              <th className="px-3 py-3 text-left font-medium text-gray-600">状态</th>
               <th className="px-3 py-3 text-left font-medium text-gray-600 w-[80px]">操作</th>
             </tr>
           </thead>
@@ -147,9 +145,6 @@ const ContentManagement = () => {
                 <td className="px-3 py-2.5 text-gray-700 truncate max-w-[90px]">{item.senderName}</td>
                 <td className="px-3 py-2.5 text-gray-500 text-[12px] truncate max-w-[110px]">{item.contact}</td>
                 <td className="px-3 py-2.5">
-                  <span className={`text-[11px] px-1.5 py-0.5 rounded ${getDeleteStatusStyle(item.deleteStatus)}`}>{item.deleteStatus}</span>
-                </td>
-                <td className="px-3 py-2.5">
                   <div className="flex items-center gap-2">
                     <button className="text-[#1890ff] text-[12px] hover:underline" onClick={() => setDetailItem(item)}>详情</button>
                     {item.deleteStatus === '正常' && (
@@ -159,7 +154,7 @@ const ContentManagement = () => {
                 </td>
               </tr>
             ))}
-            {filtered.length === 0 && <tr><td colSpan={12} className="px-4 py-12 text-center text-gray-400">暂无数据</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan={11} className="px-4 py-12 text-center text-gray-400">暂无数据</td></tr>}
           </tbody>
         </table>
       </div>
