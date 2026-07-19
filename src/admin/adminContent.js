@@ -43,6 +43,21 @@ const initContentItems = () =>
     };
   });
 
+// 为已审核的演示数据补齐审核记录
+const addDemoAuditHistory = (items) => {
+  // id=105 是审核不通过的示例帖子，补齐审核记录
+  const rejected = items.find((c) => c.id === 105);
+  if (rejected && rejected.auditHistory.length === 0) {
+    rejected.auditHistory.push({
+      action: '不通过',
+      auditor: '管理员',
+      time: '2026-07-14 16:20:00',
+      reason: '内容不符合社区规范，包含敏感信息',
+    });
+  }
+  return items;
+};
+
 // 添加一些预设删除状态的演示数据
 const addDemoDeletedItems = (items) => {
   // 标记两条为"已删除"演示数据
@@ -61,7 +76,7 @@ const addDemoDeletedItems = (items) => {
   return items;
 };
 
-let _contentItems = addDemoDeletedItems(initContentItems());
+let _contentItems = addDemoAuditHistory(addDemoDeletedItems(initContentItems()));
 let _nextContentId = 1000;
 
 export const getContentItems = () => _contentItems;
