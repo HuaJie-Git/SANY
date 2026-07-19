@@ -23,6 +23,7 @@ export const users = [
   { id: 'user-014', name: '话题达人', avatar: 'images/机手社区/三一起重机/三一起重机_03.jpg', bio: '积极参与社区话题' },
   { id: 'user-015', name: '内容创作者', avatar: 'images/机手社区/泵车/泵车_04.jpg', bio: '记录工地日常' },
   { id: 'user-016', name: '测试用户', avatar: 'images/机手社区/矿卡/矿卡_03.jpg', bio: '测试账号' },
+  { id: 'sany-official', name: '三一官方', avatar: 'images/机手社区/三一重卡/三一重卡_01.jpg', bio: '三一重工官方账号', isOfficial: true },
 ];
 
 export const getUserById = (id) => users.find((u) => u.id === id) || null;
@@ -104,7 +105,7 @@ export const posts = [
     id: 2, authorId: 'user-003', topicId: 1,
     title: '挖掘机作业全过程记录', content: '从开机检查到收工保养，完整记录一天的挖掘机作业流程。',
     image: 'images/机手社区/挖掘机/挖掘机_03.jpg',
-    views: 1560, likes: 256, comments: 45, date: '2026-07-06', type: 'video', auditStatus: 'approved', isLiked: false,
+    views: 1560, likes: 256, comments: 45, date: '2026-07-06', type: 'video', duration: '05:42', auditStatus: 'approved', isLiked: false,
   },
   // 公共帖子 - user-005（已关注）
   {
@@ -113,6 +114,12 @@ export const posts = [
     image: 'images/机手社区/泵车/泵车_04.jpg',
     views: 780, likes: 156, comments: 34, date: '2026-07-06', type: 'image', auditStatus: 'approved', isLiked: false,
   },
+  {
+    id: 30, authorId: 'user-005', topicId: 2,
+    title: '滤清器更换实操教学', content: '手把手教你如何正确更换设备滤清器，避免常见错误操作。',
+    image: 'images/机手社区/泵车/泵车_04.jpg',
+    views: 640, likes: 98, comments: 22, date: '2026-07-12', type: 'video', duration: '03:18', auditStatus: 'approved', isLiked: false,
+  },
   // 公共帖子 - user-007（已关注）
   {
     id: 4, authorId: 'user-007', topicId: 3,
@@ -120,12 +127,24 @@ export const posts = [
     image: 'images/机手社区/三一起重机/三一起重机_03.jpg',
     views: 680, likes: 145, comments: 32, date: '2026-07-04', type: 'image', auditStatus: 'approved', isLiked: false,
   },
+  {
+    id: 31, authorId: 'user-007', topicId: 3,
+    title: '塔吊标准节吊装实拍', content: '完整记录塔吊标准节安装过程，从地面组装到高空对接。',
+    image: 'images/机手社区/三一起重机/三一起重机_06.jpg',
+    views: 920, likes: 178, comments: 38, date: '2026-07-14', type: 'video', duration: '08:15', auditStatus: 'approved', isLiked: false,
+  },
   // 公共帖子 - user-011（已关注）
   {
     id: 5, authorId: 'user-011', topicId: 6,
     title: '10年操作经验分享', content: '入行10年，从新手到老师傅，分享我的成长历程和操作心得。',
     image: 'images/机手社区/三一起重机/三一起重机_03.jpg',
     views: 1580, likes: 234, comments: 56, date: '2026-06-30', type: 'image', auditStatus: 'approved', isLiked: false,
+  },
+  {
+    id: 32, authorId: 'user-011', topicId: 6,
+    title: '老师傅的挖掘机日常维护秘诀', content: '20年经验浓缩，教你如何用最简单的方法保养设备。',
+    image: 'images/机手社区/挖掘机/挖掘机_03.jpg',
+    views: 1120, likes: 189, comments: 42, date: '2026-07-08', type: 'video', duration: '04:56', auditStatus: 'approved', isLiked: false,
   },
   // 公共帖子 - 其他用户
   {
@@ -135,10 +154,16 @@ export const posts = [
     views: 920, likes: 167, comments: 38, date: '2026-07-05', type: 'image', auditStatus: 'approved', isLiked: false,
   },
   {
+    id: 33, authorId: 'user-004', topicId: 1,
+    title: '泵车臂架操作技巧详解', content: '泵车臂架操作是门学问，这几个技巧让你事半功倍。',
+    image: 'images/机手社区/泵车/泵车_04.jpg',
+    views: 780, likes: 134, comments: 28, date: '2026-07-11', type: 'video', duration: '06:30', auditStatus: 'approved', isLiked: false,
+  },
+  {
     id: 7, authorId: 'user-006', topicId: 2,
     title: '这些保养误区你中了几个？', content: '盘点常见的设备保养误区，看看你有没有踩坑。',
     image: 'images/机手社区/三一起重机/三一起重机_06.jpg',
-    views: 1020, likes: 189, comments: 42, date: '2026-07-05', type: 'video', auditStatus: 'approved', isLiked: false,
+    views: 1020, likes: 189, comments: 42, date: '2026-07-05', type: 'video', duration: '07:22', auditStatus: 'approved', isLiked: false,
   },
   {
     id: 8, authorId: 'user-008', topicId: 3,
@@ -153,10 +178,22 @@ export const posts = [
     views: 1200, likes: 198, comments: 45, date: '2026-07-02', type: 'image', auditStatus: 'approved', isLiked: false,
   },
   {
+    id: 34, authorId: 'user-009', topicId: 4,
+    title: '高空作业安全防护演示', content: '实地演示高空作业标准防护流程，每个步骤都不能省。',
+    image: 'images/机手社区/三一起重机/三一起重机_03.jpg',
+    views: 890, likes: 156, comments: 34, date: '2026-07-10', type: 'video', duration: '05:10', auditStatus: 'approved', isLiked: false,
+  },
+  {
     id: 10, authorId: 'user-010', topicId: 5,
     title: '新手必看的操作指南', content: '从零开始的挖掘机操作指南，适合刚入行的新手朋友。',
     image: 'images/机手社区/矿卡/矿卡_03.jpg',
     views: 890, likes: 167, comments: 38, date: '2026-07-01', type: 'image', auditStatus: 'approved', isLiked: false,
+  },
+  {
+    id: 35, authorId: 'user-010', topicId: 5,
+    title: '挖掘机基础操作入门教学', content: '新手第一课：认识操作杆、熟悉仪表盘、掌握基本动作。',
+    image: 'images/机手社区/挖掘机/挖掘机_04.jpg',
+    views: 1340, likes: 245, comments: 58, date: '2026-07-13', type: 'video', duration: '12:45', auditStatus: 'approved', isLiked: false,
   },
   {
     id: 11, authorId: 'user-012', topicId: 7,
@@ -165,29 +202,48 @@ export const posts = [
     views: 1100, likes: 189, comments: 42, date: '2026-06-29', type: 'image', auditStatus: 'approved', isLiked: false,
   },
   {
+    id: 36, authorId: 'user-012', topicId: 7,
+    title: '液压油泄漏紧急处理', content: '施工现场突发液压油泄漏怎么办？教你快速判断和应急处理。',
+    image: 'images/机手社区/泵车/泵车_04.jpg',
+    views: 760, likes: 132, comments: 26, date: '2026-07-09', type: 'video', duration: '04:08', auditStatus: 'approved', isLiked: false,
+  },
+  {
     id: 12, authorId: 'user-013', topicId: 8,
     title: '提升工作效率的5个技巧', content: '从时间管理到操作优化，5个实用技巧帮你提升工作效率。',
     image: 'images/机手社区/挖掘机/挖掘机_03.jpg',
     views: 760, likes: 145, comments: 32, date: '2026-06-28', type: 'image', auditStatus: 'approved', isLiked: false,
   },
-  // 占位话题内容
   {
-    id: 13, authorId: 'user-014', topicId: 9,
-    title: '占位话题1的第一篇内容', content: '这是占位话题1的示例内容。',
+    id: 37, authorId: 'user-013', topicId: 8,
+    title: '多台设备协同作业效率提升', content: '讲解如何合理调度多台设备，实现工地效率最大化。',
+    image: 'images/机手社区/三一起重机/三一起重机_06.jpg',
+    views: 540, likes: 89, comments: 18, date: '2026-07-06', type: 'video', duration: '06:12', auditStatus: 'approved', isLiked: false,
+  },
+  // 新品发布话题 - SANY官方帖子
+  {
+    id: 41, authorId: 'sany-official', topicId: 9,
+    title: 'SY750H发布会现场精彩回顾', content: '带大家回顾SY750H发布会的精彩瞬间，从开场到产品揭幕，每一个环节都充满惊喜。',
     image: 'images/机手社区/挖掘机/挖掘机_03.jpg',
+    views: 3420, likes: 567, comments: 98, date: '2026-07-14', type: 'video', duration: '02:35', auditStatus: 'approved', isLiked: false,
+  },
+  {
+    id: 42, authorId: 'user-014', topicId: 9,
+    title: '新品发布话题测试内容', content: '这是一条普通用户在新品发布话题下的内容。',
+    image: 'images/机手社区/三一重卡/三一重卡_03.jpg',
     views: 320, likes: 45, comments: 8, date: '2026-07-12', type: 'image', auditStatus: 'approved', isLiked: false,
   },
-  {
-    id: 14, authorId: 'user-015', topicId: 9,
-    title: '占位话题1的第二篇内容，测试长标题的截断效果', content: '测试内容。',
-    image: 'images/机手社区/三一重卡/三一重卡_03.jpg',
-    views: 210, likes: 32, comments: 5, date: '2026-07-11', type: 'image', auditStatus: 'approved', isLiked: false,
-  },
+  // 占位话题2 内容
   {
     id: 15, authorId: 'user-016', topicId: 10,
     title: '占位话题2的内容示例', content: '占位话题2的示例内容。',
     image: 'images/机手社区/三一起重机/三一起重机_06.jpg',
     views: 180, likes: 28, comments: 3, date: '2026-07-10', type: 'image', auditStatus: 'approved', isLiked: false,
+  },
+  {
+    id: 43, authorId: 'user-015', topicId: 10,
+    title: '占位话题2视频内容示例', content: '这是一条占位话题2下的视频帖子，用于验证视频卡片展示效果。',
+    image: 'images/机手社区/矿卡/矿卡_03.jpg',
+    views: 240, likes: 36, comments: 7, date: '2026-07-13', type: 'video', duration: '03:45', auditStatus: 'approved', isLiked: false,
   },
   // 更多已关注用户的内容
   {
@@ -248,6 +304,18 @@ export const addComment = (postId, content) => {
   };
   _comments.push(comment);
   return comment;
+};
+
+// 删除当前用户自己的帖子。真实接入时由服务端校验作者身份并同步删除关联评论。
+export const deletePost = (postId) => {
+  const postIndex = posts.findIndex((post) => post.id === postId);
+  const post = posts[postIndex];
+
+  if (!post || post.authorId !== CURRENT_USER_ID) return false;
+
+  posts.splice(postIndex, 1);
+  _comments = _comments.filter((comment) => comment.postId !== postId);
+  return true;
 };
 
 // ---- 过滤辅助函数 ----

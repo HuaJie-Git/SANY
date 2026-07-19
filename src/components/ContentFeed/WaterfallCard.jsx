@@ -44,15 +44,22 @@ const WaterfallCard = forwardRef(({
             <path d="M10 25L15 18L20 22L25 15L30 20V28C30 29.1 29.1 30 28 30H12C10.9 30 10 29.1 10 28V25Z" fill="#999"/>
           </svg>
         </div>
-        {/* 视频播放按钮 */}
+        {/* 视频播放按钮 + 时长 */}
         {post.type === 'video' && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-10 h-10 bg-black/50 rounded-full flex items-center justify-center">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M4 2L14 8L4 14V2Z" fill="white"/>
-              </svg>
+          <>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-10 h-10 bg-black/50 rounded-full flex items-center justify-center">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M4 2L14 8L4 14V2Z" fill="white"/>
+                </svg>
+              </div>
             </div>
-          </div>
+            {post.duration && (
+              <div className="absolute bottom-2 right-2 z-[1] bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-medium tabular-nums">
+                {post.duration}
+              </div>
+            )}
+          </>
         )}
         {/* 审核中状态 - 橙黄色半透明胶囊，右上角，不遮挡左下角浏览量 */}
         {showPendingBadge && (
@@ -81,6 +88,9 @@ const WaterfallCard = forwardRef(({
               onError={(e) => { e.target.style.display = 'none'; }}
             />
             <span className="text-[11px] text-gray-600 truncate">{author.name}</span>
+            {author.isOfficial && (
+              <span className="flex-shrink-0 text-[9px] font-medium text-brand-red bg-red-50 px-1 py-px rounded leading-tight">官方</span>
+            )}
           </div>
         )}
 

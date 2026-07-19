@@ -380,16 +380,6 @@ const TaskList = ({ onBack, onTaskClick }) => {
         )}
       </div>
 
-      {/* 悬浮创建按钮 */}
-      <div className="absolute bottom-6 right-4">
-        <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center shadow-lg cursor-pointer">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-            <path d="M12 5V19" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M5 12H19" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </div>
-      </div>
-
       {/* 筛选与排序面板 */}
       {showFilter && (
         <div className="absolute inset-0 bg-black/50 z-50 flex items-end">

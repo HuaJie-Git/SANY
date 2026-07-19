@@ -10,12 +10,13 @@ import {
 } from './communityData';
 import ViewCountBadge from './ViewCountBadge';
 
-const PostDetail = ({ post, onBack, onTopicClick }) => {
+const PostDetail = ({ post, onBack, onTopicClick, onDelete }) => {
   const [liked, setLiked] = useState(post.isLiked || false);
   const [likeCount, setLikeCount] = useState(post.likes);
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState(getCommentsByPostId(post.id));
   const [following, setFollowing] = useState(isFollowing(post.authorId));
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const commentSectionRef = useRef(null);
   const commentInputRef = useRef(null);
@@ -56,6 +57,11 @@ const PostDetail = ({ post, onBack, onTopicClick }) => {
     }
   };
 
+  const handleDeleteConfirm = () => {
+    setShowDeleteConfirm(false);
+    onDelete?.(post.id);
+  };
+
   const isVideo = post.type === 'video';
 
   return (
@@ -81,13 +87,20 @@ const PostDetail = ({ post, onBack, onTopicClick }) => {
             className="w-full h-[260px] object-cover"
           />
           {isVideo && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-14 h-14 bg-black/50 rounded-full flex items-center justify-center">
-                <svg width="24" height="24" viewBox="0 0 16 16" fill="none">
-                  <path d="M4 2L14 8L4 14V2Z" fill="white"/>
-                </svg>
+            <>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-14 h-14 bg-black/50 rounded-full flex items-center justify-center">
+                  <svg width="24" height="24" viewBox="0 0 16 16" fill="none">
+                    <path d="M4 2L14 8L4 14V2Z" fill="white"/>
+                  </svg>
+                </div>
               </div>
-            </div>
+              {post.duration && (
+                <div className="absolute bottom-3 right-3 bg-black/60 text-white text-[12px] px-2 py-0.5 rounded font-medium tabular-nums">
+                  {post.duration}
+                </div>
+              )}
+            </>
           )}
           <ViewCountBadge views={post.views} />
         </div>
@@ -128,7 +141,12 @@ const PostDetail = ({ post, onBack, onTopicClick }) => {
                 onError={(e) => { e.target.style.display = 'none'; }}
               />
               <div className="flex-1 min-w-0">
-                <div className="text-[14px] font-medium text-gray-900 truncate">{author.name}</div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[14px] font-medium text-gray-900 truncate">{author.name}</span>
+                  {author.isOfficial && (
+                    <span className="flex-shrink-0 text-[10px] font-medium text-brand-red bg-red-50 px-1.5 py-0.5 rounded leading-tight">官方</span>
+                  )}
+                </div>
                 <div className="text-[12px] text-gray-500">{post.date} 发布</div>
               </div>
               {/* 关注按钮 - 仅其他用户显示 */}
@@ -171,6 +189,23 @@ const PostDetail = ({ post, onBack, onTopicClick }) => {
             </svg>
             <span className="text-[14px] tabular-nums">{comments.length}</span>
           </div>
+
+          {/* 删除 - 仅本人帖子显示，紧随评论操作 */}
+          {isOwnPost && (
+            <button
+              type="button"
+              className="flex items-center gap-1.5 cursor-pointer select-none text-brand-red"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 6h18"/>
+                <path d="M8 6V4h8v2"/>
+                <path d="M19 6l-1 14H6L5 6"/>
+                <path d="M10 11v5M14 11v5"/>
+              </svg>
+              <span className="text-[14px]">删除</span>
+            </button>
+          )}
         </div>
 
         {/* 浏览量统计 - 仅文字 */}
@@ -234,6 +269,43 @@ const PostDetail = ({ post, onBack, onTopicClick }) => {
           </div>
         </div>
       </div>
+
+      {/* 删除二次确认 */}
+      {showDeleteConfirm && (
+        <div
+          className="absolute inset-0 z-[60] flex items-end bg-black/45 p-4"
+          onClick={() => setShowDeleteConfirm(false)}
+        >
+          <div
+            className="w-full overflow-hidden rounded-2xl bg-white shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-post-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="px-5 pt-5 pb-4 text-center">
+              <h2 id="delete-post-title" className="text-[17px] font-semibold text-gray-900">删除这条帖子？</h2>
+              <p className="mt-2 text-[13px] leading-5 text-gray-500">删除后无法恢复，相关评论也会一并删除。</p>
+            </div>
+            <div className="flex border-t border-gray-100">
+              <button
+                type="button"
+                className="flex-1 py-3.5 text-[16px] text-gray-600 active:bg-gray-50"
+                onClick={() => setShowDeleteConfirm(false)}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                className="flex-1 border-l border-gray-100 py-3.5 text-[16px] font-medium text-brand-red active:bg-red-50"
+                onClick={handleDeleteConfirm}
+              >
+                删除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

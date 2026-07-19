@@ -5,7 +5,7 @@ import CommunityTab from './CommunityTab';
 import PostDetail from './PostDetail';
 import TopicDetailPage from './TopicDetailPage';
 import ViewCountBadge from './ViewCountBadge';
-import { getTopicById, posts as allPosts } from './communityData';
+import { deletePost, getTopicById, posts as allPosts } from './communityData';
 
 const ContentFeed = forwardRef(({ showPublishPage, setShowPublishPage, setIsCommunityPublishEligible, setIsCommunityPublishViewportActive }, ref) => {
   const [activeTab, setActiveTab] = useState('全部');
@@ -15,6 +15,7 @@ const ContentFeed = forwardRef(({ showPublishPage, setShowPublishPage, setIsComm
   const [selectedPost, setSelectedPost] = useState(null);
   const [topicDetail, setTopicDetail] = useState(null); // { topicName, source }
   const [communitySubTab, setCommunitySubTab] = useState('我的'); // 社区二级Tab
+  const [communityTabKey, setCommunityTabKey] = useState(0);
   const tabContainerRef = useRef(null);
   const [communityItems, setCommunityItems] = useState([
     { id: 101, type: 'community', topicId: 1, image: 'images/机手社区/挖掘机/挖掘机_03.jpg', title: '今天在工地拍到的SANY挖掘机，太帅...', author: '机手小王', date: '2026-04-13', likes: 128, comments: 23, views: 1280, isLiked: false, isCollected: false },
@@ -90,6 +91,18 @@ const ContentFeed = forwardRef(({ showPublishPage, setShowPublishPage, setIsComm
     // 从共享数据源获取最新帖子数据（可能被点赞等操作更新）
     const latestPost = allPosts.find((p) => p.id === post.id) || post;
     setSelectedPost(latestPost);
+  };
+
+  // 删除后回到社区「我的」列表，并刷新瀑布流内容。
+  const handlePostDelete = (postId) => {
+    if (!deletePost(postId)) return;
+
+    setCommunityItems((items) => items.filter((item) => item.id !== postId));
+    setSelectedPost(null);
+    setTopicDetail(null);
+    setActiveTab('社区');
+    setCommunitySubTab('我的');
+    setCommunityTabKey((key) => key + 1);
   };
 
   // 处理点击话题 - 进入话题详情页（source: 'directory' | 'postDetail' | 'communityTab'）
@@ -470,6 +483,7 @@ const ContentFeed = forwardRef(({ showPublishPage, setShowPublishPage, setIsComm
           setSelectedPost(null);
           handleTopicClick(topicName, 'postDetail');
         }}
+        onDelete={handlePostDelete}
       />
     );
   }
@@ -515,7 +529,7 @@ const ContentFeed = forwardRef(({ showPublishPage, setShowPublishPage, setIsComm
       <div className="mt-3">
         {/* 社区Tab - 显示话题和内容 */}
         {activeTab === '社区' && (
-          <CommunityTab onPostClick={handlePostClick} onTopicClick={handleTopicClick} setCommunitySubTab={setCommunitySubTab} setViewportActive={setIsCommunityPublishViewportActive} />
+          <CommunityTab key={communityTabKey} onPostClick={handlePostClick} onTopicClick={handleTopicClick} setCommunitySubTab={setCommunitySubTab} setViewportActive={setIsCommunityPublishViewportActive} />
         )}
 
         {/* 瀑布流内容 - 所有卡片统一间距，浏览器自动排列 */}

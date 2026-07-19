@@ -327,7 +327,7 @@ const CommunityPublish = ({ onClose }) => {
         <div className="flex items-center justify-between px-8 py-8">
           {/* 已选图片数量和缩略图 */}
           <div className="flex flex-col items-center">
-            <span className="text-white text-[14px] mb-1">5/4</span>
+            <span className="text-white text-[14px] mb-1">4/5</span>
             <div className="w-[48px] h-[48px] bg-gray-600 rounded-lg overflow-hidden">
               <img src="images/img_excavator.jpg" alt="" className="w-full h-full object-cover" />
             </div>
