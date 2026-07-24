@@ -2,6 +2,7 @@ import React from 'react';
 
 const FuelLevelChart = ({ level }) => (
   <div className="mt-7" aria-label="油位曲线">
+    <div className="mb-2 pl-7 text-[11px] text-[#9198a4]">油位/L</div>
     <div className="relative h-[130px] pl-7 pb-5">
       <div className="absolute left-0 top-1 bottom-5 flex flex-col justify-between text-[9px] text-[#9198a4]"><span>75</span><span>50</span><span>25</span><span>0</span></div>
       {[4, 36, 68, 100].map((top) => <div key={top} className="absolute left-7 right-0 h-px bg-[#edf0f4]" style={{ top }} />)}
