@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react';
 /* ──────────────── demo data per device ──────────────── */
 const DEVICE_DATA = {
   '三一平地机': {
+    supportsTrajectory: false,
     daily: {
       summary: [
         ['油耗', '150', 'L'],
@@ -330,7 +331,8 @@ const SummaryCard = ({ data, isDaily, period }) => {
 
 /* ──────────────── daily view ──────────────── */
 const DailyView = ({ deviceName }) => {
-  const d = DEVICE_DATA[deviceName]?.daily;
+  const deviceData = DEVICE_DATA[deviceName];
+  const d = deviceData?.daily;
   if (!d) return null;
   return (
     <div className="space-y-3">
@@ -340,17 +342,19 @@ const DailyView = ({ deviceName }) => {
         <div className="text-[15px] font-semibold mb-1">当日工时分布</div>
         <WorkDistBar segments={d.workDist} />
       </div>
-      <div className="rounded-2xl bg-white p-4 shadow-sm">
-        <div className="flex justify-between items-center mb-1">
-          <span className="text-[15px] font-semibold">行驶轨迹</span>
-          <span className="text-[12px] text-[#1a73e8]">查看详情</span>
+      {deviceData.supportsTrajectory !== false && (
+        <div className="rounded-2xl bg-white p-4 shadow-sm">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-[15px] font-semibold">行驶轨迹</span>
+            <span className="text-[12px] text-[#1a73e8]">查看详情</span>
+          </div>
+          <TrajectoryMap />
+          <div className="mt-3 space-y-1 text-[11px] text-[#666]">
+            <div>起点位置：湖南省长沙市宁乡经开区</div>
+            <div>当前位置：湖南省长沙市宁乡经开区</div>
+          </div>
         </div>
-        <TrajectoryMap />
-        <div className="mt-3 space-y-1 text-[11px] text-[#666]">
-          <div>起点位置：湖南省长沙市宁乡经开区</div>
-          <div>当前位置：湖南省长沙市宁乡经开区</div>
-        </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState } from 'react';
 
 const MACHINE_DATA = {
   '三一平地机': {
+    supportsTrajectory: false,
     model: 'SMG200',
     plate: '湘A · SMG200',
     status: '行驶',
@@ -147,7 +148,9 @@ const WorkConditionDetail = ({ device, onBack, onNavigate }) => {
             </div>
             <div className="flex flex-col items-end justify-between">
               <div className="h-[43px] w-[64px] overflow-hidden rounded bg-[#eef0f2]"><img src={device?.image} alt={device?.name} className="h-full w-full object-contain" /></div>
-              <button type="button" aria-label="行驶轨迹" onClick={() => showHint('行驶轨迹')} className="h-10 w-10 rounded-full border border-[#76a9ff] text-[#2377f3] flex items-center justify-center active:bg-blue-50"><Icon type="nav" /></button>
+              {data.supportsTrajectory !== false && (
+                <button type="button" aria-label="行驶轨迹" onClick={() => showHint('行驶轨迹')} className="h-10 w-10 rounded-full border border-[#76a9ff] text-[#2377f3] flex items-center justify-center active:bg-blue-50"><Icon type="nav" /></button>
+              )}
             </div>
           </div>
           <div className="mt-4 grid grid-cols-4 gap-2">
