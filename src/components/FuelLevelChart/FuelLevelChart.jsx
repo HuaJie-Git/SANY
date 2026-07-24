@@ -11,7 +11,7 @@ const FuelLevelChart = ({ level }) => (
         <path d="M0 31H90L102 38H172L184 47H224L234 60H300" fill="none" stroke="#ff7500" strokeWidth="2" />
         <g stroke="#fff" strokeWidth="2" opacity=".9"><path d="M28 31v61M58 31v61M116 38v54M126 38v54M194 47v45M213 47v45"/></g>
       </svg>
-      <div className="absolute left-[70%] top-0 -translate-x-1/2 rounded-md bg-[#30343d] px-2.5 py-1.5 text-[10px] leading-4 text-white shadow-lg">16:00<br/>Fuel level: {level}%<span className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 bg-[#30343d]" /></div>
+      <div className="absolute left-[70%] top-0 -translate-x-1/2 rounded-md bg-[#30343d] px-2.5 py-1.5 text-[10px] leading-4 text-white shadow-lg">16:00<br/>油位：{level}%<span className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 bg-[#30343d]" /></div>
       <div className="absolute left-[70%] top-[54px] bottom-2 w-px bg-[#ef2b2d]"><span className="absolute -left-[3px] -top-[3px] h-[7px] w-[7px] rounded-full border border-white bg-[#ef2b2d]" /></div>
       <div className="absolute bottom-0 left-7 right-0 flex justify-between text-[9px] text-[#7d8491]"><span>0:00</span><span>04:00</span><span>08:00</span><span>12:00</span><span>16:00</span><span>20:00</span><span>24:00</span></div>
     </div>
