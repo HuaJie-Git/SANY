@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 
-const Asset = () => {
+const Asset = ({ onDeviceClick }) => {
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Tab数据
   const tabs = [
-    { id: 'all', name: '全部', count: 50 },
+    { id: 'all', name: '全部', count: 53 },
     { id: 'online', name: '在线', count: 20 },
     { id: 'offline', name: '离线', count: 30 },
     { id: 'unaudited', name: '未审核', count: 0 },
@@ -14,6 +14,33 @@ const Asset = () => {
 
   // 设备列表数据
   const devices = [
+    {
+      id: 9,
+      name: '三一平地机',
+      code: 'SMG200-3009',
+      image: 'images/asset-models/sany_grader.jpg',
+      status: 'online',
+      statusText: '行驶',
+      statusColor: 'text-green-500'
+    },
+    {
+      id: 10,
+      name: '三一压路机',
+      code: 'SSR260-6012',
+      image: 'images/asset-models/sany_roller.jpg',
+      status: 'offline',
+      statusText: '离线',
+      statusColor: 'text-gray-400'
+    },
+    {
+      id: 11,
+      name: '三一摊铺机',
+      code: 'SMP130-8015',
+      image: 'images/asset-models/sany_paver.jpg',
+      status: 'online',
+      statusText: '行驶',
+      statusColor: 'text-green-500'
+    },
     {
       id: 1,
       name: '三一挖掘机',
@@ -138,49 +165,68 @@ const Asset = () => {
 
       {/* 设备列表 - 可滑动区域 */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-        {devices.map((device) => (
-          <div
-            key={device.id}
-            className="bg-white rounded-xl p-3 flex items-center shadow-sm"
-          >
-            {/* 设备图片 */}
-            <div className="w-16 h-12 bg-gray-50 rounded-lg flex items-center justify-center mr-3 overflow-hidden flex-shrink-0">
-              <img
-                src={device.image}
-                alt={device.name}
-                className="w-full h-full object-contain"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'flex';
-                }}
-              />
-              <div className="hidden items-center justify-center w-full h-full">
-                <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
-                  </svg>
+        {devices.map((device) => {
+          const isTarget = ['三一平地机', '三一压路机', '三一摊铺机'].includes(device.name);
+          const cardClass = isTarget
+            ? 'bg-white rounded-xl p-3 flex items-center shadow-sm cursor-pointer active:scale-[0.99] transition-transform'
+            : 'bg-white rounded-xl p-3 flex items-center shadow-sm';
+          return (
+            <div
+              key={device.id}
+              {...(isTarget ? {
+                role: 'button',
+                tabIndex: 0,
+                onClick: () => onDeviceClick?.(device),
+                onKeyDown: (e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onDeviceClick?.(device);
+                  }
+                },
+              } : {})}
+              className={cardClass}
+            >
+              {/* 设备图片 */}
+              <div className="w-16 h-12 bg-gray-50 rounded-lg flex items-center justify-center mr-3 overflow-hidden flex-shrink-0">
+                <img
+                  src={device.image}
+                  alt={device.name}
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+                <div className="hidden items-center justify-center w-full h-full">
+                  <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                    </svg>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* 设备信息 */}
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-gray-900 mb-0.5 truncate">{device.name}</div>
-              <div className="text-xs text-gray-500 mb-1">{device.code}</div>
-              <div className="flex items-center">
-                <div className={`w-2 h-2 rounded-full mr-1 ${
-                  device.status === 'online' ? 'bg-green-500' : 'bg-gray-400'
-                }`}></div>
-                <span className={`text-xs ${device.statusColor}`}>{device.statusText}</span>
+              {/* 设备信息 */}
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-gray-900 mb-0.5 truncate">{device.name}</div>
+                <div className="text-xs text-gray-500 mb-1">{device.code}</div>
+                <div className="flex items-center">
+                  <div className={`w-2 h-2 rounded-full mr-1 ${
+                    device.status === 'online' ? 'bg-green-500' : 'bg-gray-400'
+                  }`}></div>
+                  <span className={`text-xs ${device.statusColor}`}>{device.statusText}</span>
+                </div>
               </div>
-            </div>
 
-            {/* 左箭头 */}
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/>
-            </svg>
-          </div>
-        ))}
+              {/* 右箭头 - 仅目标设备 */}
+              {isTarget && (
+                <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
+                </svg>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

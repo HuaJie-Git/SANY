@@ -18,6 +18,8 @@ import Audit from '../Audit/Audit';
 import Asset from '../Asset/Asset';
 import AIAssistant from '../AIAssistant/AIAssistant';
 import DeviceDetail from '../DeviceDetail/DeviceDetail';
+import WorkConditionDetail from '../WorkConditionDetail/WorkConditionDetail';
+import DataReport from '../DataReport/DataReport';
 import RecentDetail from '../RecentDetail/RecentDetail';
 import RecentCardDetail from '../RecentCardDetail/RecentCardDetail';
 import TaskList from '../TaskList/TaskList';
@@ -29,6 +31,8 @@ const Home = () => {
   const [showSearchPage, setShowSearchPage] = useState(false);
   const [currentPage, setCurrentPage] = useState(null); // 当前显示的功能页面
   const [selectedDevice, setSelectedDevice] = useState(null); // 选中的设备详情
+  const [selectedWorkCondition, setSelectedWorkCondition] = useState(null); // 资产工况详情
+  const [dataReportDevice, setDataReportDevice] = useState(null); // 数据报表设备
   const [selectedRecentItem, setSelectedRecentItem] = useState(null); // 选中的最近查看卡片
   const [showRecentList, setShowRecentList] = useState(false); // 是否显示最近查看列表
   const [auditInitialTab, setAuditInitialTab] = useState('exception'); // 审核页面初始Tab
@@ -142,7 +146,44 @@ const Home = () => {
     );
   }
 
-  // 如果显示设备详情页 - 禁用渐变背景
+  // 如果显示数据报表页
+  if (dataReportDevice) {
+    return (
+      <PhoneFrame
+        topNav={null}
+        bottomNav={null}
+        hideGradient={true}
+        statusBarTheme="dark"
+      >
+        <DataReport
+          device={dataReportDevice}
+          onBack={() => setDataReportDevice(null)}
+        />
+      </PhoneFrame>
+    );
+  }
+
+  // 如果显示资产工况详情页 - 禁用渐变背景和底部导航
+  if (selectedWorkCondition) {
+    return (
+      <PhoneFrame
+        topNav={null}
+        bottomNav={null}
+        hideGradient={true}
+        statusBarTheme="dark"
+      >
+        <WorkConditionDetail
+          device={selectedWorkCondition}
+          onBack={() => setSelectedWorkCondition(null)}
+          onNavigate={(page) => {
+            if (page === 'dataReport') setDataReportDevice(selectedWorkCondition);
+          }}
+        />
+      </PhoneFrame>
+    );
+  }
+
+  // 如果显示审核设备详情页 - 禁用渐变背景
   if (selectedDevice) {
     return (
       <PhoneFrame
@@ -276,7 +317,11 @@ const Home = () => {
           <BottomNav activeTab={activeTab} onTabChange={setActiveTab} showProfileDot={!userRole} />
         }
       >
-        <Asset />
+        <Asset onDeviceClick={(device) => {
+          if (['三一平地机', '三一压路机', '三一摊铺机'].includes(device.name)) {
+            setSelectedWorkCondition(device);
+          }
+        }} />
       </PhoneFrame>
     );
   }
