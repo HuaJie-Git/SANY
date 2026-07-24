@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from 'react';
+import FuelLevelChart from '../../components/FuelLevelChart/FuelLevelChart';
 
 /* ──────────────── demo data per device ──────────────── */
 const DEVICE_DATA = {
   '三一平地机': {
     supportsTrajectory: false,
     daily: {
+      fuelLevel: '70',
       summary: [
         ['油耗', '150', 'L'],
         ['每小时工作油耗', '26.7', 'L/h'],
@@ -46,7 +48,9 @@ const DEVICE_DATA = {
     },
   },
   '三一压路机': {
+    supportsTrajectory: false,
     daily: {
+      fuelLevel: '64',
       summary: [
         ['油耗', '98', 'L'],
         ['工作时长', '5.6', 'h'],
@@ -342,7 +346,7 @@ const DailyView = ({ deviceName }) => {
         <div className="text-[15px] font-semibold mb-1">当日工时分布</div>
         <WorkDistBar segments={d.workDist} />
       </div>
-      {deviceData.supportsTrajectory !== false && (
+      {deviceData.supportsTrajectory !== false ? (
         <div className="rounded-2xl bg-white p-4 shadow-sm">
           <div className="flex justify-between items-center mb-1">
             <span className="text-[15px] font-semibold">行驶轨迹</span>
@@ -353,6 +357,11 @@ const DailyView = ({ deviceName }) => {
             <div>起点位置：湖南省长沙市宁乡经开区</div>
             <div>当前位置：湖南省长沙市宁乡经开区</div>
           </div>
+        </div>
+      ) : (
+        <div className="rounded-2xl bg-white p-4 shadow-sm">
+          <div className="text-[15px] font-semibold">油位曲线</div>
+          <FuelLevelChart level={d.fuelLevel} />
         </div>
       )}
     </div>
