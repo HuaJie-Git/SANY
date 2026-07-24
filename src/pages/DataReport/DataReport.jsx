@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import FuelLevelChart from '../../components/FuelLevelChart/FuelLevelChart';
+import WorkStatusTimeline from '../../components/WorkStatusTimeline/WorkStatusTimeline';
 
 /* ──────────────── demo data per device ──────────────── */
 const DEVICE_DATA = {
@@ -13,7 +14,7 @@ const DEVICE_DATA = {
         ['工作时长', '7.5', 'h'],
         ['怠速工时', '1.5', 'h'],
       ],
-      workDist: [0,0,0,0,1,1,1,2,2,2,2,2,0,0,1,1,1,2,2,2,1,0,0,0],
+      workDist: [0,0,0,0,3,3,1,1,1,2,2,1,0,0,3,3,1,1,2,2,3,0,0,0],
     },
     weekly: {
       summary: [
@@ -56,7 +57,7 @@ const DEVICE_DATA = {
         ['工作时长', '5.6', 'h'],
         ['怠速工时', '0.8', 'h'],
       ],
-      workDist: [0,0,0,0,0,1,1,2,2,2,2,2,0,0,0,1,1,2,2,1,0,0,0,0],
+      workDist: [0,0,0,0,0,3,3,1,1,1,2,2,0,0,0,1,1,2,2,1,0,0,0,0],
     },
     weekly: {
       summary: [
@@ -99,7 +100,7 @@ const DEVICE_DATA = {
         ['工作时长', '7.5', 'h'],
         ['怠速工时', '1.5', 'h'],
       ],
-      workDist: [0,0,0,0,1,1,1,2,2,2,2,2,0,0,1,1,1,2,2,2,1,0,0,0],
+      workDist: [0,0,0,0,3,3,1,1,1,2,2,1,0,0,3,3,1,1,2,2,3,0,0,0],
     },
     weekly: {
       summary: [
@@ -177,25 +178,6 @@ const LineChart = ({ series, labels, yMax, yUnit }) => {
       {labels.map((lb, i) => i % step === 0 && <text key={i} x={toX(i)} y={H - 6} textAnchor="middle" fontSize="8" fill="#999">{lb}</text>)}
       {yUnit && <text x={PAD.l} y={12} fontSize="9" fill="#999">{yUnit}</text>}
     </svg>
-  );
-};
-
-/* ──────────────── work distribution bar ──────────────── */
-const WorkDistBar = ({ segments }) => {
-  const colors = { 0: '#d9dde5', 1: '#4dabf7', 2: '#f5bd00' };
-  return (
-    <div className="mt-5">
-      <div className="flex justify-between px-1 text-[9px] text-[#7d8491]">
-        {[0,2,4,6,8,10,12,14,16,18,20,22,'24(h)'].map((t) => <span key={t}>{t}</span>)}
-      </div>
-      <div className="mt-1.5 h-[10px] overflow-hidden rounded-sm bg-[#d9dde5] flex">
-        {segments.map((s, i) => <div key={i} style={{ width: `${100 / segments.length}%`, backgroundColor: colors[s] || colors[0] }} />)}
-      </div>
-      <div className="mt-2 flex items-center gap-4 text-[10px] text-[#666]">
-        <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#4dabf7]" />工作</span>
-        <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#f5bd00]" />怠速</span>
-      </div>
-    </div>
   );
 };
 
@@ -344,7 +326,7 @@ const DailyView = ({ deviceName }) => {
       <SummaryCard data={d.summary} isDaily />
       <div className="rounded-2xl bg-white p-4 shadow-sm">
         <div className="text-[15px] font-semibold mb-1">当日工时分布</div>
-        <WorkDistBar segments={d.workDist} />
+        <WorkStatusTimeline segments={d.workDist} />
       </div>
       {deviceData.supportsTrajectory !== false ? (
         <div className="rounded-2xl bg-white p-4 shadow-sm">

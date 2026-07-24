@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import FuelLevelChart from '../../components/FuelLevelChart/FuelLevelChart';
+import WorkStatusTimeline from '../../components/WorkStatusTimeline/WorkStatusTimeline';
 
 const MACHINE_DATA = {
   '三一平地机': {
@@ -14,6 +15,7 @@ const MACHINE_DATA = {
       ['机油压力', '2.3', 'Bar'],
       ['当前油位', '70', '%'],
     ],
+    workDist: [0,0,0,0,3,3,1,1,1,2,2,1,0,0,3,3,1,1,2,2,3,0,0,0],
     today: [['怠速工时', '1.2', 'h'], ['工作时长', '7.5', 'h']],
     cumulative: [['总油耗', '200', 'L'], ['总工作时间', '2,000', 'H']],
   },
@@ -28,6 +30,7 @@ const MACHINE_DATA = {
       ['发动机转速', '0', 'r/min'],
       ['当前油位', '48.6', '%'],
     ],
+    workDist: [0,0,0,0,0,3,3,1,1,1,2,2,0,0,0,1,1,2,2,1,0,0,0,0],
     today: [['怠速工时', '0.8', 'h'], ['工作时长', '5.6', 'h']],
     cumulative: [['总油耗', '168', 'L'], ['总工作时间', '1,620', 'H']],
   },
@@ -45,6 +48,7 @@ const MACHINE_DATA = {
       ['振捣设定值', '70.1', 'HZ'],
       ['当前油位', '70', '%'],
     ],
+    workDist: [0,0,0,0,3,3,1,1,1,2,2,1,0,0,3,3,1,1,2,2,3,0,0,0],
     today: [['怠速工时', '1.5', 'h'], ['工作时长', '7.5', 'h']],
     cumulative: [['摊铺距离', '12,680', 'm'], ['总油耗', '200', 'L'], ['总工作小时', '2,000', 'H']],
   },
@@ -79,21 +83,6 @@ const Metric = ({ item }) => {
     </div>
   );
 };
-
-const WorkTimeline = () => (
-  <div className="mt-5">
-    <div className="flex justify-between px-1 text-[9px] text-[#7d8491]">
-      {[0, 4, 8, 12, 16, 20, '24(h)'].map((time) => <span key={time}>{time}</span>)}
-    </div>
-    <div className="mt-1.5 h-[10px] overflow-hidden rounded-sm bg-[#d9dde5] flex">
-      <div className="w-[16%]" />
-      <div className="w-[27%] bg-[#1768d7]" />
-      <div className="w-[4%] bg-[#f5bd00]" />
-      <div className="w-[12%]" />
-      <div className="w-[25%] bg-[#1768d7]" />
-    </div>
-  </div>
-);
 
 const WorkConditionDetail = ({ device, onBack, onNavigate }) => {
   const [hint, setHint] = useState('');
@@ -153,7 +142,7 @@ const WorkConditionDetail = ({ device, onBack, onNavigate }) => {
         <section className="rounded-[14px] bg-white px-4 py-5 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
           <div className="flex items-center gap-1.5"><h2 className="text-[16px] font-semibold">今日数据</h2><span className="h-4 w-4 rounded-full bg-[#303640] text-center text-[10px] leading-4 text-white">?</span></div>
           <div className="mt-7 grid grid-cols-2 gap-6">{data.today.map((item) => <Metric key={item[0]} item={item} />)}</div>
-          <WorkTimeline />
+          <WorkStatusTimeline segments={data.workDist} />
           <FuelLevelChart level={fuelLevel} />
         </section>
 
