@@ -1,4 +1,6 @@
 // Monthly fuel trend data generators
+const ASSET_BASE = import.meta.env.BASE_URL;
+
 const genMonthlyFuel = (min, max) =>
   Array.from({ length: 30 }, (_, i) => ({
     day: `${i + 1}日`,
@@ -13,7 +15,7 @@ export const DEVICES = [
     type: '平地机',
     status: '行驶',
     updateTime: '2026-07-24 14:30',
-    image: '/images/asset-models/sany_grader.jpg',
+    image: `${ASSET_BASE}images/asset-models/sany_grader.jpg`,
     name: '三一平地机',
     realtime: {
       设备状态: '行驶',
@@ -129,7 +131,7 @@ export const DEVICES = [
     type: '压路机',
     status: '离线',
     updateTime: '2026-07-23 18:45',
-    image: '/images/asset-models/sany_roller.jpg',
+    image: `${ASSET_BASE}images/asset-models/sany_roller.jpg`,
     name: '三一压路机',
     realtime: {
       设备状态: '离线',
@@ -233,7 +235,7 @@ export const DEVICES = [
     type: '摊铺机',
     status: '行驶',
     updateTime: '2026-07-24 15:10',
-    image: '/images/asset-models/sany_paver.jpg',
+    image: `${ASSET_BASE}images/asset-models/sany_paver.jpg`,
     name: '三一摊铺机',
     realtime: {
       设备状态: '行驶',
