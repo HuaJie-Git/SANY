@@ -2,30 +2,13 @@ import React, { useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 
 const menuItems = [
-  { key: 'activity', label: '活动管理模块', children: ['活动管理'] },
-  { key: 'ad', label: '广告管理', children: [] },
-  { key: 'customer-analysis', label: '客户分析', children: [] },
-  { key: 'customer', label: '客户管理', children: [] },
-  { key: 'data', label: '数据管理', children: [] },
-  { key: 'feedback', label: '反馈管理', children: [] },
   { key: 'circle', label: '社区管理', children: ['话题管理', '内容管理', '内容审核'] },
-  { key: 'points', label: '积分商城管理', children: [] },
-  { key: 'maintenance', label: '保养台账管理', children: [] },
-  { key: 'operation', label: '运营活动管理', children: [] },
-  { key: 'message', label: '消息管理', children: [] },
 ];
 
 const tabs = [
-  { key: 'workspace', label: '工作台', icon: '🏠' },
   { key: 'topic', label: '话题管理' },
   { key: 'content', label: '内容管理' },
   { key: 'audit', label: '内容审核' },
-  { key: 'data-config', label: '数据配置' },
-  { key: 'data-stats', label: '数据统计' },
-  { key: 'appeal', label: '异常申诉' },
-  { key: 'app-feedback', label: 'APP功能反馈广告配置' },
-  { key: 'feedback-list', label: '反馈管理列表' },
-  { key: 'user-portrait', label: '用户群体画像' },
 ];
 
 const AdminLayout = () => {
