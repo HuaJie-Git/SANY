@@ -41,22 +41,22 @@ const AdminLayout = () => {
       setActiveSubMenu(sub);
       if (sub === '话题管理') {
         setActiveTab('topic');
-        navigate('/topic');
+        navigate('/admin/topic');
       } else if (sub === '内容管理') {
         setActiveTab('content');
-        navigate('/content');
+        navigate('/admin/content');
       } else if (sub === '内容审核') {
         setActiveTab('audit');
-        navigate('/audit');
+        navigate('/admin/audit');
       }
     }
   };
 
   const handleTabClick = (key) => {
     setActiveTab(key);
-    if (key === 'topic') navigate('/topic');
-    if (key === 'content') navigate('/content');
-    if (key === 'audit') navigate('/audit');
+    if (key === 'topic') navigate('/admin/topic');
+    if (key === 'content') navigate('/admin/content');
+    if (key === 'audit') navigate('/admin/audit');
   };
 
   return (
