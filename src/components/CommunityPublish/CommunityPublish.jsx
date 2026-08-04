@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+const TITLE_MAX_LENGTH = 20;
 const VIDEO_LIMIT_SECONDS = 3 * 60;
 const CONTENT_MAX_LENGTH = 500;
 const DAILY_PUBLISH_LIMIT = 10;
@@ -117,6 +118,7 @@ const CommunityPublish = ({ onClose }) => {
   const [step, setStep] = useState(1); // 1: 相机界面, 2: 编辑内容
   const [selectedImages, setSelectedImages] = useState([]);
   const [content, setContent] = useState('');
+  const [title, setTitle] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('');
   const [cameraMode, setCameraMode] = useState('photo'); // photo 或 video
   const [isRecording, setIsRecording] = useState(false);
@@ -517,6 +519,29 @@ const CommunityPublish = ({ onClose }) => {
               {topic}
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* 标题输入 */}
+      <div className="px-4 mb-4">
+        <div className="relative">
+          <input
+            type="text"
+            className="w-full h-10 rounded-lg bg-gray-50 px-3 pr-16 text-[14px] leading-6 text-gray-800 outline-none placeholder-gray-400"
+            placeholder="标题"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            maxLength={TITLE_MAX_LENGTH}
+            aria-describedby="title-character-count"
+          />
+          <div
+            id="title-character-count"
+            className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12px] tabular-nums ${
+              title.length >= TITLE_MAX_LENGTH ? 'text-red-500' : 'text-gray-400'
+            }`}
+          >
+            {title.length}/{TITLE_MAX_LENGTH}
+          </div>
         </div>
       </div>
 
