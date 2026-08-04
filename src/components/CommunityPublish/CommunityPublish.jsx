@@ -546,10 +546,10 @@ const CommunityPublish = ({ onClose }) => {
       </div>
 
       {/* 内容输入 */}
-      <div className="relative flex-1 px-4 pb-4">
+      <div className="relative flex-1 mx-4 mb-4 rounded-lg bg-gray-50">
         <textarea
           ref={contentInputRef}
-          className="h-full w-full resize-none border-none pb-8 pr-1 text-[14px] leading-6 text-gray-800 outline-none placeholder-gray-400"
+          className="h-full w-full resize-none border-none bg-transparent px-3 pt-3 pb-8 pr-1 text-[14px] leading-6 text-gray-800 outline-none placeholder-gray-400"
           placeholder="分享你的故事..."
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -558,7 +558,7 @@ const CommunityPublish = ({ onClose }) => {
         />
         <div
           id="content-character-count"
-          className={`pointer-events-none absolute bottom-5 right-5 rounded-full bg-white/90 px-2 py-1 text-[12px] tabular-nums shadow-[0_1px_8px_rgba(0,0,0,0.05)] ${
+          className={`pointer-events-none absolute bottom-2 right-2 rounded-full bg-white/90 px-2 py-1 text-[12px] tabular-nums shadow-[0_1px_8px_rgba(0,0,0,0.05)] ${
             content.length >= CONTENT_MAX_LENGTH ? 'text-red-500' : 'text-gray-400'
           }`}
         >
