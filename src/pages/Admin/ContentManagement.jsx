@@ -215,12 +215,6 @@ const ContentManagement = () => {
               <div className="flex"><span className="w-[80px] text-gray-500 flex-shrink-0">发送人</span><span className="text-gray-900">{detailItem.senderName}</span></div>
               <div className="flex"><span className="w-[80px] text-gray-500 flex-shrink-0">联系方式</span><span className="text-gray-900">{detailItem.contact}</span></div>
               <div className="flex"><span className="w-[80px] text-gray-500 flex-shrink-0">发送时间</span><span className="text-gray-900">{detailItem.date}</span></div>
-              {detailItem.targetRegions && detailItem.targetRegions.length > 0 && (
-                <div className="flex"><span className="w-[80px] text-gray-500 flex-shrink-0">目标国区</span><span className="text-gray-900">{detailItem.targetRegions.join('、')}</span></div>
-              )}
-              {detailItem.targetRoles && detailItem.targetRoles.length > 0 && (
-                <div className="flex"><span className="w-[80px] text-gray-500 flex-shrink-0">目标角色</span><span className="text-gray-900">{detailItem.targetRoles.join('、')}</span></div>
-              )}
               <hr className="border-gray-100" />
               <div className="text-[14px] font-medium text-gray-900">删除记录</div>
               <div className="flex"><span className="w-[80px] text-gray-500 flex-shrink-0">删除状态</span>

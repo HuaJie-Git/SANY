@@ -34,8 +34,6 @@ const initContentItems = () =>
       date: p.date,
       auditStatus: p.auditStatus || 'approved',
       auditHistory: [],
-      targetRegions: [], // 目标国区（空=全量可见）
-      targetRoles: [],  // 目标角色（空=全量可见）
       deleteStatus: '正常', // 正常 / 已删除
       deleteReason: '',
       deleteTime: '',
@@ -151,7 +149,7 @@ export const auditDeleteContent = (id, auditor, reason) => {
 };
 
 // 官方发布
-export const officialPublish = ({ title, content, topicId, type, image, duration, topicCode, targetRegions, targetRoles }) => {
+export const officialPublish = ({ title, content, topicId, type, image, duration, topicCode }) => {
   const topic = getTopicById(topicId);
   const newId = _nextContentId++;
   const newItem = {
@@ -165,8 +163,6 @@ export const officialPublish = ({ title, content, topicId, type, image, duration
     duration: duration || null, authorId: 'sany-official',
     date: new Date().toISOString().slice(0, 10),
     auditStatus: 'approved', auditHistory: [],
-    targetRegions: targetRegions || [],
-    targetRoles: targetRoles || [],
     deleteStatus: '正常', deleteReason: '', deleteTime: '', deleter: '',
   };
   _contentItems.unshift(newItem);

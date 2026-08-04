@@ -7,6 +7,7 @@ import {
   toggleTopicStatus,
   TOPIC_TYPES,
   TYPE_TO_MAPPING,
+  applyPlaceholder,
 } from '../../admin/adminTopics';
 import TopicDialog from './TopicDialog';
 
@@ -36,10 +37,16 @@ const TopicManagement = () => {
   };
 
   const handleSave = (topicData) => {
+    let saved;
     if (editingTopic) {
       updateAdminTopic(editingTopic.id, topicData);
+      saved = { id: editingTopic.id };
     } else {
-      addAdminTopic(topicData);
+      saved = addAdminTopic(topicData);
+    }
+    // 占位关联：解除旧占用话题，保持一对一（当前话题关联已在保存时写入）
+    if (topicData.placeholder && saved) {
+      applyPlaceholder(saved.id, topicData.placeholder);
     }
     refresh();
     setDialogOpen(false);
@@ -60,8 +67,6 @@ const TopicManagement = () => {
   // 映射标签颜色
   const getMappingColor = (type) => {
     if (type === '热门话题') return 'bg-blue-100 text-blue-700';
-    if (type === '热门话题占位一') return 'bg-orange-100 text-orange-700';
-    if (type === '热门话题占位二') return 'bg-purple-100 text-purple-700';
     return 'bg-gray-100 text-gray-600';
   };
 
@@ -139,6 +144,11 @@ const TopicManagement = () => {
                 <td className="px-4 py-3">
                   <span className={`text-[11px] px-2 py-0.5 rounded ${getMappingColor(topic.type)}`}>
                     {TYPE_TO_MAPPING[topic.type] || '—'}
+                    {topic.placeholder && (
+                      <span className={topic.status === '开启' ? 'font-medium' : 'text-orange-500'}>
+                        （{topic.placeholder}{topic.status === '关闭' ? '·未生效' : ''}）
+                      </span>
+                    )}
                   </span>
                 </td>
                 <td className="px-4 py-3">

@@ -49,6 +49,11 @@ const FEEDBACK_COPY = {
     description: '写一点内容再发布，让大家知道你想分享什么。',
     confirmText: '继续编辑',
   },
+  missingTopic: {
+    title: '请选择话题',
+    description: '发布前请选择一个话题，方便大家找到你的分享。',
+    confirmText: '去选择',
+  },
   dailyLimit: {
     title: '今日发布已达上限',
     description: `每天最多发布 ${DAILY_PUBLISH_LIMIT} 条内容，请明天再来。`,
@@ -209,6 +214,10 @@ const CommunityPublish = ({ onClose }) => {
     }
     if (!content.trim()) {
       setFeedbackType('missingContent');
+      return;
+    }
+    if (!selectedTopic) {
+      setFeedbackType('missingTopic');
       return;
     }
     if (dailyPublishCount >= DAILY_PUBLISH_LIMIT) {
@@ -491,7 +500,9 @@ const CommunityPublish = ({ onClose }) => {
 
       {/* 选择话题 */}
       <div className="px-4 mb-4">
-        <div className="text-[14px] text-gray-500 mb-2">选择话题</div>
+        <div className="text-[14px] text-gray-500 mb-2">
+          选择话题 <span className="text-red-500" aria-label="必填">*</span>
+        </div>
         <div className="flex flex-wrap gap-2">
           {topics.map((topic) => (
             <div

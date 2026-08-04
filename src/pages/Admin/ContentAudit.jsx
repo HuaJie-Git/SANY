@@ -135,7 +135,7 @@ const ContentAudit = () => {
                 <div className="text-[14px] font-medium text-gray-900">作者信息</div>
                 <div className="grid grid-cols-2 gap-y-2 text-[13px]">
                   <div className="flex"><span className="w-[70px] text-gray-500 flex-shrink-0">昵称</span><span className="text-gray-900">{auditItem.senderName}</span></div>
-                  <div className="flex"><span className="w-[70px] text-gray-500 flex-shrink-0">用户编号</span><span className="text-gray-900 font-mono">{auditItem.authorId}</span></div>
+                  <div className="flex"><span className="w-[70px] text-gray-500 flex-shrink-0">ID</span><span className="text-gray-900 font-mono">{auditItem.authorId}</span></div>
                   <div className="flex"><span className="w-[70px] text-gray-500 flex-shrink-0">国区</span><span className="text-gray-900">中国</span></div>
                   <div className="flex"><span className="w-[70px] text-gray-500 flex-shrink-0">角色</span><span className="text-gray-900">机手</span></div>
                 </div>
