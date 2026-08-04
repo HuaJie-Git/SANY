@@ -167,6 +167,10 @@ export default function DeviceList({ onSelectDevice }) {
           <option value="平地机">平地机</option>
           <option value="压路机">压路机</option>
           <option value="摊铺机">摊铺机</option>
+          <option value="泵车">泵车</option>
+          <option value="拖泵">拖泵</option>
+          <option value="车载泵">车载泵</option>
+          <option value="铣刨机">铣刨机</option>
         </select>
 
         {/* Status filter */}
