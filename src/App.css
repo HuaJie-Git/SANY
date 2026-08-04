@@ -153,6 +153,84 @@
   }
 }
 
+/* SANY detail-page shell */
+:root {
+  --page-bg: #f5f5f5;
+  --card: #fff;
+  --text: #252b33;
+  --muted: #8a929d;
+  --line: #e8eaed;
+  --brand: #e60012;
+}
+
+* { box-sizing: border-box; }
+button { font-family: inherit; }
+
+.sany-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--page-bg);
+  color: var(--text);
+  font-family: "PingFang SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.sany-workspace { min-width: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.sany-main { min-height: 0; flex: 1; overflow: auto; }
+
+.sany-topbar {
+  height: 52px;
+  flex: 0 0 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+}
+.sany-brand { color: var(--brand); font-size: 15px; font-weight: 700; letter-spacing: -.5px; }
+.sany-brand span { font-weight: 800; }
+.sany-topbar-actions { display: flex; align-items: center; gap: 12px; }
+.topbar-select, .topbar-user, .topbar-icon {
+  border: 1px solid #e2e5e8;
+  background: #fff;
+  color: #5d6670;
+  border-radius: 3px;
+  height: 28px;
+  padding: 0 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.topbar-icon { border: 0; padding: 0 3px; font-size: 16px; }
+.topbar-user { border: 0; padding: 0; }
+.topbar-avatar { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: #eaf0ff; color: #4674d8; font-size: 10px; }
+
+.sany-sidebar {
+  width: 48px;
+  flex: 0 0 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fff;
+  border-right: 1px solid var(--line);
+}
+.sidebar-logo-mark { height: 52px; display: flex; align-items: center; color: var(--brand); font-size: 15px; }
+.sany-sidebar nav { width: 100%; display: flex; flex-direction: column; }
+.sidebar-item, .sidebar-bottom {
+  width: 100%; height: 44px; border: 0; border-left: 2px solid transparent; background: transparent; color: #7b838c; font-size: 16px; cursor: pointer;
+}
+.sidebar-item:hover { background: #fafafa; color: var(--brand); }
+.sidebar-item.is-active { color: var(--brand); border-left-color: var(--brand); background: #fff5f5; }
+.sidebar-bottom { margin-top: auto; border-top: 1px solid var(--line); font-size: 15px; }
+
+@media (max-width: 900px) {
+  .sany-topbar { padding: 0 10px; }
+  .sany-topbar-actions { gap: 6px; }
+  .topbar-select:nth-child(2) { display: none; }
+}
+
 #spacer {
   height: 88px;
   border-top: 1px solid var(--border);
