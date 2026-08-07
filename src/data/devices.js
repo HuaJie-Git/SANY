@@ -364,16 +364,17 @@ export const DEVICES = [
     name: '三一泵车',
     realtime: {
       设备状态: '行驶',
-      水温: '82°C',
-      发动机转速: '1520r/min',
-      机油压力: '2.4Bar',
+      车速: '82km/h',
       当前油位: '68%',
     },
     today: {
       workHours: 6.8,
       idleHours: 1.4,
+      pumpingVolume: 12.6,
     },
     cumulative: {
+      totalMileage: '12,680km',
+      totalPumpingVolume: '2,760m³',
       totalFuel: '185L',
       totalWorkHours: '1750h',
     },
@@ -480,17 +481,20 @@ export const DEVICES = [
     name: '三一拖泵',
     realtime: {
       设备状态: '工作',
-      水温: '79°C',
-      发动机转速: '1450r/min',
-      机油压力: '2.2Bar',
+      液压油温: '79°C',
+      泵送排量: '82m³/h',
       当前油位: '72%',
     },
     today: {
       workHours: 7.2,
       idleHours: 0.9,
+      pumpingVolume: 15.2,
+      pumpingCount: 86,
     },
     cumulative: {
+      totalPumpingCount: '1,280次',
       totalFuel: '172L',
+      totalPumpingVolume: '15,200m³',
       totalWorkHours: '1680h',
     },
     warnings: [
@@ -591,17 +595,19 @@ export const DEVICES = [
     name: '三一车载泵',
     realtime: {
       设备状态: '行驶',
-      水温: '81°C',
       发动机转速: '1500r/min',
-      机油压力: '2.3Bar',
+      柴油机转速: '1480r/min',
+      泵送排量: '86m³/h',
       当前油位: '66%',
     },
     today: {
       workHours: 6.2,
       idleHours: 1.6,
+      pumpingVolume: 10.8,
     },
     cumulative: {
       totalFuel: '163L',
+      totalPumpingVolume: '12,400m³',
       totalWorkHours: '1520h',
     },
     warnings: [
@@ -707,6 +713,7 @@ export const DEVICES = [
     name: '三一铣刨机',
     realtime: {
       设备状态: '工作',
+      车速: '8.5km/h',
       水温: '83°C',
       发动机转速: '1580r/min',
       机油压力: '2.5Bar',
@@ -715,10 +722,12 @@ export const DEVICES = [
     today: {
       workHours: 7.8,
       idleHours: 1.1,
+      millingDistance: 2860,
     },
     cumulative: {
+      millingDistance: '12,580m',
       totalFuel: '198L',
-      totalWorkHours: '1890h',
+      engineHours: '1890h',
     },
     warnings: [
       {

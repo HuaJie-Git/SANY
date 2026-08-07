@@ -11,6 +11,21 @@ const FIELD_CONFIG = {
   摊铺机: ['设备状态', '当前油位', '车速', '摊铺距离', '水温', '发动机转速', '机油压力', '振捣设定值'],
   压路机: ['设备状态', '当前油位', '水温', '振动频率', '机油压力'],
   平地机: ['设备状态', '当前油位', '水温', '振动频率', '机油压力'],
+  泵车: ['设备状态', '车速', '当前油位'],
+  拖泵: ['设备状态', '液压油温', '泵送排量', '当前油位'],
+  车载泵: ['设备状态', '发动机转速', '柴油机转速', '泵送排量', '当前油位'],
+  铣刨机: ['设备状态', '车速', '水温', '发动机转速', '机油压力', '当前油位'],
+};
+
+// 历史累计数据按机型配置：字段表“累计工况 / 累计工况、数据报表”确认字段
+const CUMULATIVE_CONFIG = {
+  摊铺机: [['总工作时间', 'totalWorkHours'], ['总油耗', 'totalFuel'], ['摊铺距离', '摊铺距离']],
+  压路机: [['总工作时间', 'totalWorkHours'], ['总油耗', 'totalFuel'], ['总里程', 'totalMileage']],
+  平地机: [['总工作时间', 'totalWorkHours'], ['总油耗', 'totalFuel'], ['总里程', 'totalMileage']],
+  泵车: [['总里程', 'totalMileage'], ['总泵送方量', 'totalPumpingVolume'], ['总油耗', 'totalFuel'], ['总工作时间', 'totalWorkHours']],
+  拖泵: [['总泵送次数', 'totalPumpingCount'], ['总油耗', 'totalFuel'], ['总泵送方量', 'totalPumpingVolume'], ['总工作时间', 'totalWorkHours']],
+  车载泵: [['总油耗', 'totalFuel'], ['总泵送方量', 'totalPumpingVolume'], ['总工作时间', 'totalWorkHours']],
+  铣刨机: [['铣刨距离', 'millingDistance'], ['总油耗', 'totalFuel'], ['发动机小时数', 'engineHours']],
 };
 
 function RefreshIcon() {
@@ -90,9 +105,8 @@ export default function RealtimeStatus({ device }) {
   const fields = (FIELD_CONFIG[device.type] || Object.keys(realtime)).filter((key) => key in realtime).map((key) => ({ key, value: realtime[key] }));
   const fuel = today.totalFuel || today.fuelConsumption || cumulative.totalFuel || '124L';
   const hourlyFuel = today.fuelPerWorkHour || '15.2L/h';
-  const historyItems = isPaver(device)
-    ? [{ label: '总工作时间', value: cumulative['总工作小时'] || cumulative.totalWorkHours || '--' }, { label: '总油耗', value: cumulative.totalFuel || '--' }, { label: '摊铺距离', value: cumulative['摊铺距离'] || '--' }]
-    : [{ label: '总工作时间', value: cumulative.totalWorkHours || '--' }, { label: '总油耗', value: cumulative.totalFuel || '--' }, { label: '总里程', value: cumulative.totalMileage || '--' }];
+  const cumulativeConfig = CUMULATIVE_CONFIG[device.type] || CUMULATIVE_CONFIG['压路机'];
+  const historyItems = cumulativeConfig.map(([label, key]) => ({ label, value: cumulative[key] || '--' }));
 
   return (
     <div key={refreshKey} className="realtime-page">

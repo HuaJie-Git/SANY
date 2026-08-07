@@ -18,20 +18,22 @@ const typeConfig = (device) => {
   const type = device?.type;
   const paver = type === '摊铺机';
   const roller = type === '压路机';
+  const METRICS = {
+    摊铺机: [['摊铺距离', 'm'], ['油耗', 'L'], ['每小时工作油耗', 'L/h'], ['工时', 'h'], ['怠速工时', 'h']],
+    压路机: [['油耗', 'L'], ['工时', 'h'], ['怠速工时', 'h']],
+    平地机: [['油耗', 'L'], ['每小时工作油耗', 'L/h'], ['工时', 'h'], ['怠速工时', 'h']],
+    泵车: [['油耗', 'L'], ['每小时工作油耗', 'L/h'], ['工时', 'h'], ['怠速工时', 'h'], ['泵送方量', 'm³']],
+    拖泵: [['油耗', 'L'], ['每小时工作油耗', 'L/h'], ['工时', 'h'], ['怠速工时', 'h'], ['泵送方量', 'm³'], ['泵送次数', '次']],
+    车载泵: [['油耗', 'L'], ['每小时工作油耗', 'L/h'], ['工时', 'h'], ['怠速工时', 'h'], ['泵送方量', 'm³']],
+    铣刨机: [['油耗', 'L'], ['每小时工作油耗', 'L/h'], ['工时', 'h'], ['怠速工时', 'h'], ['铣刨距离', 'm']],
+  };
+  const amountLabel = type === '铣刨机' ? '铣刨距离' : ['泵车', '拖泵', '车载泵'].includes(type) ? '泵送方量' : paver ? '摊铺距离' : null;
   return {
     isPaver: paver,
     isRoller: roller,
-    metrics: paver
-      ? [
-          ['摊铺距离', 'm'],
-          ['油耗', 'L'],
-          ['每小时工作油耗', 'L/h'],
-          ['工时', 'h'],
-          ['怠速工时', 'h'],
-        ]
-      : roller
-        ? [['油耗', 'L'], ['工时', 'h'], ['怠速工时', 'h']]
-        : [['油耗', 'L'], ['每小时工作油耗', 'L/h'], ['工时', 'h'], ['怠速工时', 'h']],
+    metrics: METRICS[type] || METRICS['平地机'],
+    amountLabel,
+    amountUnit: amountLabel && (amountLabel === '摊铺距离' || amountLabel === '铣刨距离') ? 'm' : amountLabel ? 'm³' : null,
     statusNames: paver ? ['行驶', '怠速'] : ['工作', '怠速'],
   };
 };
@@ -186,26 +188,36 @@ function CategoryBars({ trend, period, device }) {
   return <div className="category-bars-wrap"><div style={{ height: 166, display: 'flex', alignItems: 'flex-end', gap: period === 'weekly' ? 18 : 8, padding: '10px 10px 22px', borderBottom: '1px solid #e5e7eb' }}>{values.map((item) => <div key={item.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, height: '100%', justifyContent: 'flex-end' }}><div style={{ width: '100%', maxWidth: 28, height: `${((item.work + item.idle) / max) * 125}px`, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}><span style={{ height: `${(item.idle / Math.max(item.work + item.idle, 1)) * 100}%`, background: WORK_STATUS_COLORS['怠速'], minHeight: item.idle ? 3 : 0 }} /><span style={{ height: `${(item.work / Math.max(item.work + item.idle, 1)) * 100}%`, background: WORK_STATUS_COLORS[primary] }} /></div><span style={{ fontSize: 9, color: '#9ca3af', whiteSpace: 'nowrap' }}>{item.label}</span></div>)}</div><div className="category-legend"><span><i style={{ background: WORK_STATUS_COLORS[primary] }} />{primary}</span><span><i style={{ background: WORK_STATUS_COLORS.怠速 }} />怠速</span></div></div>;
 }
 
-function Calendar({ trend, period, isPaver }) {
+function Calendar({ trend, period, device }) {
+  const config = typeConfig(device);
   const count = period === 'weekly' ? 7 : 30;
   const labels = period === 'weekly' ? ['日', '一', '二', '三', '四', '五', '六'] : ['日', '一', '二', '三', '四', '五', '六'];
-  return <div className={`run-calendar ${period}`}><div className="calendar-weekdays">{labels.map((label) => <span key={label}>{label}</span>)}</div><div className="calendar-days">{Array.from({ length: count }, (_, i) => { const fuel = trend.fuel[i] || 0; const distance = isPaver ? Math.round(fuel * 33.8) : null; return <div className={fuel ? 'has-data' : ''} key={i}><b>{i + 1}</b><span>{distance != null ? `${distance}m` : '--'}</span><small>{fuel ? `${fuel}L` : '--'}</small></div>; })}</div><div className="calendar-legend"><i />{isPaver ? '每日摊铺距离' : '每日里程'}</div></div>;
+  return <div className={`run-calendar ${period}`}><div className="calendar-weekdays">{labels.map((label) => <span key={label}>{label}</span>)}</div><div className="calendar-days">{Array.from({ length: count }, (_, i) => { const fuel = trend.fuel[i] || 0; const amount = config.amountLabel ? (config.amountUnit === 'm' ? Math.round(fuel * 33.8) : Number((fuel * 0.2).toFixed(1))) : null; return <div className={fuel ? 'has-data' : ''} key={i}><b>{i + 1}</b><span>{amount != null ? `${amount}${config.amountUnit}` : '--'}</span><small>{fuel ? `${fuel}L` : '--'}</small></div>; })}</div><div className="calendar-legend"><i />{config.amountLabel ? `每日${config.amountLabel}` : '每日油耗'}</div></div>;
 }
 
 function metricData(device, period, trend) {
   const config = typeConfig(device);
+  const type = device?.type;
   const totalFuel = number(device?.cumulative?.totalFuel);
   const workHours = number(device?.today?.workHours);
   const idleHours = number(device?.today?.idleHours);
+  const hourly = (fuel, work) => (work ? fuel / work : null);
+  const isAmountType = type === '铣刨机' || type === '泵车' || type === '拖泵' || type === '车载泵';
   if (period === 'daily') {
-    const values = config.isPaver ? [number(device?.cumulative?.['摊铺距离']), totalFuel, workHours ? totalFuel / workHours : null, workHours, idleHours] : config.isRoller ? [totalFuel, workHours, idleHours] : [totalFuel, workHours ? totalFuel / workHours : null, workHours, idleHours];
+    const amount = number(device?.today?.pumpingVolume ?? device?.today?.millingDistance);
+    const pumpCount = number(device?.today?.pumpingCount);
+    const base = [totalFuel, hourly(totalFuel, workHours), workHours, idleHours];
+    const values = config.isPaver ? [number(device?.cumulative?.['摊铺距离']), ...base] : config.isRoller ? [totalFuel, workHours, idleHours] : type === '拖泵' ? [...base, amount, pumpCount] : isAmountType ? [...base, amount] : base;
     return config.metrics.map(([label, unit], index) => ({ label, unit, value: values[index] }));
   }
   const fuel = trend.fuel.reduce((sum, value) => sum + value, 0);
   const work = trend.work.reduce((sum, value) => sum + value, 0);
   const idle = trend.idle.reduce((sum, value) => sum + value, 0);
-  const distance = Math.round(fuel * (config.isPaver ? 33.8 : 0));
-  const values = config.isPaver ? [distance, fuel, work ? fuel / work : null, work, idle] : config.isRoller ? [fuel, work, idle] : [fuel, work ? fuel / work : null, work, idle];
+  const factor = config.amountUnit === 'm' ? 33.8 : 0.2;
+  const distance = Math.round(fuel * (config.amountUnit ? factor : 0));
+  const pumpCount = Math.round(fuel * 0.5);
+  const base = [fuel, hourly(fuel, work), work, idle];
+  const values = config.isPaver ? [distance, ...base] : config.isRoller ? [fuel, work, idle] : type === '拖泵' ? [...base, distance, pumpCount] : isAmountType ? [...base, distance] : base;
   return config.metrics.map(([label, unit], index) => ({ label, unit, value: values[index] }));
 }
 
@@ -233,7 +245,18 @@ export default function StatisticsReport({ device }) {
   const rows = Array.from({ length: period === 'daily' ? 1 : period === 'weekly' ? 7 : 30 }, (_, index) => {
     const fuel = trend.fuel[index] || 0;
     const work = trend.work[index] || 0;
-    const values = config.isPaver ? { '摊铺距离': `${Math.round(fuel * 33.8)}m`, 油耗: `${fuel}L`, 每小时工作油耗: `${work ? one(fuel / work) : '--'}L/h`, 工时: `${one(work)}h`, 怠速工时: `${one(trend.idle[index] || 0)}h` } : config.isRoller ? { 油耗: `${fuel}L`, 工时: `${one(work)}h`, 怠速工时: `${one(trend.idle[index] || 0)}h` } : { 油耗: `${fuel}L`, 每小时工作油耗: `${work ? one(fuel / work) : '--'}L/h`, 工时: `${one(work)}h`, 怠速工时: `${one(trend.idle[index] || 0)}h` };
+    const type = device?.type;
+    let values;
+    if (config.isPaver) {
+      values = { '摊铺距离': `${Math.round(fuel * 33.8)}m`, 油耗: `${fuel}L`, 每小时工作油耗: `${work ? one(fuel / work) : '--'}L/h`, 工时: `${one(work)}h`, 怠速工时: `${one(trend.idle[index] || 0)}h` };
+    } else if (config.isRoller) {
+      values = { 油耗: `${fuel}L`, 工时: `${one(work)}h`, 怠速工时: `${one(trend.idle[index] || 0)}h` };
+    } else {
+      values = { 油耗: `${fuel}L`, 每小时工作油耗: `${work ? one(fuel / work) : '--'}L/h`, 工时: `${one(work)}h`, 怠速工时: `${one(trend.idle[index] || 0)}h` };
+      if (type === '铣刨机') values['铣刨距离'] = `${Math.round(fuel * 33.8)}m`;
+      else if (type === '泵车' || type === '拖泵' || type === '车载泵') values['泵送方量'] = `${Number((fuel * 0.2).toFixed(1))}m³`;
+      if (type === '拖泵') values['泵送次数'] = `${Math.round(fuel * 0.5)}次`;
+    }
     return { id: index, date: period === 'daily' ? formatDate(baseDate) : period === 'weekly' ? `2025/11/${17 + index}` : `2025/11/${String(index + 1).padStart(2, '0')}`, ...values };
   });
   const showToast = (message) => { setToast(message); window.setTimeout(() => setToast(''), 1800); };
@@ -250,7 +273,7 @@ export default function StatisticsReport({ device }) {
       <SectionCard title="指标概览" className="metric-overview"><div className={`report-metrics columns-${metrics.length}`}>{metrics.map((metric) => <div className="report-metric" key={metric.label}><div><strong>{metric.value == null ? '--' : one(metric.value)}</strong><span>{metric.unit}</span></div><small>{metric.label}</small></div>)}</div></SectionCard>
       {period === 'daily' && <SectionCard title="开工时段分布" className="daily-distribution"><GanttChart workHours={number(device?.today?.workHours)} idleHours={number(device?.today?.idleHours)} device={device} /></SectionCard>}
       {period !== 'daily' && <div className={`period-dashboard ${period}`}>
-        <SectionCard title="运行日历" icon="calendar" className="calendar-panel"><Calendar trend={trend} period={period} isPaver={config.isPaver} /></SectionCard>
+        <SectionCard title="运行日历" icon="calendar" className="calendar-panel"><Calendar trend={trend} period={period} device={device} /></SectionCard>
         <SectionCard title="开工时段分布" className="distribution-panel"><WorkDistributionGrid trend={trend} period={period} device={device} /></SectionCard>
         <SectionCard title="工时分类占比" className="category-panel"><CategoryBars trend={trend} period={period} device={device} /></SectionCard>
         <SectionCard title="平均每小时油耗趋势" className="trend-panel"><div className="chart-subtitle">平均每小时油耗(L/h)</div><TooltipLineChart labels={labels} series={trendSeries} /></SectionCard>
