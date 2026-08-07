@@ -16,7 +16,7 @@ const MACHINE_DATA = {
       ['当前油位', '70', '%'],
     ],
     workDist: [0,0,0,0,1,1,1,1,1,2,2,1,0,0,1,1,1,1,2,2,1,0,0,0],
-    today: [['怠速工时', '1.2', 'h'], ['工作时长', '7.5', 'h']],
+    today: [['怠速工时', '1.2', 'h'], ['工时', '7.5', 'h']],
     cumulative: [['总油耗', '200', 'L'], ['总工作时间', '2,000', 'H']],
   },
   '三一压路机': {
@@ -31,10 +31,11 @@ const MACHINE_DATA = {
       ['当前油位', '48.6', '%'],
     ],
     workDist: [0,0,0,0,0,1,1,1,1,1,2,2,0,0,0,1,1,2,2,1,0,0,0,0],
-    today: [['怠速工时', '0.8', 'h'], ['工作时长', '5.6', 'h']],
+    today: [['怠速工时', '0.8', 'h'], ['工时', '5.6', 'h']],
     cumulative: [['总油耗', '168', 'L'], ['总工作时间', '1,620', 'H']],
   },
   '三一摊铺机': {
+    supportsTrajectory: false,
     model: 'SSP130C-10',
     plate: '湘A · SMP130',
     status: '行驶',
@@ -49,8 +50,70 @@ const MACHINE_DATA = {
       ['当前油位', '70', '%'],
     ],
     workDist: [0,0,0,0,3,3,3,3,3,2,2,3,0,0,3,3,3,3,2,2,3,0,0,0],
-    today: [['怠速工时', '1.5', 'h'], ['工作时长', '7.5', 'h']],
+    today: [['怠速工时', '1.5', 'h'], ['工时', '7.5', 'h']],
     cumulative: [['摊铺距离', '12,680', 'm'], ['总油耗', '200', 'L'], ['总工作小时', '2,000', 'H']],
+  },
+  '三一泵车': {
+    supportsTrajectory: false,
+    model: 'SYM5230THB',
+    plate: '湘A · SYM5230THB',
+    status: '行驶',
+    realtime: [
+      ['设备状态', '行驶'],
+      ['车速', '82', 'km/h'],
+      ['当前油位', '68', '%'],
+    ],
+    workDist: [0,0,0,0,1,1,1,1,1,2,2,1,0,0,1,1,1,1,2,2,1,0,0,0],
+    today: [['怠速工时', '1.4', 'h'], ['工时', '6.8', 'h']],
+    cumulative: [['总里程', '12,680', 'km'], ['总泵送方量', '2,760', 'm³'], ['总油耗', '185', 'L'], ['总工作时间', '1,750', 'H']],
+  },
+  '三一拖泵': {
+    supportsTrajectory: false,
+    model: 'HBT6013C',
+    plate: '湘A · HBT6013C',
+    status: '工作',
+    realtime: [
+      ['设备状态', '工作'],
+      ['液压油温', '79', '°C'],
+      ['泵送排量', '82', 'm³/h'],
+      ['当前油位', '72', '%'],
+    ],
+    workDist: [0,0,0,0,0,1,1,1,1,1,2,2,0,0,0,1,1,2,2,1,0,0,0,0],
+    today: [['怠速工时', '0.9', 'h'], ['工时', '7.2', 'h']],
+    cumulative: [['总泵送次数', '1,280', '次'], ['总油耗', '172', 'L'], ['总泵送方量', '15,200', 'm³'], ['总工作时间', '1,680', 'H']],
+  },
+  '三一车载泵': {
+    supportsTrajectory: false,
+    model: 'SYM5120THB',
+    plate: '湘A · SYM5120THB',
+    status: '行驶',
+    realtime: [
+      ['设备状态', '行驶'],
+      ['发动机转速', '1,500', 'r/min'],
+      ['柴油机转速', '1,480', 'r/min'],
+      ['泵送排量', '86', 'm³/h'],
+      ['当前油位', '66', '%'],
+    ],
+    workDist: [0,0,0,0,1,1,1,1,1,2,2,1,0,0,1,1,1,1,2,2,1,0,0,0],
+    today: [['怠速工时', '1.6', 'h'], ['工时', '6.2', 'h']],
+    cumulative: [['总油耗', '163', 'L'], ['总泵送方量', '12,400', 'm³'], ['总工作时间', '1,520', 'H']],
+  },
+  '三一铣刨机': {
+    supportsTrajectory: false,
+    model: 'SCM1000C',
+    plate: '湘A · SCM1000C',
+    status: '工作',
+    realtime: [
+      ['设备状态', '工作'],
+      ['车速', '8.5', 'km/h'],
+      ['水温', '83', '°C'],
+      ['发动机转速', '1,580', 'r/min'],
+      ['机油压力', '2.5', 'Bar'],
+      ['当前油位', '65', '%'],
+    ],
+    workDist: [0,0,0,0,2,2,1,1,2,2,1,0,0,0,2,2,1,1,2,1,0,0,0,0],
+    today: [['怠速工时', '1.1', 'h'], ['工时', '7.8', 'h']],
+    cumulative: [['铣刨距离', '12,580', 'm'], ['总油耗', '198', 'L'], ['发动机小时数', '1,890', 'h']],
   },
 };
 
@@ -62,6 +125,8 @@ const Icon = ({ type, size = 20 }) => {
     parts: <><path d="M4 4h5l2 2h9V19H4z" strokeWidth="1.6" strokeLinejoin="round"/><circle cx="12" cy="13" r="3" strokeWidth="1.4"/><path d="M12 10v-1M12 17v-1M9.5 11.5l-.7-.7M15.2 15.2l-.7-.7M9.5 14.5l-.7.7M15.2 10.8l-.7.7" strokeWidth="1.2"/></>,
     /* 自助服务：书本+放大镜 */
     service: <><path d="M4 4h5l2 2h9V19H4z" strokeWidth="1.6" strokeLinejoin="round"/><circle cx="12" cy="13" r="3.5" strokeWidth="1.4"/><path d="M14.5 15.5l2 2" strokeWidth="1.4"/></>,
+    /* 培训资料：书本 */
+    training: <><path d="M5 4.5h13.5A1.5 1.5 0 0 1 20 6v14H7a3 3 0 0 1-3-3V6.5a2 2 0 0 1 2-2Z" strokeWidth="1.6" strokeLinejoin="round"/><path d="M7 17h11" strokeWidth="1.6"/><path d="M7 17V6.5" strokeWidth="1.6"/></>,
     /* 更多操作：四宫格（三实心一描边） */
     grid: <><rect x="3" y="3" width="8" height="8" rx="1.5" fill="currentColor" stroke="currentColor" strokeWidth="1.2"/><rect x="13" y="3" width="8" height="8" rx="1.5" fill="currentColor" stroke="currentColor" strokeWidth="1.2"/><rect x="3" y="13" width="8" height="8" rx="1.5" fill="currentColor" stroke="currentColor" strokeWidth="1.2"/><rect x="13" y="13" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.4"/></>,
     pin: <><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></>,
@@ -127,8 +192,14 @@ const WorkConditionDetail = ({ device, onBack, onNavigate }) => {
             </div>
           </div>
           <div className="mt-4 grid grid-cols-4 gap-2">
-            {[["report", "数据报表", () => onNavigate?.('dataReport')], ["parts", "零部件图册", () => showHint('零部件图册')], ["service", "自助服务", () => showHint('自助服务')], ["grid", "更多操作", () => showHint('更多操作')]].map(([icon, label, fn]) => (
-              <button key={label} type="button" onClick={fn} className="h-[76px] rounded-[12px] border border-[#aeb5bf] flex flex-col items-center justify-center gap-1.5 text-[#303640] active:bg-gray-50"><Icon type={icon}/><span className="text-[11px] text-[#68707d] leading-tight">{label}</span></button>
+            {[
+              ["report", "数据报表", () => onNavigate?.('dataReport')],
+              ["parts", "零部件图册", () => showHint('零部件图册')],
+              ["service", "自助服务", () => showHint('自助服务')],
+              ["grid", "更多操作", () => showHint('更多操作')],
+              ...(["三一铣刨机", "三一摊铺机"].includes(device?.name) ? [["training", "培训资料", () => showHint('培训资料')]] : []),
+            ].map(([icon, label, fn]) => (
+              <button key={label} type="button" aria-label={label} onClick={fn} className="h-[76px] rounded-[12px] border border-[#aeb5bf] flex flex-col items-center justify-center gap-1.5 text-[#303640] active:bg-gray-50"><Icon type={icon}/><span className="text-[11px] text-[#68707d] leading-tight">{label}</span></button>
             ))}
           </div>
         </section>

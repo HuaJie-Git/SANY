@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 const TITLE_MAX_LENGTH = 20;
 const VIDEO_LIMIT_SECONDS = 3 * 60;
 const CONTENT_MAX_LENGTH = 500;
+const MAX_IMAGES = 5;
 const DAILY_PUBLISH_LIMIT = 10;
 const DAILY_PUBLISH_STORAGE_KEY = 'sanvist-community-daily-publish-count';
 
@@ -48,6 +49,11 @@ const FEEDBACK_COPY = {
   missingContent: {
     title: '请输入内容',
     description: '写一点内容再发布，让大家知道你想分享什么。',
+    confirmText: '继续编辑',
+  },
+  missingTitle: {
+    title: '请输入标题',
+    description: '为你的内容写一个标题。',
     confirmText: '继续编辑',
   },
   missingTopic: {
@@ -115,7 +121,7 @@ const FeedbackDialog = ({ type, onConfirm }) => {
 };
 
 const CommunityPublish = ({ onClose }) => {
-  const [step, setStep] = useState(1); // 1: 相机界面, 2: 编辑内容
+  const [step, setStep] = useState(2); // 1: 相机界面, 2: 编辑内容
   const [selectedImages, setSelectedImages] = useState([]);
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
@@ -149,19 +155,40 @@ const CommunityPublish = ({ onClose }) => {
     return () => window.clearInterval(timer);
   }, [isRecording]);
 
-  // 拍照
+  // 拍照 — 追加图片，按剩余数量截断
   const handleTakePhoto = () => {
     const mockPhoto = 'images/img_excavator.jpg';
-    setSelectedImages([mockPhoto]);
+    setSelectedImages((prev) => {
+      if (prev.length >= MAX_IMAGES) return prev;
+      return [...prev, mockPhoto];
+    });
   };
 
-  // 从相册选择
+  // 从相册选择 — 追加图片，按剩余数量截断
   const handleSelectFromAlbum = () => {
     const mockImages = [
       'images/img_excavator.jpg',
       'images/img_crane.jpg',
     ];
-    setSelectedImages(mockImages);
+    setSelectedImages((prev) => {
+      const remaining = MAX_IMAGES - prev.length;
+      if (remaining <= 0) return prev;
+      return [...prev, ...mockImages.slice(0, remaining)];
+    });
+  };
+
+  // 进入图片模式 — 互斥：清除视频
+  const handleEnterPhotoMode = () => {
+    setRecordedVideo(null);
+    handleCameraModeChange('photo');
+    setStep(1);
+  };
+
+  // 进入视频模式 — 互斥：清除图片
+  const handleEnterVideoMode = () => {
+    setSelectedImages([]);
+    handleCameraModeChange('video');
+    setStep(1);
   };
 
   const handleCameraModeChange = (nextMode) => {
@@ -212,6 +239,10 @@ const CommunityPublish = ({ onClose }) => {
   const handlePublish = () => {
     if (selectedImages.length === 0 && !recordedVideo) {
       setFeedbackType('missingMedia');
+      return;
+    }
+    if (!title.trim()) {
+      setFeedbackType('missingTitle');
       return;
     }
     if (!content.trim()) {
@@ -274,7 +305,7 @@ const CommunityPublish = ({ onClose }) => {
         </div>
 
         {/* 返回按钮 */}
-        <div className="absolute top-[60px] left-4 cursor-pointer" onClick={onClose}>
+        <div className="absolute top-[60px] left-4 cursor-pointer" onClick={() => setStep(2)}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path d="M19 12H5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M12 19L5 12L12 5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -334,36 +365,26 @@ const CommunityPublish = ({ onClose }) => {
           )}
         </div>
 
-        {/* 底部控制栏 */}
+        {/* 底部控制栏 — 编辑页选定媒体类型后不可切换 */}
         <div className="flex items-center justify-between px-8 py-8">
-          {/* 已选图片数量和缩略图 */}
-          <div className="flex flex-col items-center">
-            <span className="text-white text-[14px] mb-1">4/5</span>
-            <div className="w-[48px] h-[48px] bg-gray-600 rounded-lg overflow-hidden">
-              <img src="images/img_excavator.jpg" alt="" className="w-full h-full object-cover" />
+          {cameraMode === 'photo' ? (
+            /* 图片模式：动态计数 + 缩略图 */
+            <div className="flex flex-col items-center">
+              <span className="text-white text-[14px] mb-1">{selectedImages.length}/{MAX_IMAGES}</span>
+              <div className="w-[48px] h-[48px] bg-gray-600 rounded-lg overflow-hidden">
+                <img src="images/img_excavator.jpg" alt="" className="w-full h-full object-cover" />
+              </div>
             </div>
-          </div>
+          ) : (
+            /* 视频模式：等宽占位保持录制按钮居中 */
+            <div className="w-[48px]" />
+          )}
 
-          {/* 拍照/视频切换和拍照按钮 */}
+          {/* 静态模式标题 + 拍照/录制按钮 */}
           <div className="flex flex-col items-center">
-            <div className="flex gap-4 mb-4">
-              <span
-                className={`text-[14px] cursor-pointer transition-colors ${cameraMode === 'photo' ? 'text-white font-medium' : 'text-white/50'}`}
-                onClick={() => handleCameraModeChange('photo')}
-                role="button"
-                aria-pressed={cameraMode === 'photo'}
-              >
-                拍照
-              </span>
-              <span
-                className={`text-[14px] cursor-pointer transition-colors ${cameraMode === 'video' ? 'text-white font-medium' : 'text-white/50'}`}
-                onClick={() => handleCameraModeChange('video')}
-                role="button"
-                aria-pressed={cameraMode === 'video'}
-              >
-                视频
-              </span>
-            </div>
+            <span className="text-[14px] text-white/60 mb-4">
+              {cameraMode === 'photo' ? '拍照模式' : '录制模式'}
+            </span>
             {/* 拍照/录制按钮 */}
             <div
               className="w-[72px] h-[72px] rounded-full border-4 border-white flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
@@ -383,13 +404,18 @@ const CommunityPublish = ({ onClose }) => {
             </div>
           </div>
 
-          {/* 相册按钮 */}
-          <div className="flex flex-col items-center cursor-pointer" onClick={handleSelectFromAlbum}>
-            <span className="text-white text-[14px] mb-1">相册</span>
-            <div className="w-[48px] h-[48px] bg-gray-600 rounded-lg overflow-hidden">
-              <img src="images/img_crane.jpg" alt="" className="w-full h-full object-cover" />
+          {cameraMode === 'photo' ? (
+            /* 图片模式：相册入口 */
+            <div className="flex flex-col items-center cursor-pointer" onClick={handleSelectFromAlbum}>
+              <span className="text-white text-[14px] mb-1">相册</span>
+              <div className="w-[48px] h-[48px] bg-gray-600 rounded-lg overflow-hidden">
+                <img src="images/img_crane.jpg" alt="" className="w-full h-full object-cover" />
+              </div>
             </div>
-          </div>
+          ) : (
+            /* 视频模式：等宽占位 */
+            <div className="w-[48px]" />
+          )}
         </div>
 
         {/* 勾选确认按钮 - 右上角 */}
@@ -438,7 +464,7 @@ const CommunityPublish = ({ onClose }) => {
 
       {/* 顶部导航栏 */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <div className="cursor-pointer" onClick={() => setStep(1)}>
+        <div className="cursor-pointer" onClick={onClose}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path d="M19 12H5" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M12 19L5 12L12 5" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -454,11 +480,45 @@ const CommunityPublish = ({ onClose }) => {
         </button>
       </div>
 
-      {/* 已选图片预览 */}
+      {/* 已选图片/视频预览 */}
       <div className="p-4">
-        <div className="flex gap-2 mb-4">
+        <div className="mb-3 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          {/* State B: 已选图片缩略图在前 */}
+          {selectedImages.map((img, index) => (
+            <div key={index} className="relative w-[80px] h-[80px] flex-shrink-0">
+              <img src={img} alt="" className="w-full h-full object-cover rounded-lg" />
+              <div
+                className="absolute top-1 right-1 w-[20px] h-[20px] bg-black/50 rounded-full flex items-center justify-center cursor-pointer"
+                onClick={() => {
+                  const newImages = selectedImages.filter((_, i) => i !== index);
+                  setSelectedImages(newImages);
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </div>
+            </div>
+          ))}
+          {/* State B: "继续添加图片"按钮在最后 */}
+          {!recordedVideo && selectedImages.length > 0 && selectedImages.length < MAX_IMAGES && (
+            <button
+              type="button"
+              className="w-[80px] h-[80px] rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer active:bg-gray-50 transition-colors flex-shrink-0"
+              onClick={handleEnterPhotoMode}
+              aria-label="继续添加图片"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <path d="M3 16.5l4.5-4.5 3.5 3 4-4L21 17"/>
+              </svg>
+              <span className="text-[10px] text-gray-400 mt-1">继续添加图片</span>
+            </button>
+          )}
+          {/* State C: 视频预览在前 */}
           {recordedVideo && (
-            <div className="relative w-[80px] h-[80px] rounded-lg overflow-hidden bg-gradient-to-br from-gray-700 to-black flex items-center justify-center">
+            <div className="relative w-[80px] h-[80px] rounded-lg overflow-hidden bg-gradient-to-br from-gray-700 to-black flex items-center justify-center flex-shrink-0">
               <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center backdrop-blur-sm">
                 <svg width="14" height="16" viewBox="0 0 14 16" fill="none" aria-hidden="true">
                   <path d="M13 8L1 15V1L13 8Z" fill="white" />
@@ -469,10 +529,7 @@ const CommunityPublish = ({ onClose }) => {
               </span>
               <div
                 className="absolute top-1 right-1 w-[20px] h-[20px] bg-black/50 rounded-full flex items-center justify-center cursor-pointer"
-                onClick={() => {
-                  setRecordedVideo(null);
-                  if (selectedImages.length === 0) setStep(1);
-                }}
+                onClick={() => setRecordedVideo(null)}
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                   <path d="M18 6L6 18M6 6l12 12" />
@@ -480,24 +537,70 @@ const CommunityPublish = ({ onClose }) => {
               </div>
             </div>
           )}
-          {selectedImages.map((img, index) => (
-            <div key={index} className="relative w-[80px] h-[80px]">
-              <img src={img} alt="" className="w-full h-full object-cover rounded-lg" />
-              <div
-                className="absolute top-1 right-1 w-[20px] h-[20px] bg-black/50 rounded-full flex items-center justify-center cursor-pointer"
-                onClick={() => {
-                  const newImages = selectedImages.filter((_, i) => i !== index);
-                  setSelectedImages(newImages);
-                  if (newImages.length === 0) setStep(1);
-                }}
+          {/* State C: "更换视频"按钮在最后 */}
+          {selectedImages.length === 0 && recordedVideo && (
+            <button
+              type="button"
+              className="w-[80px] h-[80px] rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer active:bg-gray-50 transition-colors flex-shrink-0"
+              onClick={handleEnterVideoMode}
+              aria-label="更换视频"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="2" y="5" width="14" height="14" rx="2"/>
+                <path d="M16 9l6-3v12l-6-3V9z" fill="#999" stroke="none"/>
+              </svg>
+              <span className="text-[10px] text-gray-400 mt-1">更换视频</span>
+            </button>
+          )}
+          {/* State A: 空状态 — 图片按钮 → 视频按钮 */}
+          {selectedImages.length === 0 && !recordedVideo && (
+            <>
+              <button
+                type="button"
+                className="w-[80px] h-[80px] rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer active:bg-gray-50 transition-colors flex-shrink-0"
+                onClick={handleEnterPhotoMode}
+                aria-label="添加图片"
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                  <path d="M18 6L6 18M6 6l12 12" />
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <path d="M3 16.5l4.5-4.5 3.5 3 4-4L21 17"/>
                 </svg>
-              </div>
-            </div>
-          ))}
+                <span className="text-[10px] text-gray-400 mt-1">图片</span>
+              </button>
+              <button
+                type="button"
+                className="w-[80px] h-[80px] rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer active:bg-gray-50 transition-colors flex-shrink-0"
+                onClick={handleEnterVideoMode}
+                aria-label="添加视频"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="2" y="5" width="14" height="14" rx="2"/>
+                  <path d="M16 9l6-3v12l-6-3V9z" fill="#999" stroke="none"/>
+                </svg>
+                <span className="text-[10px] text-gray-400 mt-1">视频</span>
+              </button>
+            </>
+          )}
         </div>
+        <p className="flex flex-wrap items-center gap-x-1 text-[11px] text-gray-400">
+          {selectedImages.length > 0 ? (
+            <>
+              <span>已选 {selectedImages.length} 张</span>
+              <span>·</span>
+              <span>还可添加 {MAX_IMAGES - selectedImages.length} 张</span>
+            </>
+          ) : recordedVideo ? (
+            <>
+              <span>已添加视频</span>
+              <span>·</span>
+              <span>可替换</span>
+            </>
+          ) : (
+            <span>图片或视频二选一</span>
+          )}
+          <span className="text-red-500" aria-label="必填">*</span>
+        </p>
       </div>
 
       {/* 选择话题 */}
@@ -524,6 +627,9 @@ const CommunityPublish = ({ onClose }) => {
 
       {/* 标题输入 */}
       <div className="px-4 mb-4">
+        <div className="text-[14px] text-gray-500 mb-2">
+          标题 <span className="text-red-500" aria-label="必填">*</span>
+        </div>
         <div className="relative">
           <input
             type="text"

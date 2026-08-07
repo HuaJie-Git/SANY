@@ -11,7 +11,6 @@ const ContentFeed = forwardRef(({ showPublishPage, setShowPublishPage, setIsComm
   const [activeTab, setActiveTab] = useState('全部');
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedContentType, setSelectedContentType] = useState('');
-  const [showCameraPermission, setShowCameraPermission] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
   const [topicDetail, setTopicDetail] = useState(null); // { topicName, source }
   const [communitySubTab, setCommunitySubTab] = useState('我的'); // 社区二级Tab
@@ -73,16 +72,8 @@ const ContentFeed = forwardRef(({ showPublishPage, setShowPublishPage, setIsComm
     }
   };
 
-  // 处理点击发布按钮
+  // 处理点击发布按钮 — 直接进入编辑页，媒体权限/选择在编辑页点击"添加图片/视频"后触发
   const handlePublishClick = () => {
-    // 模拟检查相机和相册权限（实际项目中应使用真实API）
-    const hasCameraPermission = false; // 模拟未开启权限
-
-    if (!hasCameraPermission) {
-      setShowCameraPermission(true);
-      return;
-    }
-
     setShowPublishPage(true);
   };
 
@@ -419,47 +410,6 @@ const ContentFeed = forwardRef(({ showPublishPage, setShowPublishPage, setIsComm
   // 如果显示发布页面，直接返回发布页面
   if (showPublishPage) {
     return <CommunityPublish onClose={() => setShowPublishPage(false)} />;
-  }
-
-  // 权限提示弹窗
-  if (showCameraPermission) {
-    return (
-      <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center">
-        <div className="bg-white rounded-2xl w-[300px] overflow-hidden">
-          {/* 标题 */}
-          <div className="pt-6 pb-2 text-center">
-            <h3 className="text-[18px] font-bold text-gray-900">权限申请</h3>
-          </div>
-
-          {/* 内容 */}
-          <div className="px-6 pb-4 text-center">
-            <p className="text-[14px] text-gray-500 leading-relaxed">
-              需要相机和相册权限
-            </p>
-          </div>
-
-          {/* 按钮 */}
-          <div className="flex border-t border-gray-100">
-            <button
-              className="flex-1 py-4 text-[16px] text-gray-500 border-r border-gray-100"
-              onClick={() => setShowCameraPermission(false)}
-            >
-              取消
-            </button>
-            <button
-              className="flex-1 py-4 text-[16px] text-red-500 font-medium"
-              onClick={() => {
-                // 模拟跳转设置（实际项目中应调用真实API）
-                setShowCameraPermission(false);
-                setShowPublishPage(true);
-              }}
-            >
-              前往设置
-            </button>
-          </div>
-        </div>
-      </div>
-    );
   }
 
   // 如果显示话题详情页（三级页面，全屏覆盖）

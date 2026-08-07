@@ -42,6 +42,42 @@ const Asset = ({ onDeviceClick }) => {
       statusColor: 'text-green-500'
     },
     {
+      id: 12,
+      name: '三一泵车',
+      code: 'SYM5230THB-4001',
+      image: 'images/asset-models/sany_pump.jpg',
+      status: 'online',
+      statusText: '行驶',
+      statusColor: 'text-green-500'
+    },
+    {
+      id: 13,
+      name: '三一拖泵',
+      code: 'HBT6013C-5001',
+      image: 'images/asset-models/sany_trailer_pump.jpg',
+      status: 'online',
+      statusText: '工作',
+      statusColor: 'text-green-500'
+    },
+    {
+      id: 14,
+      name: '三一车载泵',
+      code: 'SYM5120THB-6001',
+      image: 'images/asset-models/sany_truck_pump.jpg',
+      status: 'online',
+      statusText: '行驶',
+      statusColor: 'text-green-500'
+    },
+    {
+      id: 15,
+      name: '三一铣刨机',
+      code: 'SCM1000C-7001',
+      image: 'images/asset-models/sany_milling.jpg',
+      status: 'online',
+      statusText: '工作',
+      statusColor: 'text-green-500'
+    },
+    {
       id: 1,
       name: '三一挖掘机',
       code: 'KT10SESE50393',
@@ -166,7 +202,7 @@ const Asset = ({ onDeviceClick }) => {
       {/* 设备列表 - 可滑动区域 */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
         {devices.map((device) => {
-          const isTarget = ['三一平地机', '三一压路机', '三一摊铺机'].includes(device.name);
+          const isTarget = ['三一平地机', '三一压路机', '三一摊铺机', '三一泵车', '三一拖泵', '三一车载泵', '三一铣刨机'].includes(device.name);
           const cardClass = isTarget
             ? 'bg-white rounded-xl p-3 flex items-center shadow-sm cursor-pointer active:scale-[0.99] transition-transform'
             : 'bg-white rounded-xl p-3 flex items-center shadow-sm';

@@ -1,96 +1,93 @@
-import React, { useRef } from 'react';
+import React, { useState } from 'react';
+
+const INITIAL_ITEMS = [
+  {
+    id: 1,
+    type: 'asset',
+    image: 'images/优惠活动/挖掘机/挖掘机_08.jpg',
+    name: 'SANY 挖掘机',
+    code: 'PY2342343284324',
+  },
+  {
+    id: 2,
+    type: 'asset',
+    image: 'images/优惠活动/三一起重机/三一起重机_08.jpg',
+    name: 'SANY 起重机',
+    code: 'PY2342343284327',
+  },
+  {
+    id: 3,
+    type: 'audit',
+    image: 'images/审核/搅拌车.jpg',
+    name: '冷却水温高',
+    code: '设备编号：EX-2024-003',
+    status: '待处理',
+    summary: '冷却液温度高于85℃',
+  },
+  {
+    id: 4,
+    type: 'accessory',
+    image: 'images/配件/OIP.webp',
+    name: '液压油滤芯',
+    code: '配件编号：AC-2024-001',
+  },
+  {
+    id: 5,
+    type: 'activity',
+    image: 'images/优惠活动/三一起重机/三一起重机_01.jpg',
+    name: '三一周年庆',
+    code: '活动状态：进行中',
+    status: '进行中',
+    startDate: '2026-07-01',
+    endDate: '2026-07-31',
+    isRecommended: true,
+  },
+];
+
+const MAX_CARDS = 4;
 
 const RecentView = ({ onNavigate }) => {
-  const scrollRef = useRef(null);
-  
-  const items = [
-    {
-      id: 1,
-      type: 'asset',
-      image: 'images/优惠活动/挖掘机/挖掘机_08.jpg',
-      name: 'SANY 挖掘机',
-      code: 'PY2342343284324',
-    },
-    {
-      id: 2,
-      type: 'asset',
-      image: 'images/优惠活动/三一起重机/三一起重机_08.jpg',
-      name: 'SANY 起重机',
-      code: 'PY2342343284327',
-    },
-    {
-      id: 3,
-      type: 'audit',
-      image: 'images/审核/搅拌车.jpg',
-      name: '冷却水温高',
-      code: '设备编号：EX-2024-003',
-      status: '待处理',
-      summary: '冷却液温度高于85℃',
-    },
-    {
-      id: 4,
-      type: 'accessory',
-      image: 'images/配件/OIP.webp',
-      name: '液压油滤芯',
-      code: '配件编号：AC-2024-001',
-    },
-    {
-      id: 5,
-      type: 'activity',
-      image: 'images/优惠活动/三一起重机/三一起重机_01.jpg',
-      name: '三一周年庆',
-      code: '活动状态：进行中',
-      status: '进行中',
-      startDate: '2026-07-01',
-      endDate: '2026-07-31',
-      isRecommended: true,
-    },
-  ];
+  const [items, setItems] = useState(INITIAL_ITEMS);
 
-  // 点击卡片事件处理 - 跳转到卡片详情页
+  // 删除单条
+  const handleDelete = (e, itemId) => {
+    e.stopPropagation();
+    setItems(prev => prev.filter(item => item.id !== itemId));
+  };
+
+  // 清除全部
+  const handleClearAll = () => {
+    setItems([]);
+  };
+
+  // 点击卡片 → 跳转卡片详情
   const handleCardClick = (item) => {
     if (onNavigate) {
       onNavigate('recentCard', item);
     }
   };
 
-  // 点击详情事件处理 - 跳转到最近查看列表详情页
+  // 点击"详情" → 跳转最近查看列表
   const handleDetailClick = () => {
     if (onNavigate) {
       onNavigate('recentList');
     }
   };
 
-  // 监听滚动，当滑动到第5个图时，再往右滑进入详情页
-  const handleScroll = () => {
-    if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      // 当滚动到最右边时，进入详情页（需要滑动到目标区域看全文字后松手）
-      if (scrollLeft + clientWidth >= scrollWidth - 5) {
-        // 延迟跳转，让用户看全文字后松手
-        setTimeout(() => {
-          if (onNavigate) {
-            onNavigate('recentList');
-          }
-        }, 300);
-      }
-    }
-  };
+  const displayItems = items.slice(0, MAX_CARDS);
 
   const renderCard = (item) => {
-    const renderImage = () => {
-      return (
-        <img
-          src={item.image}
-          alt={item.name}
-          className="w-full h-[100px] object-cover"
-          onError={(e) => {
-            e.target.style.display = 'none';
-            e.target.nextSibling.style.display = 'flex';
-          }}
-        />
-      );
-    };
+    const renderImage = () => (
+      <img
+        src={item.image}
+        alt={item.name}
+        className="w-full h-[100px] object-cover"
+        onError={(e) => {
+          e.target.style.display = 'none';
+          e.target.nextSibling.style.display = 'flex';
+        }}
+      />
+    );
 
     const renderFallback = () => {
       if (item.type === 'asset') {
@@ -143,76 +140,87 @@ const RecentView = ({ onNavigate }) => {
       return null;
     };
 
+    const cardContent = (
+      <>
+        {renderImage()}
+        {renderFallback()}
+        {/* 删除按钮 (X) */}
+        <button
+          className="absolute top-1 right-1 w-5 h-5 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={(e) => handleDelete(e, item.id)}
+        >
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+            <path strokeLinecap="round" d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </>
+    );
+
+    const cardInfo = (
+      <div className="p-2">
+        <div className="text-[14px] font-medium text-text-primary truncate">{item.name}</div>
+        {item.type === 'activity' ? (
+          <div className="flex items-center gap-1 mt-1">
+            {item.status && (
+              <span className="text-[10px] text-green-600 bg-green-50 px-1 rounded">{item.status}</span>
+            )}
+            <span className="text-[10px] text-gray-400">07.01-07.31</span>
+          </div>
+        ) : (
+          <div className="text-[12px] text-text-secondary truncate">{item.code}</div>
+        )}
+      </div>
+    );
+
     switch (item.type) {
       case 'asset':
         return (
           <div
-            className="w-[160px] h-[168px] bg-white rounded-[11px] overflow-hidden shadow-sm flex-shrink-0 cursor-pointer"
+            className="w-[160px] h-[168px] bg-white rounded-[11px] overflow-hidden shadow-sm flex-shrink-0 cursor-pointer group relative"
             onClick={() => handleCardClick(item)}
           >
-            {renderImage()}
-            {renderFallback()}
-            <div className="p-2">
-              <div className="text-[14px] font-medium text-text-primary truncate">{item.name}</div>
-              <div className="text-[12px] text-text-secondary truncate">{item.code}</div>
-            </div>
+            {cardContent}
+            {cardInfo}
           </div>
         );
       case 'audit':
         return (
           <div
-            className="w-[160px] h-[168px] bg-white rounded-[11px] overflow-hidden shadow-sm flex-shrink-0 cursor-pointer relative"
+            className="w-[160px] h-[168px] bg-white rounded-[11px] overflow-hidden shadow-sm flex-shrink-0 cursor-pointer group relative"
             onClick={() => handleCardClick(item)}
           >
-            {renderImage()}
-            {renderFallback()}
+            {cardContent}
             {/* 状态角标 - 右上角 */}
             <div className="absolute top-0 right-0 bg-brand-red text-white text-[10px] px-2 py-0.5 rounded-bl-lg">
               {item.status}
             </div>
-            <div className="p-2">
-              <div className="text-[14px] font-medium text-text-primary truncate">{item.name}</div>
-              <div className="text-[12px] text-text-secondary truncate">{item.code}</div>
-            </div>
+            {cardInfo}
           </div>
         );
       case 'accessory':
         return (
           <div
-            className="w-[160px] h-[168px] bg-white rounded-[11px] overflow-hidden shadow-sm flex-shrink-0 cursor-pointer"
+            className="w-[160px] h-[168px] bg-white rounded-[11px] overflow-hidden shadow-sm flex-shrink-0 cursor-pointer group relative"
             onClick={() => handleCardClick(item)}
           >
-            {renderImage()}
-            {renderFallback()}
-            <div className="p-2">
-              <div className="text-[14px] font-medium text-text-primary truncate">{item.name}</div>
-              <div className="text-[12px] text-text-secondary truncate">{item.code}</div>
-            </div>
+            {cardContent}
+            {cardInfo}
           </div>
         );
       case 'activity':
         return (
           <div
-            className="w-[160px] h-[168px] bg-white rounded-[11px] overflow-hidden shadow-sm flex-shrink-0 cursor-pointer relative"
+            className="w-[160px] h-[168px] bg-white rounded-[11px] overflow-hidden shadow-sm flex-shrink-0 cursor-pointer group relative"
             onClick={() => handleCardClick(item)}
           >
-            {renderImage()}
-            {renderFallback()}
+            {cardContent}
             {/* 推荐角标 */}
             {item.isRecommended && (
               <div className="absolute top-0 right-0 bg-brand-red text-white text-[10px] px-2 py-0.5 rounded-bl-lg">
                 推荐
               </div>
             )}
-            <div className="p-2">
-              <div className="text-[14px] font-medium text-text-primary truncate">{item.name}</div>
-              <div className="flex items-center gap-1 mt-1">
-                {item.status && (
-                  <span className="text-[10px] text-green-600 bg-green-50 px-1 rounded">{item.status}</span>
-                )}
-                <span className="text-[10px] text-gray-400">07.01-07.31</span>
-              </div>
-            </div>
+            {cardInfo}
           </div>
         );
       default:
@@ -223,7 +231,17 @@ const RecentView = ({ onNavigate }) => {
   return (
     <div className="px-4 pt-4 pb-0">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[16px] font-medium text-text-primary">最近查看</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-[16px] font-medium text-text-primary">最近查看</h3>
+          {items.length > 0 && (
+            <button
+              className="text-[11px] text-gray-400 hover:text-gray-600"
+              onClick={handleClearAll}
+            >
+              清除全部
+            </button>
+          )}
+        </div>
         <span
           className="text-[12px] text-text辅助 cursor-pointer"
           onClick={handleDetailClick}
@@ -231,25 +249,15 @@ const RecentView = ({ onNavigate }) => {
           详情 &gt;
         </span>
       </div>
-      <div
-        ref={scrollRef}
-        className="flex overflow-x-auto gap-3 pb-1 relative"
-        onScroll={handleScroll}
-      >
-        {items.map((item) => (
-          <div key={item.id}>{renderCard(item)}</div>
-        ))}
-        {/* 滑动提示箭头 */}
-        <div
-          className="flex-shrink-0 w-[100px] h-[180px] bg-gray-50 rounded-[11px] flex flex-col items-center justify-center cursor-pointer"
-          onClick={handleDetailClick}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
-          </svg>
-          <div className="text-[11px] text-gray-400 mt-2 text-center leading-tight">左滑<br/>查看更多</div>
+      {displayItems.length === 0 ? (
+        <div className="text-[13px] text-gray-400 py-6 text-center">暂无最近查看记录</div>
+      ) : (
+        <div className="flex overflow-x-auto gap-3 pb-1">
+          {displayItems.map((item) => (
+            <div key={item.id}>{renderCard(item)}</div>
+          ))}
         </div>
-      </div>
+      )}
     </div>
   );
 };

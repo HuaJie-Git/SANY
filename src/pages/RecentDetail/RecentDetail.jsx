@@ -1,58 +1,105 @@
 import React, { useState } from 'react';
 
-const RecentDetail = ({ onBack }) => {
-  const [activeCategory, setActiveCategory] = useState('asset');
+const RecentDetail = ({ onBack, onNavigate }) => {
+  const [activeCategory, setActiveCategory] = useState('all');
 
-  // 5个分类 - 只用文字，不用图标
+  // 5个分类：全部/资产/配件/审核/活动
   const categories = [
+    { id: 'all', name: '全部' },
     { id: 'asset', name: '资产' },
-    { id: 'audit', name: '审核' },
-    { id: 'content', name: '内容' },
-    { id: 'activity', name: '活动' },
     { id: 'accessory', name: '配件' },
+    { id: 'audit', name: '审核' },
+    { id: 'activity', name: '活动' },
   ];
 
-  // 各分类下的数据
-  const categoryData = {
+  // 各分类下的数据（使用 state 以支持删除）
+  const [categoryData, setCategoryData] = useState({
     asset: [
-      { id: 1, name: 'SANY SY365挖掘机', code: 'EX-2024-001', status: '在线', image: 'images/审核/挖掘机.jpg' },
-      { id: 2, name: 'SANY 起重机', code: 'EX-2025-002', status: '离线', image: 'images/审核/起重机.jpg' },
-      { id: 3, name: 'SANY 泵车', code: 'EX-2024-003', status: '在线', image: 'images/审核/搅拌车.jpg' },
-      { id: 4, name: 'SANY 挖掘机', code: 'EX-2024-004', status: '离线', image: 'images/审核/挖掘机2.jpg' },
-      { id: 5, name: 'SANY 起重机', code: 'EX-2025-005', status: '在线', image: 'images/审核/起重机.jpg' },
+      { id: 1, name: 'SANY SY365挖掘机', code: 'EX-2024-001', status: '在线', image: 'images/审核/挖掘机.jpg', type: 'asset' },
+      { id: 2, name: 'SANY 起重机', code: 'EX-2025-002', status: '离线', image: 'images/审核/起重机.jpg', type: 'asset' },
+      { id: 3, name: 'SANY 泵车', code: 'EX-2024-003', status: '在线', image: 'images/审核/搅拌车.jpg', type: 'asset' },
+      { id: 4, name: 'SANY 挖掘机', code: 'EX-2024-004', status: '离线', image: 'images/审核/挖掘机2.jpg', type: 'asset' },
+      { id: 5, name: 'SANY 起重机', code: 'EX-2025-005', status: '在线', image: 'images/审核/起重机.jpg', type: 'asset' },
     ],
     audit: [
-      { id: 1, name: '冷却水温高', code: 'EX-2024-003', status: '待处理', summary: '冷却液温度高于85℃', image: 'images/审核/搅拌车.jpg' },
-      { id: 2, name: '液压油温度高', code: 'EX-2024-006', status: '已处理', summary: '液压油温度高于90℃', image: 'images/审核/挖掘机.jpg' },
-      { id: 3, name: '发动机异常', code: 'EX-2024-007', status: '待处理', summary: '发动机转速异常', image: 'images/审核/起重机.jpg' },
-    ],
-    content: [
-      { id: 1, name: '三一SY365挖掘机操作指南', type: '文章', date: '2026-07-01', views: 1234, image: 'images/机手社区/挖掘机/挖掘机_01.jpg' },
-      { id: 2, name: '设备保养小技巧', type: '视频', date: '2026-06-28', views: 5678, image: 'images/机手社区/泵车/泵车_04.jpg' },
-      { id: 3, name: '三一起重机操作经验分享', type: '文章', date: '2026-06-25', views: 2345, image: 'images/机手社区/三一起重机/三一起重机_01.jpg' },
+      { id: 6, name: '冷却水温高', code: 'EX-2024-003', status: '待处理', summary: '冷却液温度高于85℃', image: 'images/审核/搅拌车.jpg', type: 'audit' },
+      { id: 7, name: '液压油温度高', code: 'EX-2024-006', status: '已处理', summary: '液压油温度高于90℃', image: 'images/审核/挖掘机.jpg', type: 'audit' },
+      { id: 8, name: '发动机异常', code: 'EX-2024-007', status: '待处理', summary: '发动机转速异常', image: 'images/审核/起重机.jpg', type: 'audit' },
     ],
     activity: [
-      { id: 1, name: '三一周年庆', status: '进行中', startDate: '2026-07-01', endDate: '2026-07-31', participants: 1234, image: 'images/优惠活动/挖掘机/挖掘机_01.jpg' },
-      { id: 2, name: '夏季促销活动', status: '已结束', startDate: '2026-06-01', endDate: '2026-06-30', participants: 5678, image: 'images/优惠活动/矿卡/矿卡_03.png' },
-      { id: 3, name: '新用户注册礼', status: '进行中', startDate: '2026-07-01', endDate: '2026-12-31', participants: 890, image: 'images/优惠活动/三一起重机/三一起重机_01.jpg' },
+      { id: 9, name: '三一周年庆', status: '进行中', startDate: '2026-07-01', endDate: '2026-07-31', participants: 1234, image: 'images/优惠活动/挖掘机/挖掘机_01.jpg', type: 'activity' },
+      { id: 10, name: '夏季促销活动', status: '已结束', startDate: '2026-06-01', endDate: '2026-06-30', participants: 5678, image: 'images/优惠活动/矿卡/矿卡_03.png', type: 'activity' },
+      { id: 11, name: '新用户注册礼', status: '进行中', startDate: '2026-07-01', endDate: '2026-12-31', participants: 890, image: 'images/优惠活动/三一起重机/三一起重机_01.jpg', type: 'activity' },
     ],
     accessory: [
-      { id: 1, name: '液压油滤芯', code: 'AC-2024-001', type: '液压配件', stock: '有货', image: 'images/配件/OIP.webp' },
-      { id: 2, name: '空气滤芯', code: 'AC-2024-002', type: '过滤配件', stock: '有货', image: 'images/配件/OIP (1).webp' },
-      { id: 3, name: '机油滤芯', code: 'AC-2024-003', type: '过滤配件', stock: '缺货', image: 'images/配件/OIP (2).webp' },
-      { id: 4, name: '燃油滤芯', code: 'AC-2024-004', type: '过滤配件', stock: '有货', image: 'images/配件/OIP (3).webp' },
+      { id: 12, name: '液压油滤芯', code: 'AC-2024-001', type: '液压配件', stock: '有货', image: 'images/配件/OIP.webp' },
+      { id: 13, name: '空气滤芯', code: 'AC-2024-002', type: '过滤配件', stock: '有货', image: 'images/配件/OIP (1).webp' },
+      { id: 14, name: '机油滤芯', code: 'AC-2024-003', type: '过滤配件', stock: '缺货', image: 'images/配件/OIP (2).webp' },
+      { id: 15, name: '燃油滤芯', code: 'AC-2024-004', type: '过滤配件', stock: '有货', image: 'images/配件/OIP (3).webp' },
     ],
+  });
+
+  // 删除单条
+  const handleDelete = (e, catId, itemId) => {
+    e.stopPropagation();
+    setCategoryData(prev => ({
+      ...prev,
+      [catId]: prev[catId].filter(item => item.id !== itemId),
+    }));
   };
 
-  const renderCategoryIcon = (icon) => {
-    return <span className="text-lg">{icon}</span>;
+  // 清空全部
+  const handleClearAll = () => {
+    setCategoryData({
+      asset: [],
+      audit: [],
+      activity: [],
+      accessory: [],
+    });
   };
 
-  const renderItem = (item, category) => {
-    switch (category) {
+  // 获取当前分类下的数据
+  const getDisplayItems = () => {
+    if (activeCategory === 'all') {
+      return [
+        ...categoryData.asset,
+        ...categoryData.accessory,
+        ...categoryData.audit,
+        ...categoryData.activity,
+      ];
+    }
+    return categoryData[activeCategory] || [];
+  };
+
+  // 点击卡片 → 跳转卡片详情
+  const handleCardClick = (item) => {
+    if (onNavigate) {
+      onNavigate(item);
+    }
+  };
+
+  const displayItems = getDisplayItems();
+  const totalCount = Object.values(categoryData).reduce((sum, arr) => sum + arr.length, 0);
+
+  const renderItem = (item) => {
+    const renderDeleteBtn = (catId) => (
+      <button
+        className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-gray-300 hover:text-red-500 transition-colors"
+        onClick={(e) => handleDelete(e, catId, item.id)}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path strokeLinecap="round" d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    );
+
+    switch (item.type) {
       case 'asset':
         return (
-          <div className="bg-white rounded-xl p-3 flex items-center shadow-sm mb-3">
+          <div
+            className="bg-white rounded-xl p-3 flex items-center shadow-sm mb-3 cursor-pointer active:bg-gray-50"
+            onClick={() => handleCardClick(item)}
+          >
             <div className="w-16 h-12 bg-gray-50 rounded-lg flex items-center justify-center mr-3 overflow-hidden">
               <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
             </div>
@@ -64,14 +111,15 @@ const RecentDetail = ({ onBack }) => {
                 <span className={`text-xs ${item.status === '在线' ? 'text-green-500' : 'text-gray-400'}`}>{item.status}</span>
               </div>
             </div>
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
-            </svg>
+            {renderDeleteBtn('asset')}
           </div>
         );
       case 'audit':
         return (
-          <div className="bg-white rounded-xl p-3 flex items-center shadow-sm mb-3">
+          <div
+            className="bg-white rounded-xl p-3 flex items-center shadow-sm mb-3 cursor-pointer active:bg-gray-50"
+            onClick={() => handleCardClick(item)}
+          >
             <div className="w-16 h-12 bg-gray-50 rounded-lg flex items-center justify-center mr-3 overflow-hidden">
               <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
             </div>
@@ -83,36 +131,15 @@ const RecentDetail = ({ onBack }) => {
               <div className="text-xs text-gray-500">{item.code}</div>
               <div className="text-xs text-gray-400 mt-1">{item.summary}</div>
             </div>
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
-            </svg>
-          </div>
-        );
-      case 'content':
-        return (
-          <div className="bg-white rounded-xl p-3 flex items-center shadow-sm mb-3">
-            <div className="w-16 h-12 bg-gray-50 rounded-lg flex items-center justify-center mr-3 overflow-hidden">
-              <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-            </div>
-            <div className="flex-1">
-              <div className="text-sm font-medium text-gray-900 truncate">{item.name}</div>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-xs text-blue-500 bg-blue-50 px-1 rounded">{item.type}</span>
-                <span className="text-xs text-gray-400">{item.date}</span>
-                <span className="text-xs text-gray-400 flex items-center gap-1">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8a8a8a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  {item.views}
-                </span>
-              </div>
-            </div>
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
-            </svg>
+            {renderDeleteBtn('audit')}
           </div>
         );
       case 'activity':
         return (
-          <div className="bg-white rounded-xl p-3 flex items-center shadow-sm mb-3">
+          <div
+            className="bg-white rounded-xl p-3 flex items-center shadow-sm mb-3 cursor-pointer active:bg-gray-50"
+            onClick={() => handleCardClick(item)}
+          >
             <div className="w-16 h-12 bg-gray-50 rounded-lg flex items-center justify-center mr-3 overflow-hidden">
               <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
             </div>
@@ -124,14 +151,15 @@ const RecentDetail = ({ onBack }) => {
               <div className="text-xs text-gray-500">{item.startDate} 至 {item.endDate}</div>
               <div className="text-xs text-gray-400 mt-1">参与人数：{item.participants}</div>
             </div>
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
-            </svg>
+            {renderDeleteBtn('activity')}
           </div>
         );
       case 'accessory':
         return (
-          <div className="bg-white rounded-xl p-3 flex items-center shadow-sm mb-3">
+          <div
+            className="bg-white rounded-xl p-3 flex items-center shadow-sm mb-3 cursor-pointer active:bg-gray-50"
+            onClick={() => handleCardClick(item)}
+          >
             <div className="w-16 h-12 bg-gray-50 rounded-lg flex items-center justify-center mr-3 overflow-hidden">
               <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
             </div>
@@ -143,9 +171,7 @@ const RecentDetail = ({ onBack }) => {
                 <span className={`text-xs ${item.stock === '有货' ? 'text-green-500' : 'text-red-500'}`}>{item.stock}</span>
               </div>
             </div>
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
-            </svg>
+            {renderDeleteBtn('accessory')}
           </div>
         );
       default:
@@ -155,7 +181,7 @@ const RecentDetail = ({ onBack }) => {
 
   return (
     <div className="absolute inset-0 bg-white z-50 flex flex-col">
-      {/* 状态栏 - 与内容信息流详情页一致 */}
+      {/* 状态栏 */}
       <div className="flex-shrink-0">
         <div className="h-[44px] flex items-center justify-between px-4 bg-white">
           <span className="text-black text-[14px] font-medium">9:41</span>
@@ -187,11 +213,19 @@ const RecentDetail = ({ onBack }) => {
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/>
           </svg>
         </button>
-        <div className="text-lg font-medium text-gray-900">最近查看</div>
+        <div className="text-lg font-medium text-gray-900 flex-1">最近查看</div>
+        {totalCount > 0 && (
+          <button
+            className="text-[13px] text-gray-400 hover:text-red-500 transition-colors"
+            onClick={handleClearAll}
+          >
+            清空全部
+          </button>
+        )}
       </div>
       </div>
 
-      {/* 分类Tab - 只用文字，不用图标 */}
+      {/* 分类Tab */}
       <div className="bg-white px-4 py-3 flex gap-2 border-b border-gray-100 overflow-x-auto">
         {categories.map((category) => (
           <button
@@ -210,11 +244,15 @@ const RecentDetail = ({ onBack }) => {
 
       {/* 内容列表 */}
       <div className="flex-1 overflow-y-auto p-4">
-        {categoryData[activeCategory]?.map((item) => (
-          <div key={item.id}>
-            {renderItem(item, activeCategory)}
-          </div>
-        ))}
+        {displayItems.length === 0 ? (
+          <div className="text-[13px] text-gray-400 py-12 text-center">暂无记录</div>
+        ) : (
+          displayItems.map((item) => (
+            <div key={`${item.type}-${item.id}`}>
+              {renderItem(item)}
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

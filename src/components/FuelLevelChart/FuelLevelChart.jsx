@@ -2,9 +2,9 @@ import React from 'react';
 
 const FuelLevelChart = ({ level }) => (
   <div className="mt-7" aria-label="油位曲线">
-    <div className="mb-2 pl-7 text-[11px] text-[#9198a4]">油位/L</div>
+    <div className="mb-2 pl-7 text-[11px] text-[#9198a4]">油位/%</div>
     <div className="relative h-[130px] pl-7 pb-5">
-      <div className="absolute left-0 top-1 bottom-5 flex flex-col justify-between text-[9px] text-[#9198a4]"><span>75</span><span>50</span><span>25</span><span>0</span></div>
+      <div className="absolute left-0 top-1 bottom-5 flex flex-col justify-between text-[9px] text-[#9198a4]"><span>100</span><span>75</span><span>50</span><span>25</span><span>0</span></div>
       {[4, 36, 68, 100].map((top) => <div key={top} className="absolute left-7 right-0 h-px bg-[#edf0f4]" style={{ top }} />)}
       <svg className="absolute left-7 right-0 bottom-5 h-[92px] w-[calc(100%_-_1.75rem)]" viewBox="0 0 300 92" preserveAspectRatio="none">
         <defs><linearGradient id="fuelArea" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#ff7900" stopOpacity=".9"/><stop offset="1" stopColor="#ffb35c" stopOpacity=".3"/></linearGradient></defs>

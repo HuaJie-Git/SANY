@@ -125,6 +125,10 @@ const Home = () => {
       >
         <RecentDetail
           onBack={() => setShowRecentList(false)}
+          onNavigate={(item) => {
+            setShowRecentList(false);
+            setSelectedRecentItem(item);
+          }}
         />
       </PhoneFrame>
     );
@@ -318,7 +322,7 @@ const Home = () => {
         }
       >
         <Asset onDeviceClick={(device) => {
-          if (['三一平地机', '三一压路机', '三一摊铺机'].includes(device.name)) {
+          if (['三一平地机', '三一压路机', '三一摊铺机', '三一泵车', '三一拖泵', '三一车载泵', '三一铣刨机'].includes(device.name)) {
             setSelectedWorkCondition(device);
           }
         }} />
