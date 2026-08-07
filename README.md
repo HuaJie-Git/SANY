@@ -1,16 +1,26 @@
-# React + Vite
+# SanVIST PC 原型
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+SanVIST 设备管理 PC 端原型，包含设备列表、设备详情、实时状态和统计报表。
 
-Currently, two official plugins are available:
+## 项目映射
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- 本地目录：`/Users/hj/产品/原型/SanVist-PC`
+- Git 仓库：`https://github.com/HuaJie-Git/SANY`
+- Git 分支：`pc`
+- 本地地址：`http://localhost:5174/`
+- 发布地址：`https://huajie-git.github.io/SANY/pc/`
 
-## React Compiler
+## 本地运行
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm install
+npm run dev
+```
 
-## Expanding the Oxlint configuration
+## 构建
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+```bash
+npm run build
+```
+
+本项目只维护 PC 端原型；APP 与运营后台分别位于 `SanVist-APP` 和 `SanVist-Admin`。
