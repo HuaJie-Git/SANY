@@ -4,12 +4,18 @@
 
 SanVIST 设备管理 APP 首页原型，基于 React + Vite + Tailwind CSS 构建。
 
+- 本地目录：`/Users/hj/产品/原型/SanVist-APP/sanvist-homepage`
+- Git 分支：`main`
+- 本地地址：`http://localhost:5173/`
+- 发布地址：`https://huajie-git.github.io/SANY/`
+- 运营后台已迁移到独立的 `SanVist-Admin` 项目和 `admin` 分支。
+
 ## 技术栈
 
 - **框架**：React 18
 - **构建工具**：Vite
 - **样式**：Tailwind CSS
-- **路由**：React Router（待集成）
+- **路由**：React Router
 
 ## 项目结构
 
