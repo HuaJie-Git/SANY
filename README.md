@@ -4,7 +4,7 @@
 
 SanVIST 设备管理 APP 首页原型，基于 React + Vite + Tailwind CSS 构建。
 
-- 本地目录：`/Users/hj/产品/原型/SanVist-APP/sanvist-homepage`
+- 本地目录：`/Users/hj/产品/原型/SanVist-APP`
 - Git 分支：`main`
 - 本地地址：`http://localhost:5173/`
 - 发布地址：`https://huajie-git.github.io/SANY/`
