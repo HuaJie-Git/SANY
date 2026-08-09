@@ -75,9 +75,11 @@ const RecentView = ({ onNavigate }) => {
     }
   };
 
-  const recentItems = items.filter(item => !item.isRecommended).slice(0, MAX_CARDS);
+  const recentItems = items.filter(item => !item.isRecommended);
   const recommendedItem = items.find(item => item.isRecommended);
-  const displayItems = recommendedItem ? [...recentItems, recommendedItem] : recentItems;
+  const displayItems = recentItems.length < 3 && recommendedItem
+    ? [...recentItems.slice(0, MAX_CARDS - 1), recommendedItem]
+    : recentItems.slice(0, MAX_CARDS);
 
   const handleHorizontalScroll = (e) => {
     const container = e.currentTarget;
