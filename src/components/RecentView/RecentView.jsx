@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 
 const INITIAL_ITEMS = [
   {
@@ -47,19 +47,8 @@ const INITIAL_ITEMS = [
 const MAX_CARDS = 4;
 
 const RecentView = ({ onNavigate }) => {
-  const [items, setItems] = useState(INITIAL_ITEMS);
+  const items = INITIAL_ITEMS;
   const hasEnteredListRef = useRef(false);
-
-  // 删除单条
-  const handleDelete = (e, itemId) => {
-    e.stopPropagation();
-    setItems(prev => prev.filter(item => item.id !== itemId));
-  };
-
-  // 清除全部
-  const handleClearAll = () => {
-    setItems([]);
-  };
 
   // 点击卡片 → 跳转卡片详情
   const handleCardClick = (item) => {
@@ -162,15 +151,6 @@ const RecentView = ({ onNavigate }) => {
       <>
         {renderImage()}
         {renderFallback()}
-        {/* 删除按钮 (X) */}
-        <button
-          className="absolute top-1 right-1 w-5 h-5 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={(e) => handleDelete(e, item.id)}
-        >
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-            <path strokeLinecap="round" d="M18 6L6 18M6 6l12 12"/>
-          </svg>
-        </button>
       </>
     );
 
@@ -249,17 +229,7 @@ const RecentView = ({ onNavigate }) => {
   return (
     <div className="px-4 pt-4 pb-0">
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <h3 className="text-[16px] font-medium text-text-primary">最近查看</h3>
-          {items.length > 0 && (
-            <button
-              className="text-[11px] text-gray-400 hover:text-gray-600"
-              onClick={handleClearAll}
-            >
-              清除全部
-            </button>
-          )}
-        </div>
+        <h3 className="text-[16px] font-medium text-text-primary">最近查看</h3>
         <span
           className="text-[12px] text-text辅助 cursor-pointer"
           onClick={handleDetailClick}
@@ -278,6 +248,17 @@ const RecentView = ({ onNavigate }) => {
           {displayItems.map((item) => (
             <div key={item.id}>{renderCard(item)}</div>
           ))}
+          <div className="w-[104px] h-[168px] flex-shrink-0 flex flex-col items-center justify-center gap-3 text-gray-400" aria-hidden="true">
+            <div className="flex items-center -space-x-1 animate-pulse">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
+              </svg>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
+              </svg>
+            </div>
+            <span className="w-[88px] text-center text-[11px] leading-[16px]">继续滑动进入列表页</span>
+          </div>
         </div>
       )}
     </div>

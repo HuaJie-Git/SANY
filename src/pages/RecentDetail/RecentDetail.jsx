@@ -12,8 +12,8 @@ const RecentDetail = ({ onBack, onNavigate }) => {
     { id: 'activity', name: '活动' },
   ];
 
-  // 各分类下的数据（使用 state 以支持删除）
-  const [categoryData, setCategoryData] = useState({
+  // 各分类下的数据
+  const categoryData = {
     asset: [
       { id: 1, name: 'SANY SY365挖掘机', code: 'EX-2024-001', status: '在线', image: 'images/审核/挖掘机.jpg', type: 'asset' },
       { id: 2, name: 'SANY 起重机', code: 'EX-2025-002', status: '离线', image: 'images/审核/起重机.jpg', type: 'asset' },
@@ -37,25 +37,6 @@ const RecentDetail = ({ onBack, onNavigate }) => {
       { id: 14, name: '机油滤芯', code: 'AC-2024-003', type: '过滤配件', stock: '缺货', image: 'images/配件/OIP (2).webp' },
       { id: 15, name: '燃油滤芯', code: 'AC-2024-004', type: '过滤配件', stock: '有货', image: 'images/配件/OIP (3).webp' },
     ],
-  });
-
-  // 删除单条
-  const handleDelete = (e, catId, itemId) => {
-    e.stopPropagation();
-    setCategoryData(prev => ({
-      ...prev,
-      [catId]: prev[catId].filter(item => item.id !== itemId),
-    }));
-  };
-
-  // 清空全部
-  const handleClearAll = () => {
-    setCategoryData({
-      asset: [],
-      audit: [],
-      activity: [],
-      accessory: [],
-    });
   };
 
   // 获取当前分类下的数据
@@ -79,20 +60,7 @@ const RecentDetail = ({ onBack, onNavigate }) => {
   };
 
   const displayItems = getDisplayItems();
-  const totalCount = Object.values(categoryData).reduce((sum, arr) => sum + arr.length, 0);
-
   const renderItem = (item) => {
-    const renderDeleteBtn = (catId) => (
-      <button
-        className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-gray-300 hover:text-red-500 transition-colors"
-        onClick={(e) => handleDelete(e, catId, item.id)}
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path strokeLinecap="round" d="M18 6L6 18M6 6l12 12"/>
-        </svg>
-      </button>
-    );
-
     switch (item.type) {
       case 'asset':
         return (
@@ -111,7 +79,6 @@ const RecentDetail = ({ onBack, onNavigate }) => {
                 <span className={`text-xs ${item.status === '在线' ? 'text-green-500' : 'text-gray-400'}`}>{item.status}</span>
               </div>
             </div>
-            {renderDeleteBtn('asset')}
           </div>
         );
       case 'audit':
@@ -131,7 +98,6 @@ const RecentDetail = ({ onBack, onNavigate }) => {
               <div className="text-xs text-gray-500">{item.code}</div>
               <div className="text-xs text-gray-400 mt-1">{item.summary}</div>
             </div>
-            {renderDeleteBtn('audit')}
           </div>
         );
       case 'activity':
@@ -151,7 +117,6 @@ const RecentDetail = ({ onBack, onNavigate }) => {
               <div className="text-xs text-gray-500">{item.startDate} 至 {item.endDate}</div>
               <div className="text-xs text-gray-400 mt-1">参与人数：{item.participants}</div>
             </div>
-            {renderDeleteBtn('activity')}
           </div>
         );
       case 'accessory':
@@ -171,7 +136,6 @@ const RecentDetail = ({ onBack, onNavigate }) => {
                 <span className={`text-xs ${item.stock === '有货' ? 'text-green-500' : 'text-red-500'}`}>{item.stock}</span>
               </div>
             </div>
-            {renderDeleteBtn('accessory')}
           </div>
         );
       default:
@@ -214,14 +178,6 @@ const RecentDetail = ({ onBack, onNavigate }) => {
           </svg>
         </button>
         <div className="text-lg font-medium text-gray-900 flex-1">最近查看</div>
-        {totalCount > 0 && (
-          <button
-            className="text-[13px] text-gray-400 hover:text-red-500 transition-colors"
-            onClick={handleClearAll}
-          >
-            清空全部
-          </button>
-        )}
       </div>
       </div>
 
