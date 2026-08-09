@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 
 const INITIAL_ITEMS = [
   {
@@ -48,6 +48,7 @@ const MAX_CARDS = 4;
 
 const RecentView = ({ onNavigate }) => {
   const [items, setItems] = useState(INITIAL_ITEMS);
+  const hasEnteredListRef = useRef(false);
 
   // 删除单条
   const handleDelete = (e, itemId) => {
@@ -74,7 +75,19 @@ const RecentView = ({ onNavigate }) => {
     }
   };
 
-  const displayItems = items.slice(0, MAX_CARDS);
+  const recentItems = items.filter(item => !item.isRecommended).slice(0, MAX_CARDS);
+  const recommendedItem = items.find(item => item.isRecommended);
+  const displayItems = recommendedItem ? [...recentItems, recommendedItem] : recentItems;
+
+  const handleHorizontalScroll = (e) => {
+    const container = e.currentTarget;
+    const reachedEnd = container.scrollWidth > container.clientWidth
+      && container.scrollLeft + container.clientWidth >= container.scrollWidth - 12;
+    if (reachedEnd && !hasEnteredListRef.current) {
+      hasEnteredListRef.current = true;
+      onNavigate?.('recentList');
+    }
+  };
 
   const renderCard = (item) => {
     const renderImage = () => (
@@ -252,7 +265,11 @@ const RecentView = ({ onNavigate }) => {
       {displayItems.length === 0 ? (
         <div className="text-[13px] text-gray-400 py-6 text-center">暂无最近查看记录</div>
       ) : (
-        <div className="flex overflow-x-auto gap-3 pb-1">
+        <div
+          className="flex overflow-x-auto gap-3 pb-1"
+          onScroll={handleHorizontalScroll}
+          aria-label="最近查看卡片"
+        >
           {displayItems.map((item) => (
             <div key={item.id}>{renderCard(item)}</div>
           ))}
