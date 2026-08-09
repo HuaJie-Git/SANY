@@ -86,6 +86,9 @@ const RecentView = ({ onNavigate }) => {
     if (reachedEnd && !hasEnteredListRef.current) {
       hasEnteredListRef.current = true;
       onNavigate?.('recentList');
+      window.setTimeout(() => {
+        hasEnteredListRef.current = false;
+      }, 800);
     }
   };
 
