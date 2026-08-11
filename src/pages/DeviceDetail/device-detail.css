@@ -120,18 +120,22 @@
 .report-card-title { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
 .report-card-title > span { width: 17px; height: 17px; display: inline-flex; align-items: center; justify-content: center; border-radius: 5px; background: #ffe9ef; color: #ef557c; }
 .report-card-title strong { color: #303640; font-size: 11px; font-weight: 700; }
+.report-card-title .report-card-extra { margin-left: auto; color: #a0a6af; font-size: 9px; font-weight: 400; }
 .metric-overview { min-height: 83px; }
 .report-metrics { display: grid; }
 .report-metrics.columns-3 { grid-template-columns: repeat(3,1fr); }
 .report-metrics.columns-4 { grid-template-columns: repeat(4,1fr); }
 .report-metrics.columns-5 { grid-template-columns: repeat(5,1fr); }
+.report-metrics.columns-6 { grid-template-columns: repeat(6,1fr); }
 .report-metric { min-width: 0; padding: 0 16px; border-right: 1px solid #f0f1f2; }
 .report-metric:last-child { border-right: 0; }
 .report-metric > div { display: flex; align-items: baseline; gap: 3px; }
 .report-metric strong { color: #303640; font-size: clamp(17px, 1.5vw, 24px); line-height: 1; }
 .report-metric span { color: #747d86; font-size: 9px; }
 .report-metric small { display: block; margin-top: 6px; color: #929aa3; font-size: 9px; }
-.report-metric em { display: block; margin-top: 3px; font-size: 8px; font-style: normal; }
+.report-metric em { margin-left: 5px; font-size: 9px; font-style: normal; font-weight: 600; white-space: nowrap; }
+.report-metric em.is-up { color: #16b85f; }
+.report-metric em.is-down { color: #ff4055; }
 .daily-distribution { min-height: 124px; }
 .period-dashboard { display: grid; gap: 8px; align-items: stretch; }
 .period-dashboard.weekly { grid-template-columns: 1fr 1fr; grid-template-areas: "calendar distribution" "category trend"; }
@@ -155,7 +159,10 @@
 .run-calendar.weekly .calendar-days > div { min-height: 72px; padding-top: 8px; }
 .run-calendar.monthly .calendar-days > div { min-height: 49px; }
 .calendar-legend { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 7px; color: #9aa1a9; font-size: 8px; }
-.calendar-legend i { width: 8px; height: 5px; display: inline-block; background: #d8eaf8; }
+.calendar-legend span { display: inline-flex; align-items: center; gap: 4px; }
+.calendar-legend i { width: 8px; height: 5px; display: inline-block; }
+.calendar-legend i.amount { background: #d8eaf8; }
+.calendar-legend i.fuel { background: #ffe1b8; }
 .work-distribution { position: relative; display: flex; flex-direction: column; gap: 4px; padding-top: 14px; }
 .work-time-scale { position: absolute; top: 0; left: 21px; right: 0; height: 11px; }
 .work-time-scale b { position: absolute; transform: translateX(-50%); color: #a0a6ae; font-size: 7px; font-weight: 400; }

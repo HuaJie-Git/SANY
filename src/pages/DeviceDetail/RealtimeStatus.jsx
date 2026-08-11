@@ -119,7 +119,7 @@ export default function RealtimeStatus({ device }) {
       <div className="realtime-dashboard">
         <div className="dashboard-left">
           <section className="dashboard-card today-work-card"><SectionTitle icon="◷" title="今日工时" tone="purple" /><div className="today-numbers"><div><strong>{workHours}<em>h</em></strong><small>工作时长</small></div><div><strong>{idleHours}<em>h</em></strong><small>怠速工时</small></div></div><Gantt24h device={device} workHours={workHours} idleHours={idleHours} /></section>
-          <section className="dashboard-card today-fuel-card"><SectionTitle icon="◒" title="今日油耗" tone="orange" /><div className="fuel-numbers"><div><strong>{fuel}</strong><small>总油耗</small></div><div><strong>{hourlyFuel}</strong><small>每小时工作油耗</small></div></div><OilBars device={device} /><div className="chart-axis"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div></section>
+          <section className="dashboard-card today-fuel-card"><SectionTitle icon="◒" title="今日油耗" tone="orange" /><div className="fuel-numbers"><div><strong>{fuel}</strong><small>总油耗</small></div><div><strong>{hourlyFuel}</strong><small>每小时油耗</small></div></div><OilBars device={device} /><div className="chart-axis"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div></section>
           <section className="dashboard-card cumulative-card"><SectionTitle icon="◒" title="历史累计数据" tone="orange" /><div className="history-items">{historyItems.map((item) => <div key={item.label}><strong>{item.value}</strong><small>{item.label}</small></div>)}</div></section>
         </div>
         <section className="map-card"><LocalMap device={device} /></section>

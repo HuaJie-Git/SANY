@@ -7,6 +7,9 @@ const genMonthlyFuel = (min, max) =>
     value: Math.round(min + Math.random() * (max - min)),
   }));
 
+const genMonthlyAmount = (pattern) =>
+  Array.from({ length: 30 }, (_, i) => ([5, 6].includes(i % 7) ? null : pattern[i % pattern.length]));
+
 export const DEVICES = [
   {
     id: 1,
@@ -368,6 +371,8 @@ export const DEVICES = [
       当前油位: '68%',
     },
     today: {
+      totalFuel: '185L',
+      fuelPerWorkHour: '15.2L/h',
       workHours: 6.8,
       idleHours: 1.4,
       pumpingVolume: 12.6,
@@ -468,7 +473,9 @@ export const DEVICES = [
       { day: '周六', value: 21 },
       { day: '周日', value: 26 },
     ],
+    weeklyAmountTrend: [12.2, 13.4, 11.6, 10.2, 9.4, null, null],
     monthlyFuelTrend: genMonthlyFuel(20, 40),
+    monthlyAmountTrend: genMonthlyAmount([10.8, 12.1, 11.4, 9.9, 12.6]),
   },
   {
     id: 5,
@@ -486,6 +493,8 @@ export const DEVICES = [
       当前油位: '72%',
     },
     today: {
+      totalFuel: '172L',
+      fuelPerWorkHour: '15.2L/h',
       workHours: 7.2,
       idleHours: 0.9,
       pumpingVolume: 15.2,
@@ -582,7 +591,11 @@ export const DEVICES = [
       { day: '周六', value: 19 },
       { day: '周日', value: 23 },
     ],
+    weeklyAmountTrend: [15.8, 17.4, 14.9, 13.6, 13.0, null, null],
+    weeklyCountTrend: [110, 126, 102, 96, 88, null, null],
     monthlyFuelTrend: genMonthlyFuel(18, 38),
+    monthlyAmountTrend: genMonthlyAmount([14.6, 16.2, 15.1, 13.8, 17.0]),
+    monthlyCountTrend: genMonthlyAmount([104, 118, 109, 96, 123]),
   },
   {
     id: 6,
@@ -601,6 +614,8 @@ export const DEVICES = [
       当前油位: '66%',
     },
     today: {
+      totalFuel: '163L',
+      fuelPerWorkHour: '15.2L/h',
       workHours: 6.2,
       idleHours: 1.6,
       pumpingVolume: 10.8,
@@ -700,7 +715,9 @@ export const DEVICES = [
       { day: '周六', value: 17 },
       { day: '周日', value: 22 },
     ],
+    weeklyAmountTrend: [10.6, 11.8, 10.0, 9.1, 8.5, null, null],
     monthlyFuelTrend: genMonthlyFuel(16, 36),
+    monthlyAmountTrend: genMonthlyAmount([9.8, 11.0, 10.4, 8.9, 11.6]),
   },
   {
     id: 7,
@@ -720,6 +737,8 @@ export const DEVICES = [
       当前油位: '65%',
     },
     today: {
+      totalFuel: '198L',
+      fuelPerWorkHour: '15.2L/h',
       workHours: 7.8,
       idleHours: 1.1,
       millingDistance: 2860,
@@ -819,6 +838,8 @@ export const DEVICES = [
       { day: '周六', value: 24 },
       { day: '周日', value: 28 },
     ],
+    weeklyAmountTrend: [2980, 3290, 2800, 2500, 2320, null, null],
     monthlyFuelTrend: genMonthlyFuel(23, 43),
+    monthlyAmountTrend: genMonthlyAmount([2860, 3150, 2740, 2480, 3260]),
   },
 ];
