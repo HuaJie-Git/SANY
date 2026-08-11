@@ -2,7 +2,23 @@ import React, { useMemo, useState } from 'react';
 import FuelLevelChart from '../../components/FuelLevelChart/FuelLevelChart';
 import WorkStatusTimeline from '../../components/WorkStatusTimeline/WorkStatusTimeline';
 
+const shiftDate = (date, days) => {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+};
+
+const formatFullDate = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 /* ──────────────── demo data per device ──────────────── */
+const buildMonthlyAmountTrend = (pattern) =>
+  Array.from({ length: 31 }, (_, i) => ([5, 6].includes(i % 7) ? null : pattern[i % pattern.length]));
+
 const DEVICE_DATA = {
   '三一平地机': {
     supportsTrajectory: false,
@@ -146,9 +162,9 @@ const DEVICE_DATA = {
       fuelLevel: '68',
       summary: [
         ['油耗', '150', 'L'],
-        ['每小时油耗', '26.3', 'L/h'],
         ['工时', '6.8', 'h'],
         ['怠速工时', '1.4', 'h'],
+        ['每小时油耗', '26.3', 'L/h'],
         ['泵送方量', '12.6', 'm³'],
       ],
       workDist: [0,0,0,0,1,1,1,1,1,2,2,1,0,0,1,1,1,1,2,2,1,0,0,0],
@@ -156,9 +172,9 @@ const DEVICE_DATA = {
     weekly: {
       summary: [
         ['油耗', '312', 'L', 10],
-        ['每小时油耗', '26.1', 'L/h', -4],
         ['工时', '47.2', 'h', 5],
         ['怠速工时', '8.1', 'h', -5],
+        ['每小时油耗', '26.1', 'L/h', -4],
         ['泵送方量', '86.5', 'm³', 8],
       ],
       calDays: [
@@ -177,11 +193,12 @@ const DEVICE_DATA = {
     monthly: {
       summary: [
         ['油耗', '1,358', 'L', 10],
-        ['每小时油耗', '26.0', 'L/h', 5],
         ['工时', '152.4', 'h', 5],
         ['怠速工时', '30.2', 'h', 5],
+        ['每小时油耗', '26.0', 'L/h', 5],
         ['泵送方量', '362.8', 'm³', 5],
       ],
+      amountTrend: buildMonthlyAmountTrend([10.8, 12.1, 11.4, 9.9, 12.6]),
       fuelTrend: [52,56,60,54,58,0,0, 53,51,59,56,49,0,0, 55,59,52,53,58,0,0, 51,55,59,53,57,0,0, 51,58,55],
       workH: [8.0,9.3,7.6,8.4,9.0,0,0,8.2,7.4,9.1,8.6,7.0,0,0,8.7,9.2,7.3,8.0,8.9,0,0,8.1,7.7,9.0,8.5,7.2,0,0,8.3,8.8],
       idleH: [1.1,1.4,0.9,1.2,1.5,0,0,1.0,0.8,1.3,1.1,0.7,0,0,1.2,1.4,0.9,1.1,1.3,0,0,1.0,0.9,1.2,1.1,0.8,0,0,1.0,1.3],
@@ -195,9 +212,9 @@ const DEVICE_DATA = {
       fuelLevel: '72',
       summary: [
         ['油耗', '120', 'L'],
-        ['每小时油耗', '25.8', 'L/h'],
         ['工时', '7.2', 'h'],
         ['怠速工时', '0.9', 'h'],
+        ['每小时油耗', '25.8', 'L/h'],
         ['泵送方量', '15.2', 'm³'],
         ['泵送次数', '86', '次'],
       ],
@@ -206,9 +223,9 @@ const DEVICE_DATA = {
     weekly: {
       summary: [
         ['油耗', '246', 'L', 8],
-        ['每小时油耗', '25.6', 'L/h', -4],
         ['工时', '45.6', 'h', 5],
         ['怠速工时', '5.8', 'h', -5],
+        ['每小时油耗', '25.6', 'L/h', -4],
         ['泵送方量', '105.6', 'm³', 6],
         ['泵送次数', '602', '次', 4],
       ],
@@ -228,12 +245,13 @@ const DEVICE_DATA = {
     monthly: {
       summary: [
         ['油耗', '1,062', 'L', 8],
-        ['每小时油耗', '25.7', 'L/h', 5],
         ['工时', '138.8', 'h', 5],
         ['怠速工时', '24.6', 'h', 5],
+        ['每小时油耗', '25.7', 'L/h', 5],
         ['泵送方量', '452.0', 'm³', 6],
         ['泵送次数', '2,580', '次', 5],
       ],
+      amountTrend: buildMonthlyAmountTrend([14.6, 16.2, 15.1, 13.8, 17.0]),
       fuelTrend: [46,50,54,48,52,0,0, 47,44,53,50,43,0,0, 49,53,46,47,52,0,0, 45,49,53,47,51,0,0, 46,52,49],
       workH: [7.8,9.0,7.2,8.1,8.7,0,0,7.9,7.1,8.8,8.3,6.8,0,0,8.4,8.9,7.0,7.7,8.6,0,0,7.8,7.4,8.7,8.2,6.9,0,0,8.0,8.5],
       idleH: [0.8,1.0,0.6,0.9,1.1,0,0,0.7,0.5,1.0,0.8,0.4,0,0,0.9,1.1,0.6,0.8,1.0,0,0,0.7,0.6,0.9,0.8,0.5,0,0,0.7,0.9],
@@ -247,9 +265,9 @@ const DEVICE_DATA = {
       fuelLevel: '66',
       summary: [
         ['油耗', '135', 'L'],
-        ['每小时油耗', '26.1', 'L/h'],
         ['工时', '6.2', 'h'],
         ['怠速工时', '1.6', 'h'],
+        ['每小时油耗', '26.1', 'L/h'],
         ['泵送方量', '10.8', 'm³'],
       ],
       workDist: [0,0,0,0,1,1,1,1,1,2,2,1,0,0,1,1,1,1,2,2,1,0,0,0],
@@ -257,9 +275,9 @@ const DEVICE_DATA = {
     weekly: {
       summary: [
         ['油耗', '278', 'L', 9],
-        ['每小时油耗', '26.0', 'L/h', -4],
         ['工时', '43.8', 'h', 5],
         ['怠速工时', '9.2', 'h', -5],
+        ['每小时油耗', '26.0', 'L/h', -4],
         ['泵送方量', '74.5', 'm³', 5],
       ],
       calDays: [
@@ -278,11 +296,12 @@ const DEVICE_DATA = {
     monthly: {
       summary: [
         ['油耗', '1,212', 'L', 9],
-        ['每小时油耗', '25.9', 'L/h', 5],
         ['工时', '132.6', 'h', 5],
         ['怠速工时', '28.8', 'h', 5],
+        ['每小时油耗', '25.9', 'L/h', 5],
         ['泵送方量', '318.6', 'm³', 5],
       ],
+      amountTrend: buildMonthlyAmountTrend([9.8, 11.0, 10.4, 8.9, 11.6]),
       fuelTrend: [48,52,56,50,54,0,0, 49,46,55,52,45,0,0, 51,55,48,49,54,0,0, 47,51,55,49,53,0,0, 48,54,51],
       workH: [7.6,8.8,7.0,7.9,8.5,0,0,7.7,6.9,8.6,8.1,6.6,0,0,8.2,8.7,6.8,7.5,8.4,0,0,7.6,7.2,8.5,8.0,6.7,0,0,7.8,8.3],
       idleH: [1.2,1.5,0.9,1.2,1.4,0,0,1.1,0.9,1.4,1.2,0.8,0,0,1.3,1.5,1.0,1.2,1.4,0,0,1.1,1.0,1.3,1.2,0.9,0,0,1.1,1.4],
@@ -296,9 +315,9 @@ const DEVICE_DATA = {
       fuelLevel: '65',
       summary: [
         ['油耗', '165', 'L'],
-        ['每小时油耗', '26.9', 'L/h'],
         ['工时', '7.8', 'h'],
         ['怠速工时', '1.1', 'h'],
+        ['每小时油耗', '26.9', 'L/h'],
         ['铣刨距离', '2,860', 'm'],
       ],
       workDist: [0,0,0,0,2,2,1,1,2,2,1,0,0,0,2,2,1,1,2,1,0,0,0,0],
@@ -306,9 +325,9 @@ const DEVICE_DATA = {
     weekly: {
       summary: [
         ['油耗', '348', 'L', 12],
-        ['每小时油耗', '26.8', 'L/h', -5],
         ['工时', '51.2', 'h', 5],
         ['怠速工时', '7.6', 'h', -5],
+        ['每小时油耗', '26.8', 'L/h', -5],
         ['铣刨距离', '18,600', 'm', 12],
       ],
       calDays: [
@@ -327,11 +346,12 @@ const DEVICE_DATA = {
     monthly: {
       summary: [
         ['油耗', '1,486', 'L', 12],
-        ['每小时油耗', '26.7', 'L/h', 5],
         ['工时', '156.8', 'h', 5],
         ['怠速工时', '32.4', 'h', 5],
+        ['每小时油耗', '26.7', 'L/h', 5],
         ['铣刨距离', '79,500', 'm', 12],
       ],
+      amountTrend: buildMonthlyAmountTrend([2860, 3150, 2740, 2480, 3260]),
       fuelTrend: [55,59,63,57,61,0,0, 56,53,62,59,52,0,0, 58,62,55,56,61,0,0, 54,58,62,56,60,0,0, 55,61,58],
       workH: [8.5,9.8,8.0,8.9,9.5,0,0,8.6,7.8,9.5,9.0,7.4,0,0,9.1,9.6,7.7,8.4,9.3,0,0,8.5,8.1,9.4,8.9,7.5,0,0,8.7,9.2],
       idleH: [0.8,1.1,0.7,0.9,1.2,0,0,0.8,0.6,1.1,0.9,0.5,0,0,1.0,1.2,0.7,0.9,1.1,0,0,0.8,0.7,1.0,0.9,0.6,0,0,0.8,1.0],
@@ -342,8 +362,9 @@ const DEVICE_DATA = {
 const WEEKDAY = ['周日','周一','周二','周三','周四','周五','周六'];
 
 /* ──────────────── line chart (pure SVG, multi-series) ──────────────── */
-const LineChart = ({ series, labels, yMax, yUnit, rightUnit }) => {
+const LineChart = ({ series, labels, tooltipLabels = labels, yMax, yUnit, rightUnit }) => {
   const [hoverIndex, setHoverIndex] = useState(null);
+  const [selectedIndex, setSelectedIndex] = useState(null);
   const W = 320, H = 168, PAD = { t: 25, r: rightUnit ? 34 : 10, b: 34, l: 38 };
   const cw = W - PAD.l - PAD.r, ch = H - PAD.t - PAD.b;
   const leftSeries = series.filter((item) => item.axis !== 'right');
@@ -354,7 +375,13 @@ const LineChart = ({ series, labels, yMax, yUnit, rightUnit }) => {
   const toX = (i) => PAD.l + (len > 1 ? (i / (len - 1)) * cw : cw / 2);
   const toY = (v, axis) => PAD.t + ch - (v / (axis === 'right' ? rightMax : leftMax)) * ch;
   const step = len > 8 ? Math.ceil(len / 6) : 1;
-  const activeLeft = hoverIndex == null ? 50 : Math.min(74, Math.max(26, (toX(hoverIndex) / W) * 100));
+  const activeIndex = hoverIndex ?? selectedIndex;
+  const activeLeft = activeIndex == null ? 50 : Math.min(74, Math.max(26, (toX(activeIndex) / W) * 100));
+  const resolveIndex = (event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const ratio = (event.clientX - rect.left) / rect.width;
+    return Math.max(0, Math.min(len - 1, Math.round(ratio * (len - 1))));
+  };
   return (
     <div className="relative">
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 190 }} onMouseLeave={() => setHoverIndex(null)}>
@@ -367,20 +394,20 @@ const LineChart = ({ series, labels, yMax, yUnit, rightUnit }) => {
           return (
             <g key={item.key}>
               <path d={pathD} fill="none" stroke={item.color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-              {item.data.map((value, i) => <circle key={i} cx={toX(i)} cy={toY(value, item.axis)} r={hoverIndex === i ? 3.5 : 2.3} fill="#fff" stroke={item.color} strokeWidth="1.5" onMouseEnter={() => setHoverIndex(i)} />)}
+              {item.data.map((value, i) => <circle key={i} cx={toX(i)} cy={toY(value, item.axis)} r={activeIndex === i ? 3.5 : 2.3} fill="#fff" stroke={item.color} strokeWidth="1.5" onMouseEnter={() => setHoverIndex(i)} onClick={() => setSelectedIndex(i)} />)}
             </g>
           );
         })}
         {labels.map((label, i) => i % step === 0 && <text key={i} x={toX(i)} y={H - 6} textAnchor="middle" fontSize="8" fill="#999">{label}</text>)}
-        {hoverIndex != null && <line x1={toX(hoverIndex)} y1={PAD.t} x2={toX(hoverIndex)} y2={PAD.t + ch} stroke="#9aa8ba" strokeWidth=".8" strokeDasharray="4 3" />}
-        <rect x={PAD.l} y={PAD.t} width={cw} height={ch} fill="transparent" onMouseMove={(event) => { const rect = event.currentTarget.getBoundingClientRect(); const ratio = (event.clientX - rect.left) / rect.width; setHoverIndex(Math.max(0, Math.min(len - 1, Math.round(ratio * (len - 1))))); }} />
+        {activeIndex != null && <line x1={toX(activeIndex)} y1={PAD.t} x2={toX(activeIndex)} y2={PAD.t + ch} stroke="#9aa8ba" strokeWidth=".8" strokeDasharray="4 3" />}
+        <rect x={PAD.l} y={PAD.t} width={cw} height={ch} fill="transparent" onMouseMove={(event) => setHoverIndex(resolveIndex(event))} onClick={(event) => setSelectedIndex(resolveIndex(event))} />
         {yUnit && <text x={PAD.l} y={12} fontSize="9" fill="#999">{yUnit}</text>}
         {rightUnit && <text x={W - PAD.r} y={12} textAnchor="end" fontSize="9" fill="#999">{rightUnit}</text>}
       </svg>
-      {hoverIndex != null && (
+      {activeIndex != null && (
         <div className="pointer-events-none absolute top-[34px] min-w-[156px] -translate-x-1/2 rounded-lg bg-white px-3 py-2.5 shadow-[0_8px_24px_rgba(31,41,55,0.18)]" style={{ left: `${activeLeft}%` }}>
-          <div className="mb-1.5 text-[12px] text-[#4b5563]">{labels[hoverIndex]}</div>
-          {series.map((item) => <div key={item.key} className="flex items-center gap-2 text-[11px] leading-5 text-[#59616c]"><span className="h-2.5 w-2.5 rounded-full" style={{ background: item.color }} /><span className="flex-1">{item.label || item.key}</span><b className="text-[#303640]">{item.data[hoverIndex]}{item.unit || ''}</b></div>)}
+          <div className="mb-1.5 text-[12px] font-medium text-[#4b5563]">{tooltipLabels[activeIndex]}</div>
+          {series.map((item) => <div key={item.key} className="flex items-center gap-2 text-[11px] leading-5 text-[#59616c]"><span className="h-2.5 w-2.5 rounded-full" style={{ background: item.color }} /><span className="flex-1">{item.label || item.key}</span><b className="text-[#303640]">{item.data[activeIndex]}{item.unit || ''}</b></div>)}
         </div>
       )}
     </div>
@@ -425,20 +452,20 @@ const MonthCalendar = ({ dailyData, amountUnit, highlight }) => {
             if (!d) return <div key={di} />;
             const dayData = dailyData[d - 1];
             const fuel = dayData?.fuel;
-            const active = fuel != null && fuel > 0;
-            const amt = active ? dayData.amount : null;
+            const amt = dayData?.amount;
+            const hasFuel = fuel != null && fuel > 0;
+            const hasAmt = amountUnit && amt != null && Number(amt) > 0;
+            const active = hasFuel || hasAmt;
             const isHL = highlight && d === now.getDate();
             return (
               <div key={di} className={`rounded-md p-1 text-center ${isHL ? 'bg-[#f0f7ff] ring-1 ring-[#4dabf7]' : (active ? 'bg-[#fff8e1]' : 'bg-gray-50')}`}>
                 <div className={`text-[10px] font-medium ${isHL ? 'text-[#1a73e8]' : ''}`}>{d}</div>
-                {amountUnit && (
+                {hasAmt && (
                   <div className="text-[8px] leading-tight text-[#333]">
-                    {amt != null ? `${amt}${amountUnit}` : '--'}
+                    {amt}{amountUnit}
                   </div>
                 )}
-                <div className="text-[8px] leading-tight text-[#999]">
-                  {active ? `${fuel}L` : '--'}
-                </div>
+                {hasFuel && <div className="text-[8px] leading-tight text-[#999]">{fuel}L</div>}
               </div>
             );
           })}
@@ -459,14 +486,8 @@ const WeekCalendar = ({ days, amountUnit }) => (
         return (
           <div key={i} className={`rounded-md p-1.5 text-center ${(hasAmt || hasFuel) ? 'bg-[#fff8e1]' : 'bg-gray-50'}`}>
             <div className={`text-[11px] font-medium ${!hasAmt && !hasFuel ? 'text-[#ccc]' : ''}`}>{day.d}</div>
-            {amountUnit && (
-              <div className="text-[9px] leading-tight text-[#333]">
-                {hasAmt ? `${day.amount}${amountUnit}` : '--'}
-              </div>
-            )}
-            <div className="text-[9px] leading-tight text-[#999]">
-              {hasFuel ? `${day.fuel}L` : '--'}
-            </div>
+            {hasAmt && <div className="text-[9px] leading-tight text-[#333]">{day.amount}{amountUnit}</div>}
+            {hasFuel && <div className="text-[9px] leading-tight text-[#999]">{day.fuel}L</div>}
           </div>
         );
       })}
@@ -557,18 +578,16 @@ const DailyView = ({ deviceName }) => {
 };
 
 /* ──────────────── weekly view ──────────────── */
-const WeeklyView = ({ deviceName }) => {
+const WeeklyView = ({ deviceName, baseDate }) => {
   const dev = DEVICE_DATA[deviceName];
   const d = dev?.weekly;
   if (!d) return null;
+  const tooltipLabels = d.fuelTrend.map((_, index) => formatFullDate(shiftDate(baseDate, index)));
   return (
     <div className="space-y-3">
       <SummaryCard data={d.summary} period="weekly" />
       <div className="rounded-2xl bg-white p-4 shadow-sm">
-        <div className="flex items-baseline gap-2 mb-3">
-          <span className="text-[15px] font-semibold">设备运行日历</span>
-          <span className="text-[11px] text-[#999]">{dev.amountLabel}</span>
-        </div>
+        <div className="text-[15px] font-semibold mb-3">设备运行日历</div>
         <WeekCalendar days={d.calDays} amountUnit={dev.amountUnit} />
       </div>
       <div className="rounded-2xl bg-white p-4 shadow-sm">
@@ -579,6 +598,7 @@ const WeeklyView = ({ deviceName }) => {
             { key: 'duration', label: '时长', unit: ' h', data: d.workH, color: '#7c3aed', axis: 'right' },
           ]}
           labels={['周一','周二','周三','周四','周五','周六','周日']}
+          tooltipLabels={tooltipLabels}
           yUnit="L/h"
           rightUnit="时长(h)"
         />
@@ -604,26 +624,19 @@ const WeeklyView = ({ deviceName }) => {
 };
 
 /* ──────────────── monthly view ──────────────── */
-const MonthlyView = ({ deviceName }) => {
+const MonthlyView = ({ deviceName, baseDate }) => {
   const dev = DEVICE_DATA[deviceName];
   const d = dev?.monthly;
   if (!d) return null;
   const monthLabels = Array.from({ length: d.fuelTrend.length }, (_, i) => `${i + 1}`);
-  const hasAmount = !!dev.amountLabel;
-  const amountFactor = dev.amountUnit === 'm' ? 33.89 : 0.2;
-  const dailyData = d.fuelTrend.map((fuel) => {
-    const active = fuel != null && fuel > 0;
-    const amount = !active ? null : (hasAmount ? Math.round(fuel * amountFactor) : null);
-    return { amount: amount != null ? String(amount) : null, fuel };
-  });
+  const tooltipLabels = d.fuelTrend.map((_, index) => formatFullDate(shiftDate(baseDate, index)));
+  const hasDailyAmount = Array.isArray(d.amountTrend) && d.amountTrend.some((amount) => amount != null && Number(amount) > 0);
+  const dailyData = d.fuelTrend.map((fuel, index) => ({ amount: hasDailyAmount ? d.amountTrend[index] : null, fuel }));
   return (
     <div className="space-y-3">
       <SummaryCard data={d.summary} period="monthly" />
       <div className="rounded-2xl bg-white p-4 shadow-sm">
-        <div className="flex items-baseline gap-2 mb-3">
-          <span className="text-[15px] font-semibold">设备运行日历</span>
-          <span className="text-[11px] text-[#999]">{dev.amountLabel}</span>
-        </div>
+        <div className="text-[15px] font-semibold mb-3">设备运行日历</div>
         <MonthCalendar dailyData={dailyData} amountUnit={dev.amountUnit} highlight />
       </div>
       <div className="rounded-2xl bg-white p-4 shadow-sm">
@@ -634,6 +647,7 @@ const MonthlyView = ({ deviceName }) => {
             { key: 'mDuration', label: '时长', unit: ' h', data: d.workH, color: '#7c3aed', axis: 'right' },
           ]}
           labels={monthLabels}
+          tooltipLabels={tooltipLabels}
           yUnit="L/h"
           rightUnit="时长(h)"
         />
@@ -662,6 +676,12 @@ const MonthlyView = ({ deviceName }) => {
 const DataReport = ({ device, onBack }) => {
   const [tab, setTab] = useState('daily');
   const [dateOffset, setDateOffset] = useState(0);
+
+  const reportBaseDate = useMemo(() => {
+    if (tab === 'weekly') return new Date(2026, 6, 13 + (dateOffset * 7));
+    if (tab === 'monthly') return new Date(2026, 6 + dateOffset, 1);
+    return new Date(2026, 6, 24 + dateOffset);
+  }, [tab, dateOffset]);
 
   const dateLabel = useMemo(() => {
     const now = new Date(2026, 6, 24);
@@ -725,8 +745,8 @@ const DataReport = ({ device, onBack }) => {
 
         {/* content */}
         {tab === 'daily' && <DailyView deviceName={device?.name} />}
-        {tab === 'weekly' && <WeeklyView deviceName={device?.name} />}
-        {tab === 'monthly' && <MonthlyView deviceName={device?.name} />}
+        {tab === 'weekly' && <WeeklyView deviceName={device?.name} baseDate={reportBaseDate} />}
+        {tab === 'monthly' && <MonthlyView deviceName={device?.name} baseDate={reportBaseDate} />}
       </main>
     </div>
   );
