@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import ScannerPage from '../ScannerPage/ScannerPage';
 
-const SearchPage = ({ onClose }) => {
+const SearchPage = ({ onClose, onOpenAsset, initialScannerOpen = false }) => {
   const [searchText, setSearchText] = useState('');
   const [activeTab, setActiveTab] = useState('资产');
   const [isLoading, setIsLoading] = useState(false);
@@ -8,6 +9,13 @@ const SearchPage = ({ onClose }) => {
   const [showCameraModal, setShowCameraModal] = useState(false);
   const [cameraPermission, setCameraPermission] = useState('prompt'); // 'prompt', 'granted', 'denied'
   const [language, setLanguage] = useState('zh'); // 'zh', 'en', 'ja', 'ko'
+  const [showScanner, setShowScanner] = useState(initialScannerOpen);
+
+  const handleScannerClose = () => {
+    // 先关闭当前扫码子页，再通知父层退出搜索页，避免首页直接打开时关闭状态残留。
+    setShowScanner(false);
+    onClose?.();
+  };
 
   const tabs = ['资产', '品牌', '设备类型', '配件', '设备分组'];
   const inputRef = useRef(null);
@@ -93,24 +101,15 @@ const SearchPage = ({ onClose }) => {
 
   // ====== 打开扫码器 ======
   const openScanner = () => {
-    // 这里可以集成实际的扫码SDK，如zxing-js、html5-qrcode等
-    alert('扫码功能已启动（需要集成扫码SDK）');
     setShowCameraModal(false);
+    setShowScanner(true);
   };
 
   // ====== 处理权限请求 ======
   const handlePermissionRequest = async () => {
-    try {
-      // 尝试访问摄像头
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      // 获取到权限，关闭弹窗并打开扫码
-      stream.getTracks().forEach(track => track.stop()); // 停止摄像头
-      setCameraPermission('granted');
-      openScanner();
-    } catch (error) {
-      console.error('权限请求失败:', error);
-      setCameraPermission('denied');
-    }
+    // 原型中直接进入扫描器；生产环境由原生相机权限结果驱动。
+    setCameraPermission('granted');
+    openScanner();
   };
 
   // ====== 各 Tab 的默认数据（进入搜索页时展示） ======
@@ -277,7 +276,7 @@ const SearchPage = ({ onClose }) => {
   );
 
   // 空状态
-  const EmptyState = ({ type }) => (
+  const EmptyState = () => (
     <div className="flex flex-col items-center justify-center py-16">
       <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
         <circle cx="40" cy="40" r="38" stroke="#E5E7EB" strokeWidth="2" strokeDasharray="4 4"/>
@@ -427,6 +426,19 @@ const SearchPage = ({ onClose }) => {
     ? (searchResults[activeTab] || [])
     : (defaultData[activeTab] || []);
 
+  if (showScanner) {
+    return (
+      <ScannerPage
+        onClose={handleScannerClose}
+        onOpenAsset={onOpenAsset}
+        onUseSearch={(keyword) => {
+          setShowScanner(false);
+          setSearchText(keyword);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="absolute inset-0 bg-white z-50 flex flex-col">
       {/* 状态栏 */}
@@ -564,6 +576,24 @@ const SearchPage = ({ onClose }) => {
           <EmptyState />
         )}
       </div>
+
+      {showCameraModal && (
+        <div className="absolute inset-0 z-[80] bg-black/45 flex items-end" onClick={() => setShowCameraModal(false)}>
+          <div className="w-full bg-white rounded-t-3xl px-5 pt-5 pb-8" onClick={(e) => e.stopPropagation()}>
+            <div className="w-12 h-12 rounded-2xl bg-[#fff0f4] flex items-center justify-center text-[24px]">▣</div>
+            <h2 className="text-[18px] font-bold text-gray-800 mt-4">{texts.title}</h2>
+            <p className="text-[13px] text-gray-500 mt-2 leading-5">{texts.message}</p>
+            <div className="mt-4 p-3 rounded-xl bg-gray-50">
+              <div className="text-[12px] text-gray-500">{texts.featureList}</div>
+              <div className="mt-2 space-y-1.5">
+                {texts.features.map((feature) => <div key={feature} className="text-[12px] text-gray-700">✓ {feature}</div>)}
+              </div>
+            </div>
+            <button type="button" className="w-full h-12 rounded-full bg-[#252b33] text-white text-[14px] font-medium mt-5" onClick={handlePermissionRequest}>{cameraPermission === 'denied' ? texts.settings : texts.enableNow}</button>
+            <button type="button" className="w-full h-10 text-[13px] text-gray-500 mt-2" onClick={() => setShowCameraModal(false)}>{texts.cancel}</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-const QuickAccess = ({ onNavigate }) => {
+const QuickAccess = ({ onNavigate, primaryItems }) => {
   const [currentScreen, setCurrentScreen] = useState(0);
   const scrollRef = useRef(null);
 
@@ -11,13 +11,14 @@ const QuickAccess = ({ onNavigate }) => {
     orange: '#FF7316',
   };
 
-  const firstScreenItems = [
+  const defaultFirstScreenItems = [
     { id: 1, name: '我要配件', icon: '配件', color: '#FF6B6B' },
     { id: 2, name: '我要召请', icon: '召请', color: '#4ECDC4' },
     { id: 3, name: '设备保养', icon: '保养', color: '#45B7D1' },
     { id: 4, name: '产品中心', icon: '产品', color: '#96CEB4' },
     { id: 5, name: '机群报表', icon: '报表', color: '#FFEAA7', isHalfHidden: true },
   ];
+  const firstScreenItems = primaryItems?.length ? primaryItems : defaultFirstScreenItems;
 
   const secondScreenItems = [
     { id: 5, name: '机群报表', icon: '报表', color: '#FFEAA7' },

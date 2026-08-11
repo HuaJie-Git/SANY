@@ -23,12 +23,126 @@ import DataReport from '../DataReport/DataReport';
 import RecentDetail from '../RecentDetail/RecentDetail';
 import RecentCardDetail from '../RecentCardDetail/RecentCardDetail';
 import TaskList from '../TaskList/TaskList';
+import DivisionSwitcher from '../../components/DivisionSwitcher/DivisionSwitcher';
+
+const BUSINESS_SCOPES = [
+  {
+    id: 'sanvist',
+    isGlobal: true,
+    badge: 'SV',
+    shortName: 'SanVIST',
+    fullName: 'SanVIST 全部业务总览',
+    machineTypes: ['跨事业部首页'],
+    metrics: [
+      { value: '256', label: '在线设备' },
+      { value: '166', label: '今日开工' },
+      { value: '14', label: '待处理' },
+    ],
+    operation: {
+      title: '设备开机动态',
+      actionLabel: '开机曲线',
+      deviceName: 'SAC1300C8PHEVHUF',
+      deviceImage: 'images/机手社区/挖掘机/挖掘机_02.jpg',
+      primaryMetric: { value: '2.3h', label: '当日总工时' },
+      secondaryMetric: { value: '1.0h', label: '怠速工时' },
+      totalCount: 36,
+    },
+  },
+  {
+    id: 'heavy_machine',
+    badge: '重机',
+    shortName: '重型机械',
+    fullName: '重型机械事业部',
+    machineTypes: ['挖掘机', '装载机', '道路设备'],
+    metrics: [
+      { value: '128', label: '在线设备' },
+      { value: '86', label: '今日开工' },
+      { value: '4', label: '待处理' },
+    ],
+    quickItems: [
+      { id: 'hm-1', name: '我要配件', icon: '配件', color: '#FF6B6B' },
+      { id: 'hm-2', name: '我要召请', icon: '召请', color: '#4ECDC4' },
+      { id: 'hm-3', name: '设备保养', icon: '保养', color: '#45B7D1' },
+      { id: 'hm-4', name: '机群报表', icon: '报表', color: '#FFEAA7' },
+      { id: 'hm-5', name: '全部应用', icon: '全部', color: '#AED6F1', isHalfHidden: true },
+    ],
+    operation: {
+      title: '设备开机动态',
+      actionLabel: '开机曲线',
+      deviceName: 'SY365H · EXC-2026-018',
+      deviceImage: 'images/机手社区/挖掘机/挖掘机_02.jpg',
+      primaryMetric: { value: '7.6h', label: '当日总工时' },
+      secondaryMetric: { value: '1.0h', label: '怠速工时' },
+      totalCount: 36,
+    },
+  },
+  {
+    id: 'heavy_truck',
+    badge: '重卡',
+    shortName: '重型卡车',
+    fullName: '重型卡车与新能源商用车辆事业部',
+    machineTypes: ['牵引车', '自卸车', '新能源卡车'],
+    metrics: [
+      { value: '86', label: '在线设备' },
+      { value: '62', label: '今日开工' },
+      { value: '7', label: '待处理' },
+    ],
+    quickItems: [
+      { id: 'ht-1', name: '车队总览', icon: '产品', color: '#96CEB4' },
+      { id: 'ht-2', name: '行程轨迹', icon: '报表', color: '#FFEAA7' },
+      { id: 'ht-3', name: '能耗分析', icon: '报表', color: '#F7DC6F' },
+      { id: 'ht-4', name: '车辆维保', icon: '保养', color: '#45B7D1' },
+      { id: 'ht-5', name: '全部应用', icon: '全部', color: '#AED6F1', isHalfHidden: true },
+    ],
+    operation: {
+      title: '车辆运行动态',
+      actionLabel: '行程曲线',
+      deviceName: 'SANY 牵引车 · TRK-0086',
+      deviceImage: 'images/审核/搅拌车.jpg',
+      primaryMetric: { value: '326km', label: '当日里程' },
+      secondaryMetric: { value: '28.6L', label: '当日油耗' },
+      totalCount: 24,
+    },
+  },
+  {
+    id: 'crane',
+    badge: '重起',
+    shortName: '起重机械',
+    fullName: '起重机械与大型吊装装备事业部',
+    machineTypes: ['汽车起重机', '履带起重机', '塔式起重机'],
+    metrics: [
+      { value: '42', label: '在线设备' },
+      { value: '18', label: '今日开工' },
+      { value: '3', label: '待处理' },
+    ],
+    quickItems: [
+      { id: 'cr-1', name: '起重作业', icon: '产品', color: '#96CEB4' },
+      { id: 'cr-2', name: '吊装工况', icon: '报表', color: '#FFEAA7' },
+      { id: 'cr-3', name: '风速监测', icon: '服务', color: '#F7DC6F' },
+      { id: 'cr-4', name: '设备保养', icon: '保养', color: '#45B7D1' },
+      { id: 'cr-5', name: '全部应用', icon: '全部', color: '#AED6F1', isHalfHidden: true },
+    ],
+    operation: {
+      title: '吊装作业动态',
+      actionLabel: '作业曲线',
+      deviceName: 'SAC1300C8 · CRN-0042',
+      deviceImage: 'images/优惠活动/三一起重机/三一起重机_08.jpg',
+      primaryMetric: { value: '5.8h', label: '当日作业时长' },
+      secondaryMetric: { value: '8.2m/s', label: '当前风速' },
+      totalCount: 18,
+    },
+  },
+];
+
+const DIVISION_GUIDE_VERSION = '2026.08-division-switch-v1';
+const ACCESSIBLE_SCOPE_SIGNATURE = BUSINESS_SCOPES.map((scope) => scope.id).join('|');
 
 const Home = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [showPublishPage, setShowPublishPage] = useState(false);
   const [showDeviceStartupList, setShowDeviceStartupList] = useState(false);
   const [showSearchPage, setShowSearchPage] = useState(false);
+  const [openSearchWithScanner, setOpenSearchWithScanner] = useState(false);
   const [currentPage, setCurrentPage] = useState(null); // 当前显示的功能页面
   const [selectedDevice, setSelectedDevice] = useState(null); // 选中的设备详情
   const [selectedWorkCondition, setSelectedWorkCondition] = useState(null); // 资产工况详情
@@ -42,10 +156,26 @@ const Home = () => {
   const [selectedTask, setSelectedTask] = useState(null); // 选中的任务
   const [isCommunityPublishEligible, setIsCommunityPublishEligible] = useState(false); // 页面资格
   const [isCommunityPublishViewportActive, setIsCommunityPublishViewportActive] = useState(false); // 滚动视口激活
+  // 每次进入首页先回到 SanVIST 总览；事业部切换仅在当前使用会话内生效。
+  const [currentDivisionId, setCurrentDivisionId] = useState('sanvist');
+  const [showDivisionSwitcher, setShowDivisionSwitcher] = useState(false);
+  const [isSwitchingDivision, setIsSwitchingDivision] = useState(false);
+  const [divisionToast, setDivisionToast] = useState('');
+  const [showDivisionCoachmark, setShowDivisionCoachmark] = useState(() => (
+    window.localStorage.getItem('sanvist_division_guide_version') !== DIVISION_GUIDE_VERSION
+    || window.localStorage.getItem('sanvist_accessible_scope_signature') !== ACCESSIBLE_SCOPE_SIGNATURE
+  ));
   const contentRef = useRef(null); // 内容区域ref
   const contentFeedRef = useRef(null); // ContentFeed ref
+  const currentDivision = BUSINESS_SCOPES.find((division) => division.id === currentDivisionId) || BUSINESS_SCOPES[0];
+
+  const rememberDivisionGuide = () => {
+    window.localStorage.setItem('sanvist_division_guide_version', DIVISION_GUIDE_VERSION);
+    window.localStorage.setItem('sanvist_accessible_scope_signature', ACCESSIBLE_SCOPE_SIGNATURE);
+  };
 
   const handleSearchClick = () => {
+    setOpenSearchWithScanner(false);
     setShowSearchPage(true);
   };
 
@@ -58,7 +188,30 @@ const Home = () => {
   };
 
   const handleScanClick = () => {
-    console.log('扫码点击');
+    setOpenSearchWithScanner(true);
+    setShowSearchPage(true);
+  };
+
+  const handleOpenDivisionSwitcher = () => {
+    rememberDivisionGuide();
+    setShowDivisionCoachmark(false);
+    setShowDivisionSwitcher(true);
+  };
+
+  const handleDivisionSelect = (division) => {
+    if (division.id === currentDivisionId) {
+      setShowDivisionSwitcher(false);
+      return;
+    }
+    setIsSwitchingDivision(true);
+    window.setTimeout(() => {
+      setCurrentDivisionId(division.id);
+      setShowDivisionSwitcher(false);
+      setIsSwitchingDivision(false);
+      setDivisionToast(`已切换至${division.shortName}`);
+      contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+      window.setTimeout(() => setDivisionToast(''), 1800);
+    }, 520);
   };
 
   // 监听滚动事件
@@ -210,7 +363,18 @@ const Home = () => {
         topNav={null}
         bottomNav={null}
       >
-        <SearchPage onClose={() => setShowSearchPage(false)} />
+        <SearchPage
+          initialScannerOpen={openSearchWithScanner}
+          onOpenAsset={() => {
+            setShowSearchPage(false);
+            setOpenSearchWithScanner(false);
+            setActiveTab('asset');
+          }}
+          onClose={() => {
+            setShowSearchPage(false);
+            setOpenSearchWithScanner(false);
+          }}
+        />
       </PhoneFrame>
     );
   }
@@ -427,6 +591,14 @@ const Home = () => {
           onNotificationClick={handleNotificationClick}
           onMoreClick={handleMoreClick}
           onScanClick={handleScanClick}
+          currentDivision={currentDivision}
+          hasMultipleDivisions={BUSINESS_SCOPES.length > 1}
+          onDivisionClick={handleOpenDivisionSwitcher}
+          showDivisionCoachmark={showDivisionCoachmark}
+          onDismissDivisionCoachmark={() => {
+            rememberDivisionGuide();
+            setShowDivisionCoachmark(false);
+          }}
         />
       }
       bottomNav={
@@ -447,10 +619,11 @@ const Home = () => {
         ) : null
       }
     >
-      {/* 中间内容区域 - 可滚动 */}
-      <div ref={contentRef} data-scroll-container className="bg-bg-gray h-full overflow-y-auto">
-        {/* 快捷功能入口 */}
-        <QuickAccess onNavigate={setCurrentPage} />
+      <>
+        {/* 中间内容区域 - 可滚动 */}
+        <div ref={contentRef} data-scroll-container className="bg-bg-gray h-full overflow-y-auto">
+          {/* 快捷功能入口 */}
+          <QuickAccess key={currentDivision.id} onNavigate={setCurrentPage} primaryItems={currentDivision.quickItems} />
 
         {/* 最近查看 */}
         <RecentView onNavigate={(type, item) => {
@@ -472,20 +645,31 @@ const Home = () => {
         />
 
         {/* 设备开机动态 */}
-        <DeviceStartup onShowList={() => setShowDeviceStartupList(true)} />
+          <DeviceStartup onShowList={() => setShowDeviceStartupList(true)} {...currentDivision.operation} />
 
         {/* 审核事件 */}
         <AuditEvents onCategoryClick={handleAuditCategoryClick} />
 
         {/* 内容信息流 */}
-        <ContentFeed
-          ref={contentFeedRef}
-          showPublishPage={showPublishPage}
-          setShowPublishPage={setShowPublishPage}
-          setIsCommunityPublishEligible={setIsCommunityPublishEligible}
-          setIsCommunityPublishViewportActive={setIsCommunityPublishViewportActive}
-        />
-      </div>
+          <ContentFeed
+            ref={contentFeedRef}
+            showPublishPage={showPublishPage}
+            setShowPublishPage={setShowPublishPage}
+            setIsCommunityPublishEligible={setIsCommunityPublishEligible}
+            setIsCommunityPublishViewportActive={setIsCommunityPublishViewportActive}
+          />
+        </div>
+        {showDivisionSwitcher && (
+          <DivisionSwitcher
+            divisions={BUSINESS_SCOPES}
+            currentDivision={currentDivision}
+            onSelect={handleDivisionSelect}
+            onClose={() => !isSwitchingDivision && setShowDivisionSwitcher(false)}
+            isSwitching={isSwitchingDivision}
+          />
+        )}
+        {divisionToast && <div className="absolute bottom-24 left-1/2 z-[100] -translate-x-1/2 rounded-full bg-black/75 px-4 py-2 text-[12px] text-white">{divisionToast}</div>}
+      </>
     </PhoneFrame>
   );
 };

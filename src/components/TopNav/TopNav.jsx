@@ -1,19 +1,50 @@
 import React from 'react';
 
-const TopNav = ({ onSearchClick, onNotificationClick, onMoreClick, onScanClick }) => {
+const TopNav = ({
+  onSearchClick,
+  onNotificationClick,
+  onMoreClick,
+  onScanClick,
+  currentDivision,
+  onDivisionClick,
+  hasMultipleDivisions = false,
+  showDivisionCoachmark = false,
+  onDismissDivisionCoachmark,
+}) => {
   return (
     <div className="w-full">
       {/* 导航栏 - 不再需要渐变背景，由PhoneFrame统一提供 */}
       <div className="h-[60px] flex items-center justify-between px-4 pt-1">
-        {/* Logo */}
-        <div className="flex items-center">
-          <span className="text-white text-[20px] font-bold italic">San</span>
-          <span className="text-white text-[20px] font-medium">VIST</span>
+        {/* SanVIST 品牌始终保留，切换业务域后仅在下方显示本地化短名 */}
+        <div className="relative">
+          <button
+            type="button"
+            className={`flex min-w-[92px] items-center gap-1 rounded-xl px-2 py-1 text-left ${hasMultipleDivisions ? 'bg-white/12' : ''}`}
+            onClick={hasMultipleDivisions ? onDivisionClick : undefined}
+            aria-label={hasMultipleDivisions ? `当前首页：${currentDivision?.shortName}，点击切换` : `当前首页：${currentDivision?.shortName}`}
+          >
+            <span className="min-w-0">
+              <span className="block whitespace-nowrap leading-4"><b className="text-[16px] italic text-white">San</b><span className="text-[16px] font-medium text-white">VIST</span></span>
+              {!currentDivision?.isGlobal && <span className="block max-w-[76px] truncate text-[10px] leading-3 text-white/80">{currentDivision?.badge}</span>}
+            </span>
+            {hasMultipleDivisions && (
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="flex-shrink-0" aria-hidden="true">
+                <path d="m3 4.5 3 3 3-3" stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
+          </button>
+          {showDivisionCoachmark && hasMultipleDivisions && (
+            <button type="button" className="absolute left-0 top-[52px] z-[70] w-[126px] rounded-xl bg-white px-3 py-2 text-left text-[11px] leading-4 text-[#252b33] shadow-xl" onClick={() => { onDismissDivisionCoachmark?.(); onDivisionClick?.(); }}>
+              <span className="absolute -top-1.5 left-5 h-3 w-3 rotate-45 bg-white" />
+              <b className="relative block">这里可以切换事业部</b>
+              <span className="relative mt-0.5 block text-[10px] text-gray-500">首页功能会随之变化</span>
+            </button>
+          )}
         </div>
 
         {/* 搜索框 */}
         <div
-          className="flex-1 mx-4 h-[32px] bg-white/20 rounded-full flex items-center px-3 cursor-pointer"
+          className="mx-2.5 flex h-[32px] min-w-0 flex-1 cursor-pointer items-center rounded-full bg-white/20 px-3"
           onClick={onSearchClick}
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-2">
@@ -22,7 +53,7 @@ const TopNav = ({ onSearchClick, onNotificationClick, onMoreClick, onScanClick }
           </svg>
           <span className="text-white/70 text-[12px] flex-1">搜索</span>
           {/* 扫码图标在搜索框内 */}
-          <div className="cursor-pointer" onClick={onScanClick}>
+          <div className="cursor-pointer" onClick={(event) => { event.stopPropagation(); onScanClick?.(); }}>
             <svg width="18" height="18" viewBox="0 0 1024 1024" fill="white">
               <path d="M928.016126 543.908618 95.983874 543.908618c-17.717453 0-31.994625-14.277171-31.994625-31.994625S78.26642 479.919368 95.983874 479.919368l832.032253 0c17.717453 0 31.994625 14.277171 31.994625 31.994625S945.73358 543.908618 928.016126 543.908618z"/>
               <path d="M832.032253 928.016126 639.892491 928.016126c-17.717453 0-31.994625-14.277171-31.994625-31.994625s14.277171-31.994625 31.994625-31.994625l191.967747 0c17.717453 0 31.994625-14.277171 31.994625-31.994625l0-159.973123c0-17.717453 14.277171-31.994625 31.994625-31.994625s31.994625 14.277171 31.994625 31.994625l0 159.973123C928.016126 884.840585 884.840585 928.016126 832.032253 928.016126z"/>

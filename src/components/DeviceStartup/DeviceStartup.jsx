@@ -1,6 +1,15 @@
 import React from 'react';
 
-const DeviceStartup = ({ onShowList }) => {
+const DeviceStartup = ({
+  onShowList,
+  title = '设备开机动态',
+  actionLabel = '开机曲线',
+  deviceName = 'SAC1300C8PHEVHUF',
+  deviceImage = 'images/机手社区/挖掘机/挖掘机_02.jpg',
+  primaryMetric = { value: '2.3h', label: '当日总工时' },
+  secondaryMetric = { value: '1.0h', label: '怠速工时' },
+  totalCount = 36,
+}) => {
   // 模拟工时柱状图数据（0-24小时）
   const hourlyData = [2, 3, 4, 5, 6, 7, 8, 9, 7, 5, 4, 6, 8, 9, 8, 7, 6, 8, 9, 8, 6, 4, 2, 1];
   // 选中/高亮的时段索引（例如第13小时）
@@ -13,8 +22,8 @@ const DeviceStartup = ({ onShowList }) => {
     <div className="px-4 py-3">
       {/* 标题栏 */}
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[16px] font-medium text-text-primary">设备开机动态</h3>
-        <span className="text-[12px] text-text辅助 cursor-pointer" onClick={onShowList}>开机曲线 &gt;</span>
+        <h3 className="text-[16px] font-medium text-text-primary">{title}</h3>
+        <span className="text-[12px] text-text辅助 cursor-pointer" onClick={onShowList}>{actionLabel} &gt;</span>
       </div>
 
       {/* 设备信息卡片 */}
@@ -65,12 +74,12 @@ const DeviceStartup = ({ onShowList }) => {
           <div className="flex items-center gap-2">
             <div className="w-[40px] h-[30px] rounded overflow-hidden">
               <img
-                src="images/机手社区/挖掘机/挖掘机_02.jpg"
+                src={deviceImage}
                 alt="设备图片"
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="text-[14px] font-medium text-text-primary">SAC1300C8PHEVHUF</div>
+            <div className="max-w-[230px] truncate text-[14px] font-medium text-text-primary">{deviceName}</div>
           </div>
           <div className="text-text辅助">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -82,12 +91,12 @@ const DeviceStartup = ({ onShowList }) => {
         {/* 工时数据 */}
         <div className="flex justify-between mb-3">
           <div>
-            <div className="text-[24px] font-bold text-text-primary">2.3h</div>
-            <div className="text-[12px] text-text辅助">当日总工时</div>
+            <div className="text-[24px] font-bold text-text-primary">{primaryMetric.value}</div>
+            <div className="text-[12px] text-text辅助">{primaryMetric.label}</div>
           </div>
           <div className="text-right">
-            <div className="text-[24px] font-bold text-text-primary">1.0h</div>
-            <div className="text-[12px] text-text辅助">总速工时</div>
+            <div className="text-[24px] font-bold text-text-primary">{secondaryMetric.value}</div>
+            <div className="text-[12px] text-text辅助">{secondaryMetric.label}</div>
           </div>
         </div>
 
@@ -153,7 +162,7 @@ const DeviceStartup = ({ onShowList }) => {
             onClick={onShowList}
           >
             <span>更多</span>
-            <span className="text-[14px]">（36台）</span>
+            <span className="text-[14px]">（{totalCount}台）</span>
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M3 4.5L6 7.5L9 4.5" stroke="#999" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
