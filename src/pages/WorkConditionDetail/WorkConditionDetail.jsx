@@ -149,7 +149,7 @@ const Metric = ({ item }) => {
   );
 };
 
-const WorkConditionDetail = ({ device, onBack, onNavigate }) => {
+const WorkConditionDetail = ({ device, onBack, onNavigate, backLabel = '返回资产列表' }) => {
   const [hint, setHint] = useState('');
   const timerRef = useRef(null);
   const data = MACHINE_DATA[device?.name] || MACHINE_DATA['三一平地机'];
@@ -166,7 +166,7 @@ const WorkConditionDetail = ({ device, onBack, onNavigate }) => {
     <div className="relative min-h-full bg-[#f1f3f7] text-[#252b33]">
       <header className="sticky top-0 z-20 bg-[#f1f3f7]/95 backdrop-blur-sm">
         <div className="h-[52px] px-3 flex items-center">
-          <button type="button" onClick={onBack} aria-label="返回资产列表" className="h-9 w-9 flex items-center justify-center rounded-full active:bg-black/5">
+          <button type="button" onClick={onBack} aria-label={backLabel} className="h-9 w-9 flex items-center justify-center rounded-full active:bg-black/5">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#252b33" strokeWidth="2" strokeLinecap="round"><path d="m15 18-6-6 6-6"/></svg>
           </button>
           <div className="flex-1 truncate px-2 text-[15px] font-medium">{device?.code}</div>

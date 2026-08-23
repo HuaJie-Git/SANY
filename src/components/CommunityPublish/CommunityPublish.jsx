@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-const TITLE_MAX_LENGTH = 20;
+const TITLE_MAX_LENGTH = 50;
 const VIDEO_LIMIT_SECONDS = 3 * 60;
 const CONTENT_MAX_LENGTH = 500;
 const MAX_IMAGES = 5;

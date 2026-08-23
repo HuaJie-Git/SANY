@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { getAllTasks } from '../../components/MyTasks/MyTasksSummary';
+import { getAllTasks } from '../../data/tasks';
 
 const TaskList = ({ onBack, onTaskClick }) => {
   const [activeTab, setActiveTab] = useState('my'); // my: 我的任务, all: 全部任务
   const [tasks, setTasks] = useState([]);
-  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilter, setShowFilter] = useState(false);
@@ -18,7 +17,7 @@ const TaskList = ({ onBack, onTaskClick }) => {
   // 模拟加载任务数据
   useEffect(() => {
     setLoading(true);
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       let filteredTasks = [...getAllTasks()];
 
       // 根据视图筛选
@@ -68,9 +67,9 @@ const TaskList = ({ onBack, onTaskClick }) => {
       });
 
       setTasks(filteredTasks);
-      setTotal(filteredTasks.length);
       setLoading(false);
     }, 500);
+    return () => clearTimeout(timer);
   }, [activeTab, selectedStatus, selectedPriority, selectedTaskType, searchQuery, sortBy, timeFilter]);
 
   // 获取优先级样式

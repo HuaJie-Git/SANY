@@ -1,6 +1,6 @@
 import React from 'react';
 
-const PhoneFrame = ({ topNav, bottomNav, children, hideGradient = false, floatingButton, statusBarTheme = 'light' }) => {
+const PhoneFrame = ({ topNav, bottomNav, children, hideGradient = false, floatingButton, statusBarTheme = 'light', hideStatusBar = false }) => {
   const statusColor = statusBarTheme === 'dark' ? '#222831' : '#FFFFFF';
 
   return (
@@ -14,7 +14,7 @@ const PhoneFrame = ({ topNav, bottomNav, children, hideGradient = false, floatin
             {/* 顶部区域 - 整体渐变：底部红色往上渐变成黑色 */}
             <div className="flex-shrink-0" style={hideGradient ? {} : { background: 'linear-gradient(180deg, #000000 0%, #BC000F 100%)' }}>
               {/* 状态栏 */}
-              <div className="w-full h-7 flex items-center justify-between px-6" style={{ color: statusColor }}>
+              {!hideStatusBar && <div className="w-full h-7 flex items-center justify-between px-6" style={{ color: statusColor }}>
                 {/* 时间 */}
                 <div className="text-xs font-semibold" style={{ textShadow: '0 0 2px rgba(255,255,255,0.8)' }}>9:41</div>
 
@@ -45,7 +45,7 @@ const PhoneFrame = ({ topNav, bottomNav, children, hideGradient = false, floatin
                     <path d="M17.5 3v4a1.2 1.2 0 000-4z"/>
                   </svg>
                 </div>
-              </div>
+              </div>}
 
               {/* 顶部导航栏 - 继承同一个渐变背景 */}
               {topNav}

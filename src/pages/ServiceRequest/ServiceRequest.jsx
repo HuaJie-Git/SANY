@@ -4,10 +4,10 @@ import PhoneBindModal from '../../components/PhoneBindModal/PhoneBindModal';
 const ServiceRequest = ({ onBack }) => {
   const [showPhoneBindModal, setShowPhoneBindModal] = useState(false);
   const [serviceType, setServiceType] = useState('');
-  const [country, setCountry] = useState('中国');
+  const [country] = useState('中国');
   const [contactName, setContactName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [countryCode, setCountryCode] = useState('+86');
+  const [countryCode] = useState('+86');
 
   // 服务类型选项
   const serviceTypes = [

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import PhoneBindModal from '../../components/PhoneBindModal/PhoneBindModal';
 
-const PartsOrder = ({ onBack }) => {
+const PartsOrder = ({ onBack, initialQuery = '', initialItem = null }) => {
   const [showPhoneBindModal, setShowPhoneBindModal] = useState(false);
   const [activeTab, setActiveTab] = useState('materials');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
 
   // 配件数据
-  const parts = [
+  const baseParts = [
     {
       id: 1,
       code: 'YLJ008157110',
@@ -57,6 +57,17 @@ const PartsOrder = ({ onBack }) => {
       image: 'images/配件/中冷器出气管.jpg'
     }
   ];
+  const searchedPart = initialItem ? {
+    id: `searched-${initialItem.id}`,
+    code: initialItem.code,
+    name: initialItem.name,
+    image: initialItem.image,
+  } : null;
+  const keyword = searchQuery.trim().toLowerCase();
+  const parts = [searchedPart, ...baseParts]
+    .filter(Boolean)
+    .filter((part, index, list) => list.findIndex((item) => item.code === part.code) === index)
+    .filter((part) => !keyword || `${part.code}${part.name}`.toLowerCase().includes(keyword));
 
   // 模拟检查用户手机号
   useEffect(() => {

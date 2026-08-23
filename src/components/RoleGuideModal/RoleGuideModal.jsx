@@ -10,6 +10,7 @@ const DEFAULT_ROLES = [
   { id: 'mechanic', name: '设备维修员', color: '#4CAF50', iconType: 'wrench' },
   { id: 'employee', name: '三一员工', color: '#1565C0', iconType: 'logo' },
 ];
+const ROLES = DEFAULT_ROLES;
 
 // 角色SVG图标组件
 const RoleIcon = ({ type, color, size = 64 }) => {
@@ -86,9 +87,6 @@ const RoleGuideModal = ({ visible, onClose, onConfirm }) => {
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
   const autoPlayRef = useRef(null);
-
-  // 使用固定顺序的角色列表
-  const ROLES = DEFAULT_ROLES;
 
   // 弹窗打开时，重置到第一个位置
   useEffect(() => {

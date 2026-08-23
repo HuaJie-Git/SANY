@@ -676,6 +676,8 @@ const MonthlyView = ({ deviceName, baseDate }) => {
 const DataReport = ({ device, onBack }) => {
   const [tab, setTab] = useState('daily');
   const [dateOffset, setDateOffset] = useState(0);
+  const dataDeviceName = DEVICE_DATA[device?.name] ? device.name : '三一平地机';
+  const reportScope = device?.reportScope || (!DEVICE_DATA[device?.name] ? device?.name : '');
 
   const reportBaseDate = useMemo(() => {
     if (tab === 'weekly') return new Date(2026, 6, 13 + (dateOffset * 7));
@@ -722,6 +724,16 @@ const DataReport = ({ device, onBack }) => {
       </header>
 
       <main className="px-3 pb-8 space-y-3">
+        {reportScope && (
+          <div className="flex items-center justify-between rounded-xl bg-white px-3 py-2.5 shadow-sm">
+            <div>
+              <div className="text-[10px] text-gray-400">统计范围</div>
+              <div className="mt-0.5 text-[13px] font-medium text-[#252b33]">{reportScope}</div>
+            </div>
+            <span className="rounded-full bg-[#fff0f1] px-2 py-1 text-[10px] text-[#c71f2d]">机群视图</span>
+          </div>
+        )}
+
         {/* tabs */}
         <div className="flex justify-center gap-2 pt-1">
           {tabs.map((t) => (
@@ -744,9 +756,9 @@ const DataReport = ({ device, onBack }) => {
         </div>
 
         {/* content */}
-        {tab === 'daily' && <DailyView deviceName={device?.name} />}
-        {tab === 'weekly' && <WeeklyView deviceName={device?.name} baseDate={reportBaseDate} />}
-        {tab === 'monthly' && <MonthlyView deviceName={device?.name} baseDate={reportBaseDate} />}
+        {tab === 'daily' && <DailyView deviceName={dataDeviceName} />}
+        {tab === 'weekly' && <WeeklyView deviceName={dataDeviceName} baseDate={reportBaseDate} />}
+        {tab === 'monthly' && <MonthlyView deviceName={dataDeviceName} baseDate={reportBaseDate} />}
       </main>
     </div>
   );

@@ -31,7 +31,7 @@ const demoResults = {
   },
 };
 
-const ScannerPage = ({ onClose, onUseSearch, onOpenAsset }) => {
+const ScannerPage = ({ onClose, onUseSearch, onOpenAsset, showStatusBar = true }) => {
   const [stage, setStage] = useState('scanning');
   const [result, setResult] = useState(null);
   const [torchOn, setTorchOn] = useState(false);
@@ -62,10 +62,10 @@ const ScannerPage = ({ onClose, onUseSearch, onOpenAsset }) => {
   if (stage === 'result' && result) {
     return (
       <div className="absolute inset-0 z-[70] flex flex-col bg-[#f4f5f7] text-[#252b33]">
-        <div className="h-[44px] flex items-center justify-between px-4 bg-white">
+        {showStatusBar && <div className="h-[44px] flex items-center justify-between px-4 bg-white">
           <span className="text-[14px] font-medium">9:41</span>
           <span className="text-[12px] text-gray-400">SanVIST 安全识别</span>
-        </div>
+        </div>}
         <div className="h-[52px] px-4 flex items-center bg-white border-b border-gray-100">
           <button type="button" aria-label="返回扫描" className="w-9 h-9 -ml-2 flex items-center justify-center" onClick={() => setStage('scanning')}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="#252b33" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -144,7 +144,7 @@ const ScannerPage = ({ onClose, onUseSearch, onOpenAsset }) => {
   if (stage === 'error') {
     return (
       <div className="absolute inset-0 z-[70] bg-white flex flex-col text-[#252b33]">
-        <div className="h-[44px] px-4 flex items-center justify-between"><span className="text-[14px] font-medium">9:41</span></div>
+        {showStatusBar && <div className="h-[44px] px-4 flex items-center justify-between"><span className="text-[14px] font-medium">9:41</span></div>}
         <div className="h-[52px] px-4 flex items-center border-b border-gray-100">
           <button type="button" className="w-9 h-9 -ml-2" onClick={() => setStage('scanning')}>←</button><strong>识别结果</strong>
         </div>
@@ -162,9 +162,9 @@ const ScannerPage = ({ onClose, onUseSearch, onOpenAsset }) => {
   return (
     <div className="absolute inset-0 z-[70] bg-[#12161d] text-white flex flex-col overflow-hidden">
       <div className="pointer-events-none absolute inset-0 opacity-30" style={{ background: 'radial-gradient(circle at 50% 40%, #5f6e83 0%, #1b232e 38%, #0b0e13 75%)' }} />
-      <div className="relative z-20 h-[44px] flex items-center justify-between px-4">
+      {showStatusBar && <div className="relative z-20 h-[44px] flex items-center justify-between px-4">
         <span className="text-[14px] font-medium">9:41</span><span className="text-[11px] text-white/60">安全扫码</span>
-      </div>
+      </div>}
       <div className="relative z-30 h-[52px] px-4 flex items-center justify-between">
         <button
           type="button"

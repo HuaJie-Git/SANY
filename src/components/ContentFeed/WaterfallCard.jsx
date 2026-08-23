@@ -18,8 +18,9 @@ const WaterfallCard = forwardRef(({
 }, ref) => {
   const author = getUserById(post.authorId);
 
-  // 审核状态：仅 pending 在"我的"视角显示橙黄胶囊
+  // 审核状态：仅在"我的"视角显示审核状态胶囊
   const showPendingBadge = isMyView && post.auditStatus === 'pending';
+  const showRejectedBadge = isMyView && post.auditStatus === 'rejected';
 
   return (
     <div
@@ -58,6 +59,11 @@ const WaterfallCard = forwardRef(({
         {showPendingBadge && (
           <div className="absolute top-1.5 right-1.5 bg-amber-500/80 backdrop-blur-sm text-white text-[10px] px-1.5 py-0.5 rounded-full">
             审核中
+          </div>
+        )}
+        {showRejectedBadge && (
+          <div className="absolute top-1.5 right-1.5 max-w-[calc(100%-12px)] truncate rounded-full bg-red-600/90 px-1.5 py-0.5 text-[10px] text-white backdrop-blur-sm">
+            审核未通过
           </div>
         )}
         {/* 浏览量徽标 - pending 帖子始终显示 0 */}

@@ -4,6 +4,10 @@ import {
   getTopicByName,
   getContentsByTopicName,
   getMyVisiblePosts,
+  posts,
+  getCommunityInteractions,
+  markCommunityInteractionRead,
+  markAllCommunityInteractionsRead,
 } from './communityData';
 import MyPublishPage from './MyPublishPage';
 import FollowTab from './FollowTab';
@@ -12,6 +16,8 @@ import WaterfallCard from './WaterfallCard';
 const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewportActive }) => {
   const [activeTab, setActiveTab] = useState('我的');
   const [drillDown, setDrillDown] = useState(null);
+  const [showInteractions, setShowInteractions] = useState(false);
+  const [communityInteractions, setCommunityInteractions] = useState(() => getCommunityInteractions());
   const tabContainerRef = useRef(null);
   const sentinelRef = useRef(null);
   // 跟踪 sentinel 是否曾经离开过视口（区分"初始可见"和"滚动后回到顶部"）
@@ -20,7 +26,43 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
   const mountedRef = useRef(false);
 
   // 二级Tab
-  const tabs = ['我的', '关注', '全部话题', '占位话题1', '占位话题2'];
+  const tabs = ['占位话题1', '占位话题2', '全部话题', '关注', '我的'];
+
+  const unreadInteractions = communityInteractions.filter((item) => item.unread);
+
+  const interactionMeta = {
+    post_comment: { label: '评论', badge: '帖子' },
+    comment_reply: { label: '回复', badge: '评论' },
+    comment_like: { label: '', badge: '评论' },
+    post_audit_pass: { label: '', badge: '已通过' },
+    post_audit_reject: { label: '', badge: '审核未通过' },
+  };
+
+  const getInteractionTimestamp = (item) => {
+    if (typeof item.createdAt === 'number' && Number.isFinite(item.createdAt)) return item.createdAt;
+    const parsed = Date.parse(item.createdAt);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const sortedInteractions = [...communityInteractions].sort((a, b) => {
+    if (a.unread !== b.unread) return a.unread ? -1 : 1;
+    const timeDiff = getInteractionTimestamp(b) - getInteractionTimestamp(a);
+    if (timeDiff !== 0) return timeDiff;
+    return String(b.id).localeCompare(String(a.id));
+  });
+
+  const handleInteractionClick = (item) => {
+    const post = posts.find((candidate) => candidate.id === item.postId);
+    if (!post) return;
+    markCommunityInteractionRead(item.id);
+    setCommunityInteractions(getCommunityInteractions());
+    onPostClick?.(post, { commentId: item.commentId, interactionType: item.interactionType });
+  };
+
+  const handleMarkAllRead = () => {
+    markAllCommunityInteractionsRead();
+    setCommunityInteractions(getCommunityInteractions());
+  };
 
   // Tab点击
   const handleTabClick = (tab) => {
@@ -109,18 +151,113 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
   const renderMyTabHome = () => {
     const visiblePosts = getMyVisiblePosts();
     return (
-      <div className="columns-2 gap-2">
-        {visiblePosts.map((post) => (
-          <WaterfallCard
-            key={post.id}
-            post={post}
-            onClick={() => onPostClick?.(post)}
-            isMyView={true}
-          />
-        ))}
+      <div>
+        {unreadInteractions.length > 0 && (
+          <button
+            type="button"
+            className="mb-3 flex w-full items-center gap-3 rounded-xl border border-red-100 bg-red-50 px-3.5 py-3 text-left shadow-sm active:bg-red-100"
+            onClick={() => setShowInteractions(true)}
+          >
+            <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white text-brand-red shadow-sm">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.5 8.5 0 0 1-4-.9L4 19l.9-3.2A7.4 7.4 0 0 1 4.5 12 7.5 7.5 0 0 1 12 4.5c1.6 0 3.1.5 4.3 1.3" />
+                <path d="m17 3 1.2 2.2L20.5 6l-2.3.8L17 9l-1.2-2.2-2.3-.8 2.3-.8L17 3Z" />
+              </svg>
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[13px] font-medium text-gray-900">社区互动</span>
+              <span className="mt-0.5 block text-[12px] text-gray-500">{unreadInteractions.length} 条社区互动未读，点击查看</span>
+            </span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b45352" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m9 18 6-6-6-6" />
+            </svg>
+          </button>
+        )}
+        <div className="columns-2 gap-2">
+          {visiblePosts.map((post) => (
+            <WaterfallCard
+              key={post.id}
+              post={post}
+              onClick={() => onPostClick?.(post)}
+              isMyView={true}
+            />
+          ))}
+        </div>
       </div>
     );
   };
+
+  const renderInteractions = () => (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
+        <button type="button" className="flex h-8 w-8 items-center justify-center rounded-full active:bg-gray-100" aria-label="返回我的" onClick={() => setShowInteractions(false)}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+        </button>
+        <h3 className="text-[16px] font-semibold text-gray-900">社区互动</h3>
+        {unreadInteractions.length > 0 && <button type="button" className="ml-auto text-[12px] text-brand-red" onClick={handleMarkAllRead}>全部已读</button>}
+      </div>
+      {sortedInteractions.map((item) => {
+        const post = posts.find((candidate) => candidate.id === item.postId);
+        const isAudit = item.interactionType === 'post_audit_pass' || item.interactionType === 'post_audit_reject';
+        const meta = interactionMeta[item.interactionType] || { label: '新的社区互动', badge: '社区' };
+        const summaryText = meta.label ? `${meta.label}：${item.summary}` : item.summary;
+        const card = <span className={`mt-1 h-2 w-2 flex-shrink-0 rounded-full ${item.unread ? 'bg-brand-red' : 'bg-transparent'}`} />;
+        const auditContent = isAudit ? (
+          <>
+            {card}
+            <span className="min-w-0 flex-1">
+              <span className="flex min-w-0 items-center justify-between gap-2 text-[13px] text-gray-900">
+                <strong className="min-w-0 truncate">{item.actorName}</strong>
+                <span className={`flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] ${item.interactionType === 'post_audit_reject' ? 'bg-red-50 text-brand-red' : 'bg-green-50 text-green-600'}`}>{meta.badge}</span>
+              </span>
+              <span className="mt-1 block truncate text-[12px] text-gray-600">{summaryText}</span>
+              {item.interactionType === 'post_audit_reject' && item.auditReason && (
+                <span className="mt-1 block text-[11px] leading-[1.5] text-gray-400">未通过原因：{item.auditReason}</span>
+              )}
+              <span className="mt-1 flex min-w-0 items-center justify-between gap-2 text-[11px] text-gray-400">
+                <span className="min-w-0 truncate">来自：{post?.title || '社区帖子'}</span>
+                <time className="flex-shrink-0 whitespace-nowrap" dateTime={item.createdAt ? String(item.createdAt) : undefined}>{item.time}</time>
+              </span>
+            </span>
+          </>
+        ) : null;
+
+        if (isAudit) {
+          if (item.interactionType === 'post_audit_reject') {
+            return (
+              <button type="button" key={item.id} className="flex w-full items-start gap-3 rounded-xl bg-white px-3 py-3 text-left shadow-sm active:bg-gray-50" onClick={() => handleInteractionClick(item)}>
+                {auditContent}
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#c0c4cc" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+              </button>
+            );
+          }
+          return (
+            <div key={item.id} className="flex w-full items-start gap-3 rounded-xl bg-white px-3 py-3 text-left shadow-sm">
+              {auditContent}
+            </div>
+          );
+        }
+
+        return (
+          <button type="button" key={item.id} className="flex w-full items-start gap-3 rounded-xl bg-white px-3 py-3 text-left shadow-sm active:bg-gray-50" onClick={() => handleInteractionClick(item)}>
+            {card}
+            <span className="min-w-0 flex-1">
+              <span className="flex min-w-0 items-center justify-between gap-2 text-[13px] text-gray-900">
+                <strong className="min-w-0 truncate">{item.actorName}</strong>
+                <span className="flex-shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500">{meta.badge}</span>
+              </span>
+              <span className="mt-1 block truncate text-[12px] text-gray-500">{summaryText}</span>
+              <span className="mt-1 flex min-w-0 items-center justify-between gap-2 text-[11px] text-gray-400">
+                <span className="min-w-0 truncate">来自：{post?.title || '社区帖子'}</span>
+                <time className="flex-shrink-0 whitespace-nowrap" dateTime={item.createdAt ? String(item.createdAt) : undefined}>{item.time}</time>
+              </span>
+            </span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#c0c4cc" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+          </button>
+        );
+      })}
+    </div>
+  );
 
   // 渲染首页 - "关注"Tab
   const renderFollowTabHome = () => (
@@ -227,12 +364,19 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
               }`}
               onClick={() => handleTabClick(tab)}
             >
-              {tab}
+              <span className="relative inline-flex items-center gap-1">
+                {tab}
+                {tab === '我的' && unreadInteractions.length > 0 && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-brand-red" aria-label="有未读社区互动" />
+                )}
+              </span>
             </div>
           ))}
         </div>
       </div>
 
+      {showInteractions ? renderInteractions() : (
+      <>
       {/* 滚动触发 sentinel - 社区内容区上边界标记 */}
       <div data-community-publish-trigger ref={sentinelRef} className="h-0 w-full" />
 
@@ -246,6 +390,8 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
           {activeTab === '全部话题' && renderAllTabHome()}
           {activeTab !== '我的' && activeTab !== '关注' && activeTab !== '全部话题' && renderPlaceholderTabHome()}
         </div>
+      )}
+      </>
       )}
     </div>
   );

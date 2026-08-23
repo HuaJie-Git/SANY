@@ -92,7 +92,7 @@ export const posts = [
     id: 105, authorId: 'user-001', topicId: 4,
     title: '安全操作心得（未通过审核示例）', content: '这是一条审核未通过的示例帖子，仅本人可见。',
     image: 'images/机手社区/挖掘机/挖掘机_03.jpg',
-    views: 0, likes: 0, date: '2026-07-14', type: 'image', auditStatus: 'rejected', isLiked: false,
+    views: 0, likes: 0, date: '2026-07-14', type: 'image', auditStatus: 'rejected', auditReason: '内容包含未经证实的安全操作建议，请补充可靠来源或修改表述后重新提交。', isLiked: false,
   },
   // 公共帖子 - user-003（已关注）
   {
@@ -274,8 +274,23 @@ export const posts = [
 
 // ---- 评论数据 ----
 let _comments = [
-  { id: 1, postId: 1, userId: 'user-002', userName: '机手小赵', userAvatar: 'images/机手社区/三一起重机/三一起重机_03.jpg', content: '写得很好，学到了！', time: '2小时前' },
-  { id: 2, postId: 1, userId: 'user-004', userName: '效率达人', userAvatar: 'images/机手社区/泵车/泵车_04.jpg', content: '确实，起步检查很重要', time: '3小时前' },
+  { id: 1, postId: 1, userId: 'user-002', userName: '机手小赵', userAvatar: 'images/机手社区/三一起重机/三一起重机_03.jpg', content: '写得很好，学到了！', time: '2小时前', rootCommentId: 1, parentCommentId: null, replyToUserId: null, likeCount: 18, isLiked: false },
+  { id: 11, postId: 1, userId: 'user-003', userName: '老司机李', userAvatar: 'images/机手社区/挖掘机/挖掘机_03.jpg', content: '尤其是启动前的绕机检查，很多新手容易忽略。', time: '1小时前', rootCommentId: 1, parentCommentId: 1, replyToUserId: 'user-002', likeCount: 6, isLiked: false },
+  { id: 12, postId: 1, userId: 'user-004', userName: '效率达人', userAvatar: 'images/机手社区/泵车/泵车_04.jpg', content: '赞同，建议把检查清单贴在驾驶室里。', time: '58分钟前', rootCommentId: 1, parentCommentId: 1, replyToUserId: 'user-002', likeCount: 3, isLiked: false },
+  { id: 13, postId: 1, userId: 'user-005', userName: '维修专家', userAvatar: 'images/机手社区/三一起重机/三一起重机_06.jpg', content: '液压油和冷却液也要一起看。', time: '45分钟前', rootCommentId: 1, parentCommentId: 1, replyToUserId: 'user-002', likeCount: 2, isLiked: false },
+  { id: 14, postId: 1, userId: 'user-006', userName: '安全员小李', userAvatar: 'images/机手社区/挖掘机/挖掘机_04.jpg', content: '安全检查做足了，效率反而更高。', time: '32分钟前', rootCommentId: 1, parentCommentId: 1, replyToUserId: 'user-002', likeCount: 1, isLiked: false },
+  { id: 15, postId: 1, userId: 'user-007', userName: '工地老张', userAvatar: 'images/机手社区/三一起重机/三一起重机_03.jpg', content: '现场管理也可以照这个思路做。', time: '20分钟前', rootCommentId: 1, parentCommentId: 1, replyToUserId: 'user-002', likeCount: 0, isLiked: false },
+  { id: 16, postId: 1, userId: 'user-008', userName: '新手学徒', userAvatar: 'images/机手社区/三一重卡/三一重卡_03.jpg', content: '收藏了，明天上班试试。', time: '10分钟前', rootCommentId: 1, parentCommentId: 1, replyToUserId: 'user-002', likeCount: 0, isLiked: false },
+  { id: 2, postId: 1, userId: 'user-004', userName: '效率达人', userAvatar: 'images/机手社区/泵车/泵车_04.jpg', content: '确实，起步检查很重要', time: '3小时前', rootCommentId: 2, parentCommentId: null, replyToUserId: null, likeCount: 9, isLiked: false },
+  { id: 17, postId: 101, userId: 'user-002', userName: '机手小赵', userAvatar: 'images/机手社区/三一起重机/三一起重机_03.jpg', content: '这个检查流程很实用，收藏了！', time: '2小时前', rootCommentId: 17, parentCommentId: null, replyToUserId: null, likeCount: 12, isLiked: false },
+  { id: 18, postId: 101, userId: 'user-004', userName: '效率达人', userAvatar: 'images/机手社区/泵车/泵车_04.jpg', content: '建议再补充一下收工后的停机步骤。', time: '1小时前', rootCommentId: 17, parentCommentId: 17, replyToUserId: 'user-002', likeCount: 4, isLiked: false },
+  { id: 19, postId: 101, userId: 'user-005', userName: '维修专家', userAvatar: 'images/机手社区/三一起重机/三一起重机_06.jpg', content: '液压油和冷却液也要一起看。', time: '52分钟前', rootCommentId: 17, parentCommentId: 17, replyToUserId: 'user-002', likeCount: 2, isLiked: false },
+  { id: 20, postId: 101, userId: 'user-006', userName: '安全员小李', userAvatar: 'images/机手社区/挖掘机/挖掘机_04.jpg', content: '安全检查做足了，效率反而更高。', time: '38分钟前', rootCommentId: 17, parentCommentId: 17, replyToUserId: 'user-002', likeCount: 1, isLiked: false },
+  { id: 21, postId: 101, userId: 'user-007', userName: '工地老张', userAvatar: 'images/机手社区/三一起重机/三一起重机_03.jpg', content: '现场管理也可以照这个思路做。', time: '20分钟前', rootCommentId: 17, parentCommentId: 17, replyToUserId: 'user-002', likeCount: 0, isLiked: false },
+  { id: 22, postId: 101, userId: 'user-008', userName: '新手学徒', userAvatar: 'images/机手社区/三一重卡/三一重卡_03.jpg', content: '收藏了，明天上班试试。', time: '10分钟前', rootCommentId: 17, parentCommentId: 17, replyToUserId: 'user-002', likeCount: 0, isLiked: false },
+  { id: 23, postId: 101, userId: 'user-009', userName: '安全专家', userAvatar: 'images/机手社区/挖掘机/挖掘机_04.jpg', content: '这套方法值得推广。', time: '刚刚', rootCommentId: 17, parentCommentId: 17, replyToUserId: 'user-002', likeCount: 0, isLiked: false },
+  { id: 24, postId: 1, userId: 'user-001', userName: '机手小王', userAvatar: 'images/机手社区/挖掘机/挖掘机_03.jpg', content: '这个电动正面吊的续航表现怎么样？', time: '35分钟前', rootCommentId: 24, parentCommentId: null, replyToUserId: null, likeCount: 2, isLiked: false },
+  { id: 25, postId: 1, userId: 'user-003', userName: '老司机李', userAvatar: 'images/机手社区/挖掘机/挖掘机_03.jpg', content: '现场连续作业一整天没问题，补能也很方便。', time: '18分钟前', rootCommentId: 24, parentCommentId: 24, replyToUserId: 'user-001', likeCount: 1, isLiked: false },
   { id: 3, postId: 101, userId: 'user-003', userName: '老司机李', userAvatar: 'images/机手社区/挖掘机/挖掘机_03.jpg', content: '经验之谈，值得学习！', time: '1小时前' },
   { id: 4, postId: 2, userId: 'user-006', userName: '安全员小李', userAvatar: 'images/机手社区/挖掘机/挖掘机_04.jpg', content: '挖掘机操作确实需要技巧', time: '5小时前' },
   { id: 5, postId: 103, userId: 'user-007', userName: '工地老张', userAvatar: 'images/机手社区/三一起重机/三一起重机_03.jpg', content: '这台设备看起来真不错！', time: '3天前' },
@@ -287,11 +302,12 @@ let _comments = [
 ];
 
 let _nextCommentId = _comments.length + 1;
+const COMMENT_MAX_LENGTH = 500;
 
 export const getCommentsByPostId = (postId) =>
   _comments.filter((c) => c.postId === postId);
 
-export const addComment = (postId, content) => {
+export const addComment = (postId, content, commentOptions = {}) => {
   const user = getCurrentUser();
   const comment = {
     id: _nextCommentId++,
@@ -299,11 +315,51 @@ export const addComment = (postId, content) => {
     userId: user.id,
     userName: user.name,
     userAvatar: user.avatar,
-    content,
+    content: String(content).slice(0, COMMENT_MAX_LENGTH),
     time: '刚刚',
+    rootCommentId: commentOptions.rootCommentId || null,
+    parentCommentId: commentOptions.parentCommentId || null,
+    replyToUserId: commentOptions.replyToUserId || null,
+    likeCount: 0,
+    isLiked: false,
   };
+  if (!comment.rootCommentId) comment.rootCommentId = comment.id;
   _comments.push(comment);
   return comment;
+};
+
+// 删除当前用户自己的评论/回复。删除一级评论时连同其回复一起移除；删除回复仅移除当前条目。
+// 真实接入时由服务端再次校验作者权限，并返回最新讨论串。
+export const deleteComment = (commentId) => {
+  const target = _comments.find((comment) => comment.id === commentId);
+  if (!target || target.userId !== CURRENT_USER_ID) return false;
+
+  const rootId = target.rootCommentId || target.id;
+  _comments = _comments.filter((comment) => (
+    target.parentCommentId
+      ? comment.id !== commentId
+      : (comment.id !== commentId && (comment.rootCommentId || comment.id) !== rootId)
+  ));
+  return true;
+};
+
+// 社区内部互动演示数据。interactionType 与服务端字段保持一致，真实接入时由接口替换。
+let _communityInteractions = [
+  { id: 'interaction-001', interactionType: 'post_comment', actorId: 'user-002', actorName: '机手小赵', postId: 101, commentId: 17, summary: '这个检查流程很实用，收藏了！', time: '刚刚', createdAt: 5, unread: true },
+  { id: 'interaction-002', interactionType: 'comment_reply', actorId: 'user-003', actorName: '老司机李', postId: 1, commentId: 25, summary: '现场连续作业一整天没问题，补能也很方便。', time: '18分钟前', createdAt: 4, unread: true },
+  { id: 'interaction-003', interactionType: 'comment_like', actorId: 'user-004', actorName: '效率达人', postId: 1, commentId: 24, summary: '赞了你的评论', time: '12分钟前', createdAt: 3, unread: true },
+  { id: 'interaction-004', interactionType: 'post_audit_pass', actorId: 'audit-system', actorName: '内容审核', postId: 102, summary: '你的帖子已通过审核', time: '昨天 16:20', createdAt: 2, unread: true, auditStatus: 'approved' },
+  { id: 'interaction-005', interactionType: 'post_audit_reject', actorId: 'audit-system', actorName: '内容审核', postId: 105, summary: '你的帖子未通过审核', time: '昨天 15:45', createdAt: 1, unread: true, auditStatus: 'rejected', auditReason: '内容包含未经证实的安全操作建议，请补充可靠来源或修改表述后重新提交。' },
+];
+
+export const getCommunityInteractions = () => _communityInteractions.map((item) => ({ ...item }));
+
+export const markCommunityInteractionRead = (interactionId) => {
+  _communityInteractions = _communityInteractions.map((item) => item.id === interactionId ? { ...item, unread: false } : item);
+};
+
+export const markAllCommunityInteractionsRead = () => {
+  _communityInteractions = _communityInteractions.map((item) => ({ ...item, unread: false }));
 };
 
 // 删除当前用户自己的帖子。真实接入时由服务端校验作者身份并同步删除关联评论。

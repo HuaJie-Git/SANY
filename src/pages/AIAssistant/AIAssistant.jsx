@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const AIAssistant = ({ onBack }) => {
+const AIAssistant = () => {
   const [message, setMessage] = useState('');
 
   // 快捷问题

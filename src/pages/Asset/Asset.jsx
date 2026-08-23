@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 
-const Asset = ({ onDeviceClick }) => {
-  const [activeTab, setActiveTab] = useState('all');
+const Asset = ({ onDeviceClick, navigationContext }) => {
+  const [activeTab, setActiveTab] = useState(
+    navigationContext?.kind === 'status' && ['online', 'offline'].includes(navigationContext.value)
+      ? navigationContext.value
+      : 'all',
+  );
   const [searchQuery, setSearchQuery] = useState('');
 
   // Tab数据
@@ -13,7 +17,7 @@ const Asset = ({ onDeviceClick }) => {
   ];
 
   // 设备列表数据
-  const devices = [
+  const baseDevices = [
     {
       id: 9,
       name: '三一平地机',
@@ -151,6 +155,38 @@ const Asset = ({ onDeviceClick }) => {
     }
   ];
 
+  const contextualDevices = navigationContext?.kind === 'brand' && navigationContext.value !== 'SANY'
+    ? [{
+        id: `context-${navigationContext.value}`,
+        name: `${navigationContext.value} 320GC 挖掘机`,
+        code: `${navigationContext.value}-320GC-0266`,
+        image: 'images/机手社区/挖掘机/挖掘机_07.jpg',
+        status: 'online',
+        statusText: '工作',
+        statusColor: 'text-green-500',
+        brand: navigationContext.value,
+      }]
+    : [];
+
+  const keyword = searchQuery.trim().toLowerCase();
+  const devices = [...contextualDevices, ...baseDevices].filter((device) => {
+    const matchesSearch = !keyword || `${device.name}${device.code}`.toLowerCase().includes(keyword);
+    if (!matchesSearch) return false;
+    if (!navigationContext) return true;
+    if (navigationContext.kind === 'brand') {
+      return navigationContext.value === 'SANY'
+        ? device.name.includes('三一')
+        : device.brand === navigationContext.value || device.name.includes(navigationContext.value);
+    }
+    if (navigationContext.kind === 'type') return device.name.includes(navigationContext.value);
+    if (navigationContext.kind === 'status') return device.status === navigationContext.value;
+    return true;
+  }).filter((device) => {
+    if (activeTab === 'online' || activeTab === 'offline') return device.status === activeTab;
+    if (activeTab === 'unaudited') return device.auditStatus === 'unaudited';
+    return true;
+  });
+
   return (
     <div className="h-full flex flex-col bg-gray-50">
       {/* 顶部固定区域 - Tab和搜索框 */}
@@ -202,24 +238,19 @@ const Asset = ({ onDeviceClick }) => {
       {/* 设备列表 - 可滑动区域 */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
         {devices.map((device) => {
-          const isTarget = ['三一平地机', '三一压路机', '三一摊铺机', '三一泵车', '三一拖泵', '三一车载泵', '三一铣刨机'].includes(device.name);
-          const cardClass = isTarget
-            ? 'bg-white rounded-xl p-3 flex items-center shadow-sm cursor-pointer active:scale-[0.99] transition-transform'
-            : 'bg-white rounded-xl p-3 flex items-center shadow-sm';
+          const cardClass = 'bg-white rounded-xl p-3 flex items-center shadow-sm cursor-pointer active:scale-[0.99] transition-transform';
           return (
             <div
               key={device.id}
-              {...(isTarget ? {
-                role: 'button',
-                tabIndex: 0,
-                onClick: () => onDeviceClick?.(device),
-                onKeyDown: (e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onDeviceClick?.(device);
-                  }
-                },
-              } : {})}
+              role="button"
+              tabIndex={0}
+              onClick={() => onDeviceClick?.(device)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onDeviceClick?.(device);
+                }
+              }}
               className={cardClass}
             >
               {/* 设备图片 */}
@@ -254,15 +285,15 @@ const Asset = ({ onDeviceClick }) => {
                 </div>
               </div>
 
-              {/* 右箭头 - 仅目标设备 */}
-              {isTarget && (
-                <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
-                </svg>
-              )}
+              <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
+              </svg>
             </div>
           );
         })}
+        {devices.length === 0 && (
+          <div className="rounded-xl bg-white py-12 text-center text-[13px] text-gray-400">当前筛选下暂无资产</div>
+        )}
       </div>
     </div>
   );

@@ -10,6 +10,7 @@ const TopNav = ({
   hasMultipleDivisions = false,
   showDivisionCoachmark = false,
   onDismissDivisionCoachmark,
+  notificationCount = 0,
 }) => {
   return (
     <div className="w-full">
@@ -72,9 +73,11 @@ const TopNav = ({
               <path d="M15 7C15 5.67392 14.4732 4.40215 13.5355 3.46447C12.5979 2.52678 11.3261 2 10 2C8.67392 2 7.40215 2.52678 6.46447 3.46447C5.52678 4.40215 5 5.67392 5 7C5 12 2 14 2 14H18C18 14 15 12 15 7Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M11.45 17C11.3034 17.3031 11.0808 17.5547 10.7953 17.7134C10.5099 17.8721 10.1795 17.9299 9.85999 17.8768C9.54048 17.8237 9.24651 17.6629 9.01999 17.42C8.79347 17.1771 8.64845 16.8669 8.61499 16.53" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            <div className="absolute -top-1 -right-1 w-[16px] h-[16px] bg-brand-red rounded-full flex items-center justify-center">
-              <span className="text-white text-[9px] font-medium">3</span>
-            </div>
+            {notificationCount > 0 && (
+              <div className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 bg-brand-red rounded-full flex items-center justify-center">
+                <span className="text-white text-[9px] font-medium">{notificationCount > 99 ? '99+' : notificationCount}</span>
+              </div>
+            )}
           </div>
 
           {/* 更多 */}

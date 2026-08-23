@@ -1,17 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import RoleGuideModal from '../../components/RoleGuideModal/RoleGuideModal';
-import { trackRoleGuide } from '../../utils/tracking';
 
 const Profile = ({ userRole, onRoleConfirm }) => {
-  const [showGuideBar, setShowGuideBar] = useState(!userRole);
   const [showModal, setShowModal] = useState(false);
-  const [modalClosed, setModalClosed] = useState(false); // 弹窗是否被关闭过
-
-  // 当用户角色状态变化时，更新提示条显示状态
-  useEffect(() => {
-    setShowGuideBar(!userRole);
-    if (userRole) setModalClosed(false);
-  }, [userRole]);
 
   // 进入页面自动弹出角色引导弹窗（未填写角色时）
   useEffect(() => {
@@ -23,22 +14,14 @@ const Profile = ({ userRole, onRoleConfirm }) => {
     }
   }, [userRole]);
 
-  // 点击提示条 - 显示弹窗
-  const handleGuideBarClick = () => {
-    // 埋点：点击提示条
-    trackRoleGuide.bannerClick();
-    setShowModal(true);
-  };
-
   // 关闭弹窗 - 仅关闭弹窗，保留提示条
   const handleModalClose = () => {
     setShowModal(false);
-    setModalClosed(true);
   };
 
   // 确认选择角色
   const handleRoleConfirm = (role) => {
-    onRoleConfirm && onRoleConfirm(role);
+    onRoleConfirm?.(role);
     setShowModal(false);
   };
   // 功能菜单数据

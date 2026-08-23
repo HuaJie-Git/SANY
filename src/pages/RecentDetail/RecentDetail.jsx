@@ -32,10 +32,10 @@ const RecentDetail = ({ onBack, onNavigate }) => {
       { id: 11, name: '新用户注册礼', status: '进行中', startDate: '2026-07-01', endDate: '2026-12-31', participants: 890, image: 'images/优惠活动/三一起重机/三一起重机_01.jpg', type: 'activity' },
     ],
     accessory: [
-      { id: 12, name: '液压油滤芯', code: 'AC-2024-001', type: '液压配件', stock: '有货', image: 'images/配件/OIP.webp' },
-      { id: 13, name: '空气滤芯', code: 'AC-2024-002', type: '过滤配件', stock: '有货', image: 'images/配件/OIP (1).webp' },
-      { id: 14, name: '机油滤芯', code: 'AC-2024-003', type: '过滤配件', stock: '缺货', image: 'images/配件/OIP (2).webp' },
-      { id: 15, name: '燃油滤芯', code: 'AC-2024-004', type: '过滤配件', stock: '有货', image: 'images/配件/OIP (3).webp' },
+      { id: 12, name: '液压油滤芯', code: 'AC-2024-001', type: 'accessory', partType: '液压配件', stock: '有货', image: 'images/配件/OIP.webp' },
+      { id: 13, name: '空气滤芯', code: 'AC-2024-002', type: 'accessory', partType: '过滤配件', stock: '有货', image: 'images/配件/OIP (1).webp' },
+      { id: 14, name: '机油滤芯', code: 'AC-2024-003', type: 'accessory', partType: '过滤配件', stock: '缺货', image: 'images/配件/OIP (2).webp' },
+      { id: 15, name: '燃油滤芯', code: 'AC-2024-004', type: 'accessory', partType: '过滤配件', stock: '有货', image: 'images/配件/OIP (3).webp' },
     ],
   };
 
@@ -132,7 +132,7 @@ const RecentDetail = ({ onBack, onNavigate }) => {
               <div className="text-sm font-medium text-gray-900">{item.name}</div>
               <div className="text-xs text-gray-500">{item.code}</div>
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-xs text-purple-500 bg-purple-50 px-1 rounded">{item.type}</span>
+                <span className="text-xs text-purple-500 bg-purple-50 px-1 rounded">{item.partType}</span>
                 <span className={`text-xs ${item.stock === '有货' ? 'text-green-500' : 'text-red-500'}`}>{item.stock}</span>
               </div>
             </div>

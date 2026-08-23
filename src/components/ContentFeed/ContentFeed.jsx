@@ -12,6 +12,7 @@ const ContentFeed = forwardRef(({ showPublishPage, setShowPublishPage, setIsComm
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedContentType, setSelectedContentType] = useState('');
   const [selectedPost, setSelectedPost] = useState(null);
+  const [selectedCommentId, setSelectedCommentId] = useState(null);
   const [topicDetail, setTopicDetail] = useState(null); // { topicName, source }
   const [communitySubTab, setCommunitySubTab] = useState('我的'); // 社区二级Tab
   const [communityTabKey, setCommunityTabKey] = useState(0);
@@ -48,7 +49,6 @@ const ContentFeed = forwardRef(({ showPublishPage, setShowPublishPage, setIsComm
   };
 
   const tabs = ['全部', '活动', '优惠(占位)', '行业动态(占位)', '社区'];
-  const communityTabs = ['全部', '热门话题', '设备操作', '保养技巧', '工程现场', '安全规范', '新手入门'];
 
   // Tab点击时滚动到可见区域
   const handleTabClick = (tab) => {
@@ -78,10 +78,11 @@ const ContentFeed = forwardRef(({ showPublishPage, setShowPublishPage, setIsComm
   };
 
   // 处理点击社区帖子 - 进入帖子详情
-  const handlePostClick = (post) => {
+  const handlePostClick = (post, interactionContext = null) => {
     // 从共享数据源获取最新帖子数据（可能被点赞等操作更新）
     const latestPost = allPosts.find((p) => p.id === post.id) || post;
     setSelectedPost(latestPost);
+    setSelectedCommentId(interactionContext?.commentId || null);
   };
 
   // 删除后回到社区「我的」列表，并刷新瀑布流内容。
@@ -90,6 +91,7 @@ const ContentFeed = forwardRef(({ showPublishPage, setShowPublishPage, setIsComm
 
     setCommunityItems((items) => items.filter((item) => item.id !== postId));
     setSelectedPost(null);
+    setSelectedCommentId(null);
     setTopicDetail(null);
     setActiveTab('社区');
     setCommunitySubTab('我的');
@@ -230,56 +232,6 @@ const ContentFeed = forwardRef(({ showPublishPage, setShowPublishPage, setIsComm
     const handleClick = () => {
       setSelectedItem(item);
       setSelectedContentType(contentType);
-    };
-
-    const renderImage = () => {
-      return (
-        <div className="relative">
-          <img
-            src={item.image}
-            alt={item.title}
-            className="w-full h-[140px] object-cover"
-            onError={(e) => {
-              e.target.style.display = 'none';
-              e.target.nextSibling.style.display = 'flex';
-            }}
-          />
-          <div className="w-full h-[140px] bg-gradient-to-br from-gray-200 to-gray-300 items-center justify-center hidden">
-            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="5" y="5" width="30" height="30" rx="2" stroke="#666" strokeWidth="2" fill="none"/>
-              <path d="M10 25L15 18L20 22L25 15L30 20V28C30 29.1 29.1 30 28 30H12C10.9 30 10 29.1 10 28V25Z" fill="#999"/>
-            </svg>
-          </div>
-          {item.type === 'video' && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-[40px] h-[40px] bg-black/50 rounded-full flex items-center justify-center">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4 2L14 8L4 14V2Z" fill="white"/>
-                </svg>
-              </div>
-            </div>
-          )}
-          {item.type === 'community_video' && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-[40px] h-[40px] bg-black/50 rounded-full flex items-center justify-center">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4 2L14 8L4 14V2Z" fill="white"/>
-                </svg>
-              </div>
-            </div>
-          )}
-          {item.type === 'carousel' && (
-            <div className="absolute top-2 left-2 bg-black/50 text-white text-[10px] px-2 py-0.5 rounded">
-              轮播
-            </div>
-          )}
-          {item.type === 'activity' && item.status && (
-            <div className={`absolute top-2 left-2 text-white text-[10px] px-2 py-0.5 rounded ${item.status === '进行中' ? 'bg-green-500' : 'bg-gray-500'}`}>
-              {item.status}
-            </div>
-          )}
-        </div>
-      );
     };
 
     // 社区卡片
@@ -428,6 +380,7 @@ const ContentFeed = forwardRef(({ showPublishPage, setShowPublishPage, setIsComm
     return (
       <PostDetail
         post={selectedPost}
+        targetCommentId={selectedCommentId}
         onBack={() => setSelectedPost(null)}
         onTopicClick={(topicName) => {
           setSelectedPost(null);

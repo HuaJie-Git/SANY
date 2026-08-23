@@ -1,25 +1,48 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ScannerPage from '../ScannerPage/ScannerPage';
 
-const SearchPage = ({ onClose, onOpenAsset, initialScannerOpen = false }) => {
-  const [searchText, setSearchText] = useState('');
-  const [activeTab, setActiveTab] = useState('资产');
+const filterSearchItems = (items, keyword) => {
+  const normalizedKeyword = keyword.trim().toLowerCase();
+  if (!normalizedKeyword) return items;
+  return items.filter((item) => Object.values(item).some((value) => (
+    typeof value === 'string' && value.toLowerCase().includes(normalizedKeyword)
+  )));
+};
+
+const SearchPage = ({
+  onClose,
+  onOpenAsset,
+  onNavigate,
+  initialScannerOpen = false,
+  initialState,
+  onStateChange,
+}) => {
+  const [searchText, setSearchText] = useState(initialState?.searchText || '');
+  const [activeTab, setActiveTab] = useState(initialState?.activeTab || '资产');
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState({});
   const [showCameraModal, setShowCameraModal] = useState(false);
   const [cameraPermission, setCameraPermission] = useState('prompt'); // 'prompt', 'granted', 'denied'
   const [language, setLanguage] = useState('zh'); // 'zh', 'en', 'ja', 'ko'
   const [showScanner, setShowScanner] = useState(initialScannerOpen);
+  const scannerOpenedDirectlyRef = useRef(initialScannerOpen);
 
   const handleScannerClose = () => {
-    // 先关闭当前扫码子页，再通知父层退出搜索页，避免首页直接打开时关闭状态残留。
     setShowScanner(false);
-    onClose?.();
+    if (scannerOpenedDirectlyRef.current) onClose?.();
   };
 
   const tabs = ['资产', '品牌', '设备类型', '配件', '设备分组'];
   const inputRef = useRef(null);
   const debounceTimer = useRef(null);
+
+  useEffect(() => {
+    onStateChange?.({ searchText, activeTab });
+  }, [activeTab, onStateChange, searchText]);
+
+  useEffect(() => {
+    if (!showScanner) inputRef.current?.focus();
+  }, [showScanner]);
 
   // ====== 多语言权限提示语 ======
   const permissionTexts = {
@@ -102,6 +125,7 @@ const SearchPage = ({ onClose, onOpenAsset, initialScannerOpen = false }) => {
   // ====== 打开扫码器 ======
   const openScanner = () => {
     setShowCameraModal(false);
+    scannerOpenedDirectlyRef.current = false;
     setShowScanner(true);
   };
 
@@ -200,13 +224,15 @@ const SearchPage = ({ onClose, onOpenAsset, initialScannerOpen = false }) => {
     ],
   };
 
+  const searchDataRef = useRef(mockSearchResults);
+
   // 搜索逻辑（300ms防抖）
   useEffect(() => {
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
     }
 
-    if (!searchText) {
+    if (!searchText.trim()) {
       setSearchResults({});
       setIsLoading(false);
       return;
@@ -215,10 +241,13 @@ const SearchPage = ({ onClose, onOpenAsset, initialScannerOpen = false }) => {
     setIsLoading(true);
 
     debounceTimer.current = setTimeout(() => {
-      setTimeout(() => {
-        setSearchResults(mockSearchResults);
-        setIsLoading(false);
-      }, 800);
+      const nextResults = Object.fromEntries(
+        Object.entries(searchDataRef.current).map(([tab, items]) => (
+          [tab, filterSearchItems(items, searchText)]
+        )),
+      );
+      setSearchResults(nextResults);
+      setIsLoading(false);
     }, 300);
 
     return () => {
@@ -292,7 +321,7 @@ const SearchPage = ({ onClose, onOpenAsset, initialScannerOpen = false }) => {
 
   // 资产 Tab
   const AssetCard = ({ item }) => (
-    <div className="flex items-center gap-3 py-4 border-b border-gray-100">
+    <button type="button" onClick={() => onNavigate?.({ target: 'assetDetail', item })} className="flex w-full items-center gap-3 border-b border-gray-100 py-4 text-left active:bg-gray-50">
       <DeviceImage src={item.image} name={item.name} />
       <div className="flex-1 min-w-0">
         <div className="text-[16px] font-bold text-gray-800">
@@ -304,13 +333,14 @@ const SearchPage = ({ onClose, onOpenAsset, initialScannerOpen = false }) => {
         </div>
         <div className="text-[13px] text-gray-400">{item.location}</div>
       </div>
-    </div>
+      <svg className="h-4 w-4 flex-shrink-0 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+    </button>
   );
 
   // 品牌 Tab
   const BrandCard = ({ item }) => (
-    <div className="py-4 border-b border-gray-100">
-      <div className="flex items-center gap-3 mb-3">
+    <div className="border-b border-gray-100 py-4">
+      <button type="button" onClick={() => onNavigate?.({ target: 'assetList', context: { kind: 'brand', value: item.name, item, label: `${item.name} · ${item.deviceCount} 台资产` } })} className="mb-3 flex w-full items-center gap-3 text-left active:opacity-70">
         <div className="w-[50px] h-[50px] bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
           <span className="text-[18px] font-bold text-gray-600">{item.name.charAt(0)}</span>
         </div>
@@ -321,9 +351,10 @@ const SearchPage = ({ onClose, onOpenAsset, initialScannerOpen = false }) => {
           <div className="text-[13px] text-gray-400">{item.code}</div>
           <div className="text-[12px] text-gray-400 mt-1">{item.deviceCount} 台设备</div>
         </div>
-      </div>
+        <svg className="h-4 w-4 flex-shrink-0 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </button>
       <div className="flex gap-4 ml-[62px]">
-        <div className="flex flex-col items-center">
+        <button type="button" onClick={() => onNavigate?.({ target: 'assetList', context: { kind: 'brand', value: item.name, item, label: `${item.name} 品牌资产` } })} className="flex flex-col items-center active:opacity-60">
           <div className="w-[44px] h-[44px] bg-gray-100 rounded-full flex items-center justify-center">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <rect x="3" y="8" width="18" height="12" rx="2" stroke="#666" strokeWidth="1.5"/>
@@ -332,8 +363,8 @@ const SearchPage = ({ onClose, onOpenAsset, initialScannerOpen = false }) => {
             </svg>
           </div>
           <span className="text-[11px] text-blue-500 mt-1">资产</span>
-        </div>
-        <div className="flex flex-col items-center">
+        </button>
+        <button type="button" onClick={() => onNavigate?.({ target: 'auditList', context: { kind: 'brand', value: item.name, item, initialTab: '设备异常', label: `${item.name} 品牌审核` } })} className="flex flex-col items-center active:opacity-60">
           <div className="w-[44px] h-[44px] bg-gray-100 rounded-full flex items-center justify-center">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <rect x="5" y="3" width="14" height="18" rx="2" stroke="#666" strokeWidth="1.5"/>
@@ -341,8 +372,8 @@ const SearchPage = ({ onClose, onOpenAsset, initialScannerOpen = false }) => {
             </svg>
           </div>
           <span className="text-[11px] text-blue-500 mt-1">审核</span>
-        </div>
-        <div className="flex flex-col items-center">
+        </button>
+        <button type="button" onClick={() => onNavigate?.({ target: 'usageReport', item: { ...item, reportScope: `${item.name} 品牌机群`, code: `${item.name} · ${item.deviceCount} 台设备` } })} className="flex flex-col items-center active:opacity-60">
           <div className="w-[44px] h-[44px] bg-gray-100 rounded-full flex items-center justify-center">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="12" r="9" stroke="#666" strokeWidth="1.5"/>
@@ -350,14 +381,14 @@ const SearchPage = ({ onClose, onOpenAsset, initialScannerOpen = false }) => {
             </svg>
           </div>
           <span className="text-[11px] text-blue-500 mt-1">使用情况</span>
-        </div>
+        </button>
       </div>
     </div>
   );
 
   // 设备类型 Tab
   const DeviceTypeCard = ({ item }) => (
-    <div className="flex items-center gap-3 py-4 border-b border-gray-100">
+    <button type="button" onClick={() => onNavigate?.({ target: 'assetList', context: { kind: 'type', value: item.name, item, label: `${item.name} · ${item.deviceCount} 台资产` } })} className="flex w-full items-center gap-3 border-b border-gray-100 py-4 text-left active:bg-gray-50">
       <DeviceImage src={item.image} name={item.name} size="small" />
       <div className="flex-1">
         <div className="text-[16px] font-bold text-gray-800">
@@ -366,12 +397,13 @@ const SearchPage = ({ onClose, onOpenAsset, initialScannerOpen = false }) => {
         <div className="text-[13px] text-gray-400">{item.code}</div>
         <div className="text-[12px] text-gray-400 mt-1">{item.deviceCount} 台设备</div>
       </div>
-    </div>
+      <svg className="h-4 w-4 flex-shrink-0 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+    </button>
   );
 
   // 配件 Tab
   const AccessoryCard = ({ item }) => (
-    <div className="flex items-center gap-3 py-4 border-b border-gray-100">
+    <button type="button" onClick={() => onNavigate?.({ target: 'parts', context: { query: item.name, item } })} className="flex w-full items-center gap-3 border-b border-gray-100 py-4 text-left active:bg-gray-50">
       <DeviceImage src={item.image} name={item.name} size="small" />
       <div className="flex-1">
         <div className="text-[16px] font-bold text-gray-800">
@@ -385,12 +417,13 @@ const SearchPage = ({ onClose, onOpenAsset, initialScannerOpen = false }) => {
           </span>
         </div>
       </div>
-    </div>
+      <svg className="h-4 w-4 flex-shrink-0 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+    </button>
   );
 
   // 设备分组 Tab
   const DeviceGroupCard = ({ item }) => (
-    <div className="flex items-center gap-3 py-4 border-b border-gray-100">
+    <button type="button" onClick={() => onNavigate?.({ target: 'assetList', context: { kind: 'group', value: item.name, item, label: `${item.name} · ${item.deviceCount} 台资产` } })} className="flex w-full items-center gap-3 border-b border-gray-100 py-4 text-left active:bg-gray-50">
       <div className="w-[50px] h-[50px] bg-purple-50 rounded-lg flex items-center justify-center flex-shrink-0">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
           <circle cx="8" cy="8" r="3" stroke="#8B5CF6" strokeWidth="1.5"/>
@@ -406,7 +439,8 @@ const SearchPage = ({ onClose, onOpenAsset, initialScannerOpen = false }) => {
         <div className="text-[13px] text-gray-400">{item.code}</div>
         <div className="text-[12px] text-gray-400 mt-1">{item.deviceCount} 台设备</div>
       </div>
-    </div>
+      <svg className="h-4 w-4 flex-shrink-0 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+    </button>
   );
 
   // 根据 Tab 渲染卡片
@@ -422,13 +456,15 @@ const SearchPage = ({ onClose, onOpenAsset, initialScannerOpen = false }) => {
   };
 
   // 获取当前 Tab 的数据（有搜索词用搜索结果，无搜索词用默认数据）
-  const currentData = searchText
+  const hasSearchText = Boolean(searchText.trim());
+  const currentData = hasSearchText
     ? (searchResults[activeTab] || [])
     : (defaultData[activeTab] || []);
 
   if (showScanner) {
     return (
       <ScannerPage
+        showStatusBar={false}
         onClose={handleScannerClose}
         onOpenAsset={onOpenAsset}
         onUseSearch={(keyword) => {
@@ -441,38 +477,14 @@ const SearchPage = ({ onClose, onOpenAsset, initialScannerOpen = false }) => {
 
   return (
     <div className="absolute inset-0 bg-white z-50 flex flex-col">
-      {/* 状态栏 */}
-      <div className="h-[44px] flex items-center justify-between px-4 bg-white">
-        <span className="text-black text-[14px] font-medium">9:41</span>
-        <div className="flex items-center gap-1">
-          <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
-            <path d="M1 8H3V12H1V8Z" fill="#333"/>
-            <path d="M5 5H7V12H5V5Z" fill="#333"/>
-            <path d="M9 3H11V12H9V3Z" fill="#333"/>
-            <path d="M13 0H15V12H13V0Z" fill="#333"/>
-          </svg>
-          <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
-            <path d="M8 2C10.76 2 13.07 3.61 14.1 6L15.5 4.5C14.14 2.58 11.23 1 8 1C4.77 1 1.86 2.58 0.5 4.5L1.9 6C2.93 3.61 5.24 2 8 2Z" fill="#333"/>
-            <path d="M8 5C9.66 5 11.14 5.69 12.11 6.88L13.5 5.5C12.2 3.98 10.21 3 8 3C5.79 3 3.8 3.98 2.5 5.5L3.89 6.88C4.86 5.69 6.34 5 8 5Z" fill="#333"/>
-            <path d="M8 8C8.83 8 9.58 8.34 10.12 8.9L11.5 7.5C10.6 6.6 9.37 6 8 6C6.63 6 5.4 6.6 4.5 7.5L5.88 8.9C6.42 8.34 7.17 8 8 8Z" fill="#333"/>
-            <circle cx="8" cy="11" r="1.5" fill="#333"/>
-          </svg>
-          <svg width="24" height="12" viewBox="0 0 24 12" fill="none">
-            <rect x="0.5" y="0.5" width="21" height="11" rx="2" stroke="#333" strokeOpacity="0.35"/>
-            <rect x="2" y="2" width="18" height="8" rx="1" fill="#333"/>
-            <path d="M23 4V8C23.5523 8 24 7.5523 24 7V5C24 4.4477 23.5523 4 23 4Z" fill="#333" fillOpacity="0.4"/>
-          </svg>
-        </div>
-      </div>
-
       {/* 顶部导航栏 */}
-      <div className="flex items-center px-4 py-3 bg-white">
-        <div className="cursor-pointer mr-3" onClick={onClose}>
+      <div className="flex items-center px-4 pb-3 pt-6 bg-white">
+        <button type="button" className="mr-3 flex h-8 w-8 items-center justify-center rounded-full active:bg-gray-100" onClick={onClose} aria-label="关闭全域搜索">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path d="M19 12H5" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M12 19L5 12L12 5" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-        </div>
+        </button>
         <div className="flex-1 h-[40px] bg-gray-100 rounded-full flex items-center px-4">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className="mr-2 flex-shrink-0">
             <circle cx="8" cy="8" r="6" stroke="#999" strokeWidth="1.5"/>
@@ -481,23 +493,27 @@ const SearchPage = ({ onClose, onOpenAsset, initialScannerOpen = false }) => {
           <input
             ref={inputRef}
             type="text"
+            aria-label="搜索资产、品牌、设备类型、配件或设备分组"
+            placeholder="搜索资产、品牌、设备类型或配件"
             className="flex-1 bg-transparent outline-none text-[16px] text-gray-800"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             maxLength={50}
           />
           {searchText && (
-            <div className="cursor-pointer ml-2 flex-shrink-0" onClick={handleClear}>
+            <button type="button" className="ml-2 flex-shrink-0" onClick={handleClear} aria-label="清空搜索">
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <circle cx="9" cy="9" r="8" fill="#ccc"/>
                 <path d="M6 6L12 12M12 6L6 12" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
-            </div>
+            </button>
           )}
         </div>
         {/* 扫码按钮 */}
-        <div
-          className="cursor-pointer ml-3 w-[40px] h-[40px] bg-gray-100 rounded-full flex items-center justify-center"
+        <button
+          type="button"
+          aria-label="扫一扫"
+          className="ml-3 w-[40px] h-[40px] bg-gray-100 rounded-full flex items-center justify-center"
           onClick={requestCameraPermission}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -511,10 +527,12 @@ const SearchPage = ({ onClose, onOpenAsset, initialScannerOpen = false }) => {
             <path d="M7 10H17" stroke="#333" strokeWidth="1.5"/>
             <path d="M7 14H17" stroke="#333" strokeWidth="1.5"/>
           </svg>
-        </div>
+        </button>
         {/* 语言切换按钮 */}
-        <div
-          className="cursor-pointer ml-2 px-2 py-1 bg-gray-100 rounded text-[12px] text-gray-600"
+        <button
+          type="button"
+          aria-label="切换搜索语言"
+          className="ml-2 px-2 py-1 bg-gray-100 rounded text-[12px] text-gray-600"
           onClick={() => {
             const languages = ['zh', 'en', 'ja', 'ko'];
             const currentIndex = languages.indexOf(language);
@@ -522,15 +540,16 @@ const SearchPage = ({ onClose, onOpenAsset, initialScannerOpen = false }) => {
           }}
         >
           {language.toUpperCase()}
-        </div>
+        </button>
       </div>
 
       {/* 分类 Tab */}
       <div className="flex px-4 py-2 gap-2 bg-white overflow-x-auto">
         {tabs.map((tab) => {
-          const count = searchText && searchResults[tab] ? searchResults[tab].length : null;
+          const count = hasSearchText && searchResults[tab] ? searchResults[tab].length : null;
           return (
-            <div
+            <button
+              type="button"
               key={tab}
               className={`px-4 py-2 rounded-full text-[14px] cursor-pointer flex items-center gap-1 whitespace-nowrap flex-shrink-0 ${
                 activeTab === tab
@@ -540,7 +559,7 @@ const SearchPage = ({ onClose, onOpenAsset, initialScannerOpen = false }) => {
               onClick={() => setActiveTab(tab)}
             >
               {tab}
-              {isLoading && (
+              {isLoading && activeTab === tab && (
                 <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
@@ -549,7 +568,7 @@ const SearchPage = ({ onClose, onOpenAsset, initialScannerOpen = false }) => {
               {count !== null && !isLoading && (
                 <span className="text-[12px]">({count})</span>
               )}
-            </div>
+            </button>
           );
         })}
       </div>
@@ -557,7 +576,7 @@ const SearchPage = ({ onClose, onOpenAsset, initialScannerOpen = false }) => {
       {/* 内容区域 */}
       <div className="flex-1 overflow-y-auto bg-white px-4 py-3">
         {/* 无搜索词时显示"最近查看"标题 */}
-        {!searchText && (
+        {!hasSearchText && (
           <div className="text-[16px] font-bold text-gray-800 mb-4">最近查看</div>
         )}
         {isLoading ? (

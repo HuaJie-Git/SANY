@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const Audit = ({ onDeviceClick, initialTab }) => {
+const Audit = ({ onDeviceClick, initialTab, navigationContext }) => {
   // Tab名称到ID的映射
   const tabNameToId = {
     '设备异常': 'exception',
@@ -17,8 +17,7 @@ const Audit = ({ onDeviceClick, initialTab }) => {
   };
 
   const [activeTab, setActiveTab] = useState(getInitialTab());
-  const [searchQuery, setSearchQuery] = useState('');
-  const [dateRange, setDateRange] = useState('12/10 - 12/20');
+  const [dateRange] = useState('12/10 - 12/20');
   const [groupByDevice, setGroupByDevice] = useState(true);
 
   // Tab数据
@@ -200,7 +199,20 @@ const Audit = ({ onDeviceClick, initialTab }) => {
     }
   };
 
-  const devices = getDevices();
+  const contextualAuditDevice = navigationContext?.kind === 'audit' && navigationContext.item
+    ? {
+        id: `context-${navigationContext.item.id}`,
+        name: navigationContext.item.code,
+        type: navigationContext.item.name,
+        image: navigationContext.item.image,
+        newCountText: navigationContext.item.status || '待处理',
+        newCountColor: navigationContext.item.status === '已处理' ? 'bg-gray-100 text-gray-500' : 'bg-red-100 text-red-600',
+        extraNewCountText: null,
+        status: [],
+        isContextTarget: true,
+      }
+    : null;
+  const devices = contextualAuditDevice ? [contextualAuditDevice, ...getDevices()] : getDevices();
 
   return (
     <div className="h-full bg-gray-50 overflow-y-auto">
@@ -264,7 +276,7 @@ const Audit = ({ onDeviceClick, initialTab }) => {
         {devices.map((device) => (
           <div
             key={device.id}
-            className="bg-white rounded-xl p-3 flex items-center shadow-sm cursor-pointer"
+            className={`rounded-xl p-3 flex items-center shadow-sm cursor-pointer ${device.isContextTarget ? 'bg-[#fff3f4] ring-1 ring-[#f4c8cd]' : 'bg-white'}`}
             onClick={() => onDeviceClick && onDeviceClick(device)}
           >
             {/* 设备图片 */}
@@ -327,6 +339,9 @@ const Audit = ({ onDeviceClick, initialTab }) => {
             </svg>
           </div>
         ))}
+        {devices.length === 0 && (
+          <div className="rounded-xl bg-white py-12 text-center text-[13px] text-gray-400">当前分类暂无审核事件</div>
+        )}
       </div>
     </div>
   );

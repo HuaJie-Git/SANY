@@ -1,15 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 
-const QuickAccess = ({ onNavigate, primaryItems }) => {
+const QuickAccess = ({ onNavigate, primaryItems, applications = [] }) => {
   const [currentScreen, setCurrentScreen] = useState(0);
   const scrollRef = useRef(null);
-
-  // 三一品牌颜色
-  const sanyColors = {
-    red: '#E60012',
-    dark: '#181C26',
-    orange: '#FF7316',
-  };
 
   const defaultFirstScreenItems = [
     { id: 1, name: '我要配件', icon: '配件', color: '#FF6B6B' },
@@ -18,7 +11,18 @@ const QuickAccess = ({ onNavigate, primaryItems }) => {
     { id: 4, name: '产品中心', icon: '产品', color: '#96CEB4' },
     { id: 5, name: '机群报表', icon: '报表', color: '#FFEAA7', isHalfHidden: true },
   ];
-  const firstScreenItems = primaryItems?.length ? primaryItems : defaultFirstScreenItems;
+  const shortcutOverrides = {
+    assets: { name: '产品中心', icon: '产品', color: '#96CEB4' },
+  };
+  const firstScreenItems = primaryItems?.length
+    ? primaryItems
+    : applications.length
+      ? applications.slice(0, 5).map((app, index) => ({
+          ...app,
+          ...shortcutOverrides[app.id],
+          isHalfHidden: index === 4,
+        }))
+      : defaultFirstScreenItems;
 
   const secondScreenItems = [
     { id: 5, name: '机群报表', icon: '报表', color: '#FFEAA7' },
@@ -51,20 +55,29 @@ const QuickAccess = ({ onNavigate, primaryItems }) => {
   const phoneRequiredFunctions = ['我要配件', '我要召请', '设备保养'];
 
   // 处理功能点击
-  const handleFunctionClick = (itemName) => {
+  const handleFunctionClick = (item) => {
+    if (item.id === 'all-applications' || item.name === '全部应用') {
+      onNavigate?.({ target: 'allApps' });
+      return;
+    }
+    if (item.target) {
+      onNavigate?.({ target: item.target, app: item });
+      return;
+    }
+    const itemName = item.name;
     // 检查是否是需要手机号验证的功能
     if (phoneRequiredFunctions.includes(itemName)) {
       // 跳转到对应的功能页面
       // 在功能页面里会检查手机号并显示弹窗
       switch (itemName) {
         case '我要配件':
-          onNavigate && onNavigate('parts');
+          if (onNavigate) onNavigate('parts');
           break;
         case '我要召请':
-          onNavigate && onNavigate('service');
+          if (onNavigate) onNavigate('service');
           break;
         case '设备保养':
-          onNavigate && onNavigate('maintenance');
+          if (onNavigate) onNavigate('maintenance');
           break;
         default:
           break;
@@ -252,7 +265,7 @@ const QuickAccess = ({ onNavigate, primaryItems }) => {
                 key={item.id}
                 className={`flex flex-col items-center flex-shrink-0 ${item.isHalfHidden ? 'opacity-60' : ''}`}
                 style={{ width: '64px' }}
-                onClick={() => handleFunctionClick(item.name)}
+                onClick={() => handleFunctionClick(item)}
               >
                 {renderIcon(item.icon)}
                 <span className="text-[11px] text-text-primary mt-1 text-center">{item.name}</span>
@@ -266,19 +279,19 @@ const QuickAccess = ({ onNavigate, primaryItems }) => {
           {/* 第一行 */}
           <div className="flex justify-between mb-2">
             {secondScreenItems.slice(0, 5).map((item) => (
-              <div key={item.id} className="flex flex-col items-center" style={{ width: '68px' }}>
+              <button type="button" key={item.id} className="flex flex-col items-center" style={{ width: '68px' }} onClick={() => handleFunctionClick(item)}>
                 {renderIcon(item.icon)}
                 <span className="text-[11px] text-text-primary mt-1 text-center">{item.name}</span>
-              </div>
+              </button>
             ))}
           </div>
           {/* 第二行 */}
           <div className="flex justify-between">
             {secondScreenItems.slice(5, 10).map((item) => (
-              <div key={item.id} className="flex flex-col items-center" style={{ width: '68px' }}>
+              <button type="button" key={item.id} className="flex flex-col items-center" style={{ width: '68px' }} onClick={() => handleFunctionClick(item)}>
                 {renderIcon(item.icon)}
                 <span className="text-[11px] text-text-primary mt-1 text-center">{item.name}</span>
-              </div>
+              </button>
             ))}
           </div>
         </div>

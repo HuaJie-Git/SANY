@@ -21,9 +21,12 @@ import DeviceDetail from '../DeviceDetail/DeviceDetail';
 import WorkConditionDetail from '../WorkConditionDetail/WorkConditionDetail';
 import DataReport from '../DataReport/DataReport';
 import RecentDetail from '../RecentDetail/RecentDetail';
-import RecentCardDetail from '../RecentCardDetail/RecentCardDetail';
 import TaskList from '../TaskList/TaskList';
 import DivisionSwitcher from '../../components/DivisionSwitcher/DivisionSwitcher';
+import AllApplications from '../AllApplications/AllApplications';
+import MessageCenter from '../MessageCenter/MessageCenter';
+import { readApplicationOrder } from '../../data/appCatalog';
+import { getMessageUnreadCount } from '../../data/messages';
 
 const BUSINESS_SCOPES = [
   {
@@ -147,13 +150,20 @@ const Home = () => {
   const [selectedDevice, setSelectedDevice] = useState(null); // 选中的设备详情
   const [selectedWorkCondition, setSelectedWorkCondition] = useState(null); // 资产工况详情
   const [dataReportDevice, setDataReportDevice] = useState(null); // 数据报表设备
-  const [selectedRecentItem, setSelectedRecentItem] = useState(null); // 选中的最近查看卡片
   const [showRecentList, setShowRecentList] = useState(false); // 是否显示最近查看列表
+  const [showAllApplications, setShowAllApplications] = useState(false);
+  const [showMessageCenter, setShowMessageCenter] = useState(false);
+  const [orderedApplications, setOrderedApplications] = useState(() => readApplicationOrder());
+  const [messageUnreadCount, setMessageUnreadCount] = useState(() => getMessageUnreadCount());
+  const [navigationSource, setNavigationSource] = useState(null);
+  const [pageContext, setPageContext] = useState(null);
+  const [assetNavigationContext, setAssetNavigationContext] = useState(null);
+  const [auditNavigationContext, setAuditNavigationContext] = useState(null);
+  const [searchSession, setSearchSession] = useState({ searchText: '', activeTab: '资产' });
   const [auditInitialTab, setAuditInitialTab] = useState('exception'); // 审核页面初始Tab
   const [isScrolled, setIsScrolled] = useState(false); // 是否滚动到一定位置
   const [userRole, setUserRole] = useState(null); // 用户角色，null表示未填写
   const [showTaskList, setShowTaskList] = useState(false); // 是否显示任务列表
-  const [selectedTask, setSelectedTask] = useState(null); // 选中的任务
   const [isCommunityPublishEligible, setIsCommunityPublishEligible] = useState(false); // 页面资格
   const [isCommunityPublishViewportActive, setIsCommunityPublishViewportActive] = useState(false); // 滚动视口激活
   // 每次进入首页先回到 SanVIST 总览；事业部切换仅在当前使用会话内生效。
@@ -180,11 +190,11 @@ const Home = () => {
   };
 
   const handleNotificationClick = () => {
-    console.log('通知点击');
+    setShowMessageCenter(true);
   };
 
   const handleMoreClick = () => {
-    console.log('更多点击');
+    setShowAllApplications(true);
   };
 
   const handleScanClick = () => {
@@ -246,8 +256,172 @@ const Home = () => {
   // 审核事件分类点击 - 跳转到审核页面对应Tab
   const handleAuditCategoryClick = (categoryName) => {
     setAuditInitialTab(categoryName);
+    setAuditNavigationContext(null);
+    setNavigationSource(null);
     setActiveTab('audit');
   };
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setAssetNavigationContext(null);
+    setAuditNavigationContext(null);
+    setNavigationSource(null);
+    setPageContext(null);
+  };
+
+  const hideSourceSurface = (source) => {
+    if (source === 'search') setShowSearchPage(false);
+    if (source === 'messages') setShowMessageCenter(false);
+    if (source === 'allApps') setShowAllApplications(false);
+    if (source === 'recentList') setShowRecentList(false);
+  };
+
+  const restoreNavigationSource = () => {
+    const source = navigationSource;
+    setNavigationSource(null);
+    setPageContext(null);
+    if (source === 'search') setShowSearchPage(true);
+    if (source === 'messages') setShowMessageCenter(true);
+    if (source === 'allApps') setShowAllApplications(true);
+    if (source === 'recentList') setShowRecentList(true);
+  };
+
+  const normalizeDevice = (item = {}) => ({
+    ...item,
+    id: item.id || item.code || 'search-device',
+    name: item.name || '三一平地机',
+    code: item.code || 'SV-DEVICE-001',
+    image: item.image || 'images/asset-models/sany_grader.jpg',
+    status: item.status || 'online',
+    statusText: item.statusText || '工作',
+    statusColor: item.statusColor || 'text-green-500',
+    reportScope: item.reportScope,
+  });
+
+  const openHomeSection = (section) => {
+    setActiveTab('home');
+    setShowRecentList(false);
+    setNavigationSource(null);
+    window.setTimeout(() => {
+      contentRef.current?.querySelector(`[data-home-section="${section}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
+  };
+
+  const handleBusinessNavigate = (incomingAction, source = null) => {
+    const action = typeof incomingAction === 'string' ? { target: incomingAction } : incomingAction;
+    if (!action?.target) return;
+    hideSourceSurface(source);
+    setNavigationSource(source);
+    setPageContext(action.context ? { ...action.context, source } : (source ? { source } : null));
+
+    switch (action.target) {
+      case 'allApps':
+        setNavigationSource(null);
+        setPageContext(null);
+        setShowAllApplications(true);
+        break;
+      case 'messageCenter':
+        setShowMessageCenter(true);
+        break;
+      case 'assetList':
+        setCurrentPage(null);
+        setAssetNavigationContext(action.context || null);
+        setActiveTab('asset');
+        break;
+      case 'auditList':
+        setAuditInitialTab(action.context?.initialTab || '设备异常');
+        setCurrentPage(null);
+        setAuditNavigationContext(action.context || null);
+        setActiveTab('audit');
+        break;
+      case 'assetDetail':
+        setSelectedWorkCondition(normalizeDevice(action.item || action.context));
+        break;
+      case 'usageReport':
+        setDataReportDevice(normalizeDevice(action.item || {
+          name: '三一平地机',
+          code: 'SanVIST 机群',
+        }));
+        break;
+      case 'parts':
+      case 'service':
+      case 'maintenance':
+        setCurrentPage(action.target);
+        break;
+      case 'taskList':
+        setShowTaskList(true);
+        break;
+      case 'startupList':
+        setShowDeviceStartupList(true);
+        break;
+      case 'scanner':
+        setOpenSearchWithScanner(true);
+        setShowSearchPage(true);
+        break;
+      case 'ai':
+        setNavigationSource(null);
+        setActiveTab('ai');
+        break;
+      case 'profile':
+        setNavigationSource(null);
+        setActiveTab('profile');
+        break;
+      case 'content':
+        openHomeSection('content');
+        break;
+      default:
+        setNavigationSource(null);
+        break;
+    }
+  };
+
+  const handleRecentNavigate = (item, source = null) => {
+    if (!item) return;
+    if (item.type === 'asset') {
+      handleBusinessNavigate({ target: 'assetDetail', item }, source);
+    } else if (item.type === 'audit') {
+      handleBusinessNavigate({ target: 'auditList', context: { kind: 'audit', item, initialTab: '设备异常', label: `${item.name} · ${item.code}` } }, source);
+    } else if (item.type === 'accessory') {
+      handleBusinessNavigate({ target: 'parts', context: { query: item.name, item } }, source);
+    } else if (item.type === 'activity') {
+      openHomeSection('content');
+    }
+  };
+
+  const closeCurrentPage = () => {
+    setCurrentPage(null);
+    restoreNavigationSource();
+  };
+
+  if (showAllApplications) {
+    return (
+      <PhoneFrame topNav={null} bottomNav={null} hideGradient={true}>
+        <AllApplications
+          onBack={() => {
+            setShowAllApplications(false);
+            restoreNavigationSource();
+          }}
+          onNavigate={(action) => handleBusinessNavigate(action, 'allApps')}
+          onOrderChange={setOrderedApplications}
+        />
+      </PhoneFrame>
+    );
+  }
+
+  if (showMessageCenter) {
+    return (
+      <PhoneFrame topNav={null} bottomNav={null} hideGradient={true}>
+        <MessageCenter
+          onBack={() => {
+            setShowMessageCenter(false);
+            restoreNavigationSource();
+          }}
+          onNavigate={(action) => handleBusinessNavigate(action, 'messages')}
+          onUnreadChange={setMessageUnreadCount}
+        />
+      </PhoneFrame>
+    );
+  }
 
   // 如果显示任务列表页 - 禁用渐变背景
   if (showTaskList) {
@@ -256,12 +430,15 @@ const Home = () => {
         topNav={null}
         bottomNav={null}
         hideGradient={true}
+        hideStatusBar={true}
       >
         <TaskList
-          onBack={() => setShowTaskList(false)}
-          onTaskClick={(task) => {
-            setSelectedTask(task);
+          onBack={() => {
             setShowTaskList(false);
+            restoreNavigationSource();
+          }}
+          onTaskClick={(task) => {
+            console.info('任务详情待接入，保留在任务列表：', task.id);
           }}
         />
       </PhoneFrame>
@@ -275,29 +452,13 @@ const Home = () => {
         topNav={null}
         bottomNav={null}
         hideGradient={true}
+        hideStatusBar={true}
       >
         <RecentDetail
           onBack={() => setShowRecentList(false)}
           onNavigate={(item) => {
-            setShowRecentList(false);
-            setSelectedRecentItem(item);
+            handleRecentNavigate(item, 'recentList');
           }}
-        />
-      </PhoneFrame>
-    );
-  }
-
-  // 如果显示最近查看卡片详情页 - 禁用渐变背景
-  if (selectedRecentItem) {
-    return (
-      <PhoneFrame
-        topNav={null}
-        bottomNav={null}
-        hideGradient={true}
-      >
-        <RecentCardDetail
-          item={selectedRecentItem}
-          onBack={() => setSelectedRecentItem(null)}
         />
       </PhoneFrame>
     );
@@ -314,7 +475,10 @@ const Home = () => {
       >
         <DataReport
           device={dataReportDevice}
-          onBack={() => setDataReportDevice(null)}
+          onBack={() => {
+            setDataReportDevice(null);
+            if (!selectedWorkCondition) restoreNavigationSource();
+          }}
         />
       </PhoneFrame>
     );
@@ -331,7 +495,11 @@ const Home = () => {
       >
         <WorkConditionDetail
           device={selectedWorkCondition}
-          onBack={() => setSelectedWorkCondition(null)}
+          backLabel={currentPage === 'assetList' ? '返回资产列表' : navigationSource === 'search' ? '返回全域搜索' : '返回'}
+          onBack={() => {
+            setSelectedWorkCondition(null);
+            if (currentPage !== 'assetList') restoreNavigationSource();
+          }}
           onNavigate={(page) => {
             if (page === 'dataReport') setDataReportDevice(selectedWorkCondition);
           }}
@@ -347,10 +515,14 @@ const Home = () => {
         topNav={null}
         bottomNav={null}
         hideGradient={true}
+        hideStatusBar={true}
       >
         <DeviceDetail
           deviceName={selectedDevice.name}
-          onBack={() => setSelectedDevice(null)}
+          onBack={() => {
+            setSelectedDevice(null);
+            if (currentPage !== 'auditList') restoreNavigationSource();
+          }}
         />
       </PhoneFrame>
     );
@@ -365,14 +537,17 @@ const Home = () => {
       >
         <SearchPage
           initialScannerOpen={openSearchWithScanner}
+          initialState={searchSession}
+          onStateChange={setSearchSession}
+          onNavigate={(action) => handleBusinessNavigate(action, 'search')}
           onOpenAsset={() => {
-            setShowSearchPage(false);
             setOpenSearchWithScanner(false);
-            setActiveTab('asset');
+            handleBusinessNavigate({ target: 'assetList', context: { label: '扫码识别资产' } }, 'search');
           }}
           onClose={() => {
             setShowSearchPage(false);
             setOpenSearchWithScanner(false);
+            restoreNavigationSource();
           }}
         />
       </PhoneFrame>
@@ -386,7 +561,10 @@ const Home = () => {
         topNav={null}
         bottomNav={null}
       >
-        <DeviceStartupList onBack={() => setShowDeviceStartupList(false)} />
+        <DeviceStartupList onBack={() => {
+          setShowDeviceStartupList(false);
+          restoreNavigationSource();
+        }} />
       </PhoneFrame>
     );
   }
@@ -411,11 +589,11 @@ const Home = () => {
     const renderPage = () => {
       switch (currentPage) {
         case 'parts':
-          return <PartsOrder onBack={() => setCurrentPage(null)} />;
+          return <PartsOrder onBack={closeCurrentPage} initialQuery={pageContext?.query} initialItem={pageContext?.item} />;
         case 'service':
-          return <ServiceRequest onBack={() => setCurrentPage(null)} />;
+          return <ServiceRequest onBack={closeCurrentPage} />;
         case 'maintenance':
-          return <DeviceMaintenance onBack={() => setCurrentPage(null)} />;
+          return <DeviceMaintenance onBack={closeCurrentPage} />;
         default:
           return null;
       }
@@ -425,6 +603,7 @@ const Home = () => {
       <PhoneFrame
         topNav={null}
         bottomNav={null}
+        hideStatusBar={['parts', 'service', 'maintenance'].includes(currentPage)}
       >
         {renderPage()}
       </PhoneFrame>
@@ -482,14 +661,10 @@ const Home = () => {
           </div>
         }
         bottomNav={
-          <BottomNav activeTab={activeTab} onTabChange={setActiveTab} showProfileDot={!userRole} />
+          <BottomNav activeTab={activeTab} onTabChange={handleTabChange} showProfileDot={!userRole} />
         }
       >
-        <Asset onDeviceClick={(device) => {
-          if (['三一平地机', '三一压路机', '三一摊铺机', '三一泵车', '三一拖泵', '三一车载泵', '三一铣刨机'].includes(device.name)) {
-            setSelectedWorkCondition(device);
-          }
-        }} />
+        <Asset navigationContext={assetNavigationContext} onDeviceClick={(device) => setSelectedWorkCondition(device)} />
       </PhoneFrame>
     );
   }
@@ -521,10 +696,10 @@ const Home = () => {
           </div>
         }
         bottomNav={
-          <BottomNav activeTab={activeTab} onTabChange={setActiveTab} showProfileDot={!userRole} />
+          <BottomNav activeTab={activeTab} onTabChange={handleTabChange} showProfileDot={!userRole} />
         }
       >
-        <Audit key={auditInitialTab} onDeviceClick={(device) => setSelectedDevice(device)} initialTab={auditInitialTab} />
+        <Audit key={auditInitialTab} onDeviceClick={(device) => setSelectedDevice(device)} initialTab={auditInitialTab} navigationContext={auditNavigationContext} />
       </PhoneFrame>
     );
   }
@@ -575,7 +750,7 @@ const Home = () => {
           </div>
         }
         bottomNav={
-          <BottomNav activeTab={activeTab} onTabChange={setActiveTab} showProfileDot={!userRole} />
+          <BottomNav activeTab={activeTab} onTabChange={handleTabChange} showProfileDot={!userRole} />
         }
       >
         <Profile userRole={userRole} onRoleConfirm={(role) => setUserRole(role)} />
@@ -599,10 +774,11 @@ const Home = () => {
             rememberDivisionGuide();
             setShowDivisionCoachmark(false);
           }}
+          notificationCount={messageUnreadCount}
         />
       }
       bottomNav={
-        <BottomNav activeTab={activeTab} onTabChange={setActiveTab} isScrolled={isScrolled} onScrollToTop={scrollToTop} showProfileDot={!userRole} />
+        <BottomNav activeTab={activeTab} onTabChange={handleTabChange} isScrolled={isScrolled} onScrollToTop={scrollToTop} showProfileDot={!userRole} />
       }
       floatingButton={
         // 发布按钮：底部导航在 home + 非发布流程 + ContentFeed 上报社区可发布
@@ -623,14 +799,19 @@ const Home = () => {
         {/* 中间内容区域 - 可滚动 */}
         <div ref={contentRef} data-scroll-container className="bg-bg-gray h-full overflow-y-auto">
           {/* 快捷功能入口 */}
-          <QuickAccess key={currentDivision.id} onNavigate={setCurrentPage} primaryItems={currentDivision.quickItems} />
+          <QuickAccess
+            key={currentDivision.id}
+            onNavigate={(action) => handleBusinessNavigate(action)}
+            primaryItems={currentDivision.isGlobal ? null : currentDivision.quickItems}
+            applications={orderedApplications}
+          />
 
         {/* 最近查看 */}
         <RecentView onNavigate={(type, item) => {
           if (type === 'recentList') {
             setShowRecentList(true);
           } else if (type === 'recentCard') {
-            setSelectedRecentItem(item);
+            handleRecentNavigate(item);
           }
         }} />
 
@@ -638,10 +819,7 @@ const Home = () => {
         <MyTasksSummary
           tenantType="enterprise"
           onTaskListClick={() => setShowTaskList(true)}
-          onTaskClick={(task) => {
-            console.log('点击任务:', task);
-            // 实际项目中跳转到任务详情页
-          }}
+          onTaskClick={() => setShowTaskList(true)}
         />
 
         {/* 设备开机动态 */}
@@ -651,13 +829,15 @@ const Home = () => {
         <AuditEvents onCategoryClick={handleAuditCategoryClick} />
 
         {/* 内容信息流 */}
-          <ContentFeed
-            ref={contentFeedRef}
-            showPublishPage={showPublishPage}
-            setShowPublishPage={setShowPublishPage}
-            setIsCommunityPublishEligible={setIsCommunityPublishEligible}
-            setIsCommunityPublishViewportActive={setIsCommunityPublishViewportActive}
-          />
+          <div data-home-section="content">
+            <ContentFeed
+              ref={contentFeedRef}
+              showPublishPage={showPublishPage}
+              setShowPublishPage={setShowPublishPage}
+              setIsCommunityPublishEligible={setIsCommunityPublishEligible}
+              setIsCommunityPublishViewportActive={setIsCommunityPublishViewportActive}
+            />
+          </div>
         </div>
         {showDivisionSwitcher && (
           <DivisionSwitcher

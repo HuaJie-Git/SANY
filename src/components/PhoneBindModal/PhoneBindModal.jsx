@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { trackPhoneBind } from '../../utils/tracking';
 
-const PhoneBindModal = ({ visible, onClose, onSuccess, containerRef, sourcePage }) => {
+const PhoneBindModal = ({ visible, onClose, onSuccess, sourcePage }) => {
   const [phone, setPhone] = useState('');
   const [countryCode, setCountryCode] = useState('+86');
   const [verificationCode, setVerificationCode] = useState('');
@@ -122,8 +122,8 @@ const PhoneBindModal = ({ visible, onClose, onSuccess, containerRef, sourcePage 
       trackPhoneBind.confirm(countryCode, true);
       // 实际项目中这里调用绑定接口
       setTimeout(() => {
-        onSuccess && onSuccess();
-        onClose();
+        onSuccess?.();
+        onClose?.();
       }, 1500);
     }, 1500);
   };
@@ -139,12 +139,6 @@ const PhoneBindModal = ({ visible, onClose, onSuccess, containerRef, sourcePage 
   const handleCodeChange = (e) => {
     const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
     setVerificationCode(value);
-    setError('');
-  };
-
-  // 处理区号选择
-  const handleCountryCodeChange = (e) => {
-    setCountryCode(e.target.value);
     setError('');
   };
 

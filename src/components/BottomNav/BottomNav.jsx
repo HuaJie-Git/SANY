@@ -55,17 +55,18 @@ const BottomNav = ({ activeTab, onTabChange, isScrolled, onScrollToTop, showProf
   const handleTabClick = (tabId) => {
     if (tabId === 'home' && isScrolled) {
       // 如果点击的是首页图标且已滚动，执行回顶部
-      onScrollToTop && onScrollToTop();
+      onScrollToTop?.();
     } else {
       // 否则正常切换Tab
-      onTabChange(tabId);
+      onTabChange?.(tabId);
     }
   };
 
   return (
     <div className="w-full bg-white border-t border-gray-100 px-2 py-2 flex justify-around items-center">
       {tabs.map((tab) => (
-        <div
+        <button
+          type="button"
           key={tab.id}
           className="flex flex-col items-center justify-center cursor-pointer relative"
           onClick={() => handleTabClick(tab.id)}
@@ -92,7 +93,7 @@ const BottomNav = ({ activeTab, onTabChange, isScrolled, onScrollToTop, showProf
               </span>
             </>
           )}
-        </div>
+        </button>
       ))}
     </div>
   );
