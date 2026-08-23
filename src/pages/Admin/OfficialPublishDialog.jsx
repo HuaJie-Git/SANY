@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { getAdminTopics } from '../../admin/adminTopics';
-import { officialPublish } from '../../admin/adminContent';
+import { officialPublish, COMMUNITY_TITLE_MAX_LENGTH, COMMUNITY_CONTENT_MAX_LENGTH } from '../../admin/adminContent';
 
 const OfficialPublishDialog = ({ onClose, onSuccess }) => {
   const [topics, setTopics] = useState(() => getAdminTopics().filter((t) => t.status === '开启'));
@@ -186,13 +186,19 @@ const OfficialPublishDialog = ({ onClose, onSuccess }) => {
           {/* 标题（非必填） */}
           <div>
             <label className="block text-[13px] text-gray-700 mb-1">标题</label>
-            <input type="text" value={form.title} onChange={(e) => updateField('title', e.target.value)} className="w-full h-9 px-3 border border-gray-300 rounded text-[13px] focus:outline-none focus:border-[#1890ff]" placeholder="请输入标题（选填）" />
+            <div className="relative">
+              <input type="text" value={form.title} maxLength={COMMUNITY_TITLE_MAX_LENGTH} onChange={(e) => updateField('title', e.target.value)} className="w-full h-9 px-3 pr-14 border border-gray-300 rounded text-[13px] focus:outline-none focus:border-[#1890ff]" placeholder="请输入标题（选填）" />
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-gray-400">{form.title.length}/{COMMUNITY_TITLE_MAX_LENGTH}</span>
+            </div>
           </div>
 
           {/* 正文（非必填） */}
           <div>
             <label className="block text-[13px] text-gray-700 mb-1">正文</label>
-            <textarea value={form.content} onChange={(e) => updateField('content', e.target.value)} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded text-[13px] resize-none focus:outline-none focus:border-[#1890ff]" placeholder="请输入正文内容（选填）" />
+            <div className="relative">
+              <textarea value={form.content} maxLength={COMMUNITY_CONTENT_MAX_LENGTH} onChange={(e) => updateField('content', e.target.value)} rows={3} className="w-full px-3 pt-2 pb-6 border border-gray-300 rounded text-[13px] resize-none focus:outline-none focus:border-[#1890ff]" placeholder="请输入正文内容（选填）" />
+              <span className="pointer-events-none absolute bottom-2 right-3 text-[11px] text-gray-400">{form.content.length}/{COMMUNITY_CONTENT_MAX_LENGTH}</span>
+            </div>
           </div>
 
           {/* ─── 媒体区域 ─── */}

@@ -7,6 +7,9 @@ import {
   getTopicById,
 } from '../components/ContentFeed/communityData';
 
+export const COMMUNITY_TITLE_MAX_LENGTH = 50;
+export const COMMUNITY_CONTENT_MAX_LENGTH = 500;
+
 // 标准删除原因
 export const DELETE_REASONS = ['违规内容', '虚假/误导', '广告/垃圾信息', '侵权', '其他'];
 
@@ -152,11 +155,13 @@ export const auditDeleteContent = (id, auditor, reason) => {
 export const officialPublish = ({ title, content, topicId, type, image, duration, topicCode }) => {
   const topic = getTopicById(topicId);
   const newId = _nextContentId++;
+  const normalizedTitle = String(title || '').trim().slice(0, COMMUNITY_TITLE_MAX_LENGTH);
+  const normalizedContent = String(content || '').slice(0, COMMUNITY_CONTENT_MAX_LENGTH);
   const newItem = {
     id: newId,
     topicCode: topicCode || (topic ? `QZ2025${String(topic.id).padStart(6, '0')}` : '—'),
     topicName: topic ? `#${topic.name}` : '—',
-    sender: '官方', content: title, contentBody: content || '',
+    sender: '官方', content: normalizedTitle, contentBody: normalizedContent,
     views: 0, likes: 0, commentCount: 0,
     senderName: '三一官方', contact: '400-887-0000',
     type, image: image || topic?.icon || 'images/机手社区/三一重卡/三一重卡_01.jpg',
@@ -167,7 +172,7 @@ export const officialPublish = ({ title, content, topicId, type, image, duration
   };
   _contentItems.unshift(newItem);
   communityPosts.unshift({
-    id: newId, authorId: 'sany-official', topicId, title, content,
+    id: newId, authorId: 'sany-official', topicId, title: normalizedTitle, content: normalizedContent,
     image: newItem.image, views: 0, likes: 0, comments: 0,
     date: newItem.date, type, duration: duration || undefined,
     auditStatus: 'approved', isLiked: false,
