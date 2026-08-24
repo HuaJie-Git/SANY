@@ -172,8 +172,6 @@
 .home-modules { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 13px; }
 .home-module { position: relative; min-width: 0; padding: 17px; border: 1px solid #e2e6e9; border-radius: 8px; background: #fff; box-shadow: 0 1px 4px rgba(30,38,46,.04); }
 .home-module.is-span-12 { grid-column: span 12; }
-.home-module.is-span-7 { grid-column: span 7; }
-.home-module.is-span-5 { grid-column: span 5; }
 .home-inline-notice { position: fixed; inset-inline: 50% auto; bottom: 24px; z-index: 400; width: max-content; max-width: min(420px, calc(100vw - 32px)); padding: 10px 14px; border: 1px solid #d9e5dc; border-radius: 6px; background: #28333a; color: #fff; font-size: 11px; line-height: 1.45; text-align: center; box-shadow: 0 10px 25px rgba(19, 27, 33, .2); transform: translateX(-50%); }
 .home-module > header { min-height: 38px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .home-module > header h2 { margin: 0; color: #252d35; font-size: 13px; font-weight: 650; letter-spacing: -.2px; }
@@ -577,7 +575,6 @@
 
 @media (max-width: 1180px) {
   .global-search-wrap { width: calc(100% - 64px); }
-  .home-module.is-span-7, .home-module.is-span-5 { grid-column: span 12; }
   .maintenance-assets { grid-template-columns: repeat(3, 1fr); }
   .home-module.is-links .quick-links { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .home-content { padding-bottom: 88px; }
