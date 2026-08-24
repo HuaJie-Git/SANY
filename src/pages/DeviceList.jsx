@@ -75,20 +75,21 @@ function RunStatusDot({ status }) {
 }
 
 /* ─── Main Component ─── */
-export default function DeviceList({ onSelectDevice }) {
+export default function DeviceList({ onSelectDevice, preset, onClearPreset }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
 
   const filteredDevices = useMemo(() => {
     return DEVICES.filter((d) => {
+      if (preset?.deviceIds?.length && !preset.deviceIds.includes(d.id)) return false;
       const q = searchQuery.trim().toLowerCase();
       if (q && !d.code.toLowerCase().includes(q) && !d.name.includes(q) && !d.model.toLowerCase().includes(q)) return false;
       if (filterType && d.type !== filterType) return false;
       if (filterStatus && d.status !== filterStatus) return false;
       return true;
     });
-  }, [searchQuery, filterType, filterStatus]);
+  }, [searchQuery, filterType, filterStatus, preset]);
 
   const handleReset = () => {
     setSearchQuery('');
@@ -133,6 +134,12 @@ export default function DeviceList({ onSelectDevice }) {
 
   return (
     <div style={{ minHeight: 'calc(100vh - 56px)', background: '#f5f6fa', padding: 24 }}>
+      {preset && (
+        <div className="device-list-context">
+          <div><small>来自主屏幕的筛选</small><strong>{preset.label}</strong><span>{filteredDevices.length} 台设备</span></div>
+          <button type="button" onClick={onClearPreset}>查看全部设备</button>
+        </div>
+      )}
       {/* ── Top bar: search + filters ── */}
       <div
         style={{
@@ -181,6 +188,8 @@ export default function DeviceList({ onSelectDevice }) {
         >
           <option value="">运行状态</option>
           <option value="行驶">行驶</option>
+          <option value="工作">工作</option>
+          <option value="怠速">怠速</option>
           <option value="离线">离线</option>
         </select>
 

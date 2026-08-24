@@ -1,7 +1,8 @@
 import React from 'react';
 
 const menuItems = [
-  { label: '设备管理', icon: '▣' },
+  { key: 'home', label: '主屏幕', icon: '⌂' },
+  { key: 'devices', label: '设备管理', icon: '▣' },
   { label: '数据大屏', icon: '▥' },
   { label: '项目管理', icon: '▤' },
   { label: '监控中心', icon: '⌁' },
@@ -19,20 +20,21 @@ function showToast(message) {
   setTimeout(() => toast.remove(), 1600);
 }
 
-export default function Sidebar() {
+export default function Sidebar({ activeKey = 'home', onNavigate }) {
   return (
     <aside className="sany-sidebar" aria-label="主导航">
       <div className="sidebar-logo-mark">▰</div>
       <nav>
-        {menuItems.map((item, index) => (
+        {menuItems.map((item) => (
           <button
             key={item.label}
             type="button"
             title={item.label}
-            className={`sidebar-item${index === 0 ? ' is-active' : ''}`}
-            onClick={() => index !== 0 && showToast(`${item.label}功能演示`)}
+            className={`sidebar-item${item.key === activeKey ? ' is-active' : ''}`}
+            onClick={() => item.key ? onNavigate?.(item.key === 'home' ? 'home' : 'list') : showToast(`${item.label}功能演示`)}
           >
             <span aria-hidden="true">{item.icon}</span>
+            <small>{item.label}</small>
           </button>
         ))}
       </nav>
