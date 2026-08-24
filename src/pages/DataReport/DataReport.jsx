@@ -595,12 +595,10 @@ const WeeklyView = ({ deviceName, baseDate }) => {
         <LineChart
           series={[
             { key: 'hourlyFuel', label: '平均每小时油耗', unit: ' L/h', data: d.fuelTrend.map((fuel, i) => Number((fuel / (d.workH[i] || 1)).toFixed(2))), color: '#ff862d' },
-            { key: 'duration', label: '时长', unit: ' h', data: d.workH, color: '#7c3aed', axis: 'right' },
           ]}
           labels={['周一','周二','周三','周四','周五','周六','周日']}
           tooltipLabels={tooltipLabels}
           yUnit="L/h"
-          rightUnit="时长(h)"
         />
       </div>
       <div className="rounded-2xl bg-white p-4 shadow-sm">
@@ -644,12 +642,10 @@ const MonthlyView = ({ deviceName, baseDate }) => {
         <LineChart
           series={[
             { key: 'mHourlyFuel', label: '平均每小时油耗', unit: ' L/h', data: d.fuelTrend.map((fuel, i) => Number((fuel / (d.workH[i] || 1)).toFixed(2))), color: '#ff862d' },
-            { key: 'mDuration', label: '时长', unit: ' h', data: d.workH, color: '#7c3aed', axis: 'right' },
           ]}
           labels={monthLabels}
           tooltipLabels={tooltipLabels}
           yUnit="L/h"
-          rightUnit="时长(h)"
         />
       </div>
       <div className="rounded-2xl bg-white p-4 shadow-sm">
