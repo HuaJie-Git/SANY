@@ -19,7 +19,7 @@ const typeConfig = (device) => {
   const paver = type === '摊铺机';
   const roller = type === '压路机';
   const METRICS = {
-    摊铺机: [['油耗', 'L'], ['工时', 'h'], ['怠速工时', 'h'], ['每小时油耗', 'L/h'], ['摊铺距离', 'm']],
+    摊铺机: [['油耗', 'L'], ['怠速工时', 'h'], ['摊铺距离', 'm']],
     压路机: [['油耗', 'L'], ['工时', 'h'], ['怠速工时', 'h']],
     平地机: [['油耗', 'L'], ['工时', 'h'], ['怠速工时', 'h'], ['每小时油耗', 'L/h']],
     泵车: [['油耗', 'L'], ['工时', 'h'], ['怠速工时', 'h'], ['每小时油耗', 'L/h'], ['泵送方量', 'm³']],
@@ -34,7 +34,7 @@ const typeConfig = (device) => {
     metrics: METRICS[type] || METRICS['平地机'],
     amountLabel,
     amountUnit: amountLabel && (amountLabel === '摊铺距离' || amountLabel === '铣刨距离') ? 'm' : amountLabel ? 'm³' : null,
-    statusNames: paver ? ['行驶', '怠速'] : ['工作', '怠速'],
+    statusNames: paver ? ['怠速'] : ['工作', '怠速'],
   };
 };
 
@@ -182,9 +182,10 @@ function GanttChart({ workHours, idleHours, device }) {
 
 function WorkDistributionGrid({ trend, period, device }) {
   const primary = getPrimaryWorkStatus(device);
+  const paver = device?.type === '摊铺机';
   const days = period === 'weekly' ? 7 : 30;
   const rows = Array.from({ length: days }, (_, index) => {
-    const work = trend.work[index] || 0;
+    const work = paver ? 0 : (trend.work[index] || 0);
     const idle = trend.idle[index] || 0;
     const total = Math.max(work + idle, 1);
     return { label: period === 'weekly' ? ['一', '二', '三', '四', '五', '六', '日'][index] : String(index + 1), work, idle, total };
@@ -199,20 +200,21 @@ function WorkDistributionGrid({ trend, period, device }) {
     const secondStart = Math.min(idleStart + idle + .65, 23);
     const secondWork = Math.min(work - firstWork, 24 - secondStart);
     return <div className="work-distribution-row" key={row.label}><span>{row.label}</span><div><i style={{ left: `${start / 24 * 100}%`, width: `${firstWork / 24 * 100}%`, background: WORK_STATUS_COLORS[primary] }} /><i style={{ left: `${idleStart / 24 * 100}%`, width: `${idle / 24 * 100}%`, background: WORK_STATUS_COLORS.怠速 }} />{secondWork > 0 && <i style={{ left: `${secondStart / 24 * 100}%`, width: `${secondWork / 24 * 100}%`, background: WORK_STATUS_COLORS[primary] }} />}</div></div>;
-  })}<div className="work-distribution-legend"><span><i style={{ background: WORK_STATUS_COLORS[primary] }} />{primary}</span><span><i style={{ background: WORK_STATUS_COLORS.怠速 }} />怠速</span></div></div>;
+  })}<div className="work-distribution-legend">{!paver && <span><i style={{ background: WORK_STATUS_COLORS[primary] }} />{primary}</span>}<span><i style={{ background: WORK_STATUS_COLORS.怠速 }} />怠速</span></div></div>;
 }
 
 function CategoryBars({ trend, period, device }) {
   const primary = getPrimaryWorkStatus(device);
+  const paver = device?.type === '摊铺机';
   const days = period === 'weekly' ? 7 : 14;
   const step = Math.ceil(trend.work.length / days);
   const values = Array.from({ length: days }, (_, index) => {
-    const work = trend.work[index * step] || 0;
+    const work = paver ? 0 : (trend.work[index * step] || 0);
     const idle = trend.idle[index * step] || 0;
     return { work, idle, label: period === 'weekly' ? ['11/17', '11/18', '11/19', '11/20', '11/21', '11/22', '11/23'][index] : `11/${String(index * step + 1).padStart(2, '0')}` };
   });
   const max = Math.max(...values.map((item) => item.work + item.idle), 1);
-  return <div className="category-bars-wrap"><div style={{ height: 166, display: 'flex', alignItems: 'flex-end', gap: period === 'weekly' ? 18 : 8, padding: '10px 10px 22px', borderBottom: '1px solid #e5e7eb' }}>{values.map((item) => <div key={item.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, height: '100%', justifyContent: 'flex-end' }}><div style={{ width: '100%', maxWidth: 28, height: `${((item.work + item.idle) / max) * 125}px`, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}><span style={{ height: `${(item.idle / Math.max(item.work + item.idle, 1)) * 100}%`, background: WORK_STATUS_COLORS['怠速'], minHeight: item.idle ? 3 : 0 }} /><span style={{ height: `${(item.work / Math.max(item.work + item.idle, 1)) * 100}%`, background: WORK_STATUS_COLORS[primary] }} /></div><span style={{ fontSize: 9, color: '#9ca3af', whiteSpace: 'nowrap' }}>{item.label}</span></div>)}</div><div className="category-legend"><span><i style={{ background: WORK_STATUS_COLORS[primary] }} />{primary}</span><span><i style={{ background: WORK_STATUS_COLORS.怠速 }} />怠速</span></div></div>;
+  return <div className="category-bars-wrap"><div style={{ height: 166, display: 'flex', alignItems: 'flex-end', gap: period === 'weekly' ? 18 : 8, padding: '10px 10px 22px', borderBottom: '1px solid #e5e7eb' }}>{values.map((item) => <div key={item.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, height: '100%', justifyContent: 'flex-end' }}><div style={{ width: '100%', maxWidth: 28, height: `${((item.work + item.idle) / max) * 125}px`, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}><span style={{ height: `${(item.idle / Math.max(item.work + item.idle, 1)) * 100}%`, background: WORK_STATUS_COLORS['怠速'], minHeight: item.idle ? 3 : 0 }} />{!paver && <span style={{ height: `${(item.work / Math.max(item.work + item.idle, 1)) * 100}%`, background: WORK_STATUS_COLORS[primary] }} />}</div><span style={{ fontSize: 9, color: '#9ca3af', whiteSpace: 'nowrap' }}>{item.label}</span></div>)}</div><div className="category-legend">{!paver && <span><i style={{ background: WORK_STATUS_COLORS[primary] }} />{primary}</span>}<span><i style={{ background: WORK_STATUS_COLORS.怠速 }} />怠速</span></div></div>;
 }
 
 function Calendar({ trend, period, device }) {
@@ -253,7 +255,7 @@ function metricData(device, period, trend) {
     const amount = number(device?.today?.pumpingVolume ?? device?.today?.millingDistance);
     const pumpCount = number(device?.today?.pumpingCount);
     const base = [dailyFuel, workHours, idleHours, hourly(dailyFuel, workHours)];
-    const values = config.isPaver ? [...base, number(device?.today?.pavingDistance)] : config.isRoller ? [dailyFuel, workHours, idleHours] : type === '拖泵' ? [...base, amount, pumpCount] : isAmountType ? [...base, amount] : base;
+    const values = config.isPaver ? [dailyFuel, idleHours, number(device?.today?.pavingDistance)] : config.isRoller ? [dailyFuel, workHours, idleHours] : type === '拖泵' ? [...base, amount, pumpCount] : isAmountType ? [...base, amount] : base;
     return buildMetrics(values);
   }
   const fuel = trend.fuel.reduce((sum, value) => sum + value, 0);
@@ -265,7 +267,7 @@ function metricData(device, period, trend) {
   const hasPumpCount = trend.pumpCount.some((value) => value != null);
   const pumpCount = hasPumpCount ? trend.pumpCount.reduce((sum, value) => sum + (value || 0), 0) : null;
   const base = [fuel, work, idle, hourly(fuel, work)];
-  const values = config.isPaver ? [...base, distance] : config.isRoller ? [fuel, work, idle] : type === '拖泵' ? [...base, distance, pumpCount] : isAmountType ? [...base, distance] : base;
+  const values = config.isPaver ? [fuel, idle, distance] : config.isRoller ? [fuel, work, idle] : type === '拖泵' ? [...base, distance, pumpCount] : isAmountType ? [...base, distance] : base;
   return buildMetrics(values);
 }
 
@@ -301,7 +303,7 @@ export default function StatisticsReport({ device }) {
     const type = device?.type;
     let values;
     if (config.isPaver) {
-      values = { 油耗: `${fuel}L`, 工时: `${one(work)}h`, 怠速工时: `${one(trend.idle[index] || 0)}h`, 每小时油耗: `${work ? one(fuel / work) : '--'}L/h`, 摊铺距离: `${Math.round(fuel * 33.8)}m` };
+      values = { 油耗: `${fuel}L`, 怠速工时: `${one(trend.idle[index] || 0)}h`, 摊铺距离: `${Math.round(fuel * 33.8)}m` };
     } else if (config.isRoller) {
       values = { 油耗: `${fuel}L`, 工时: `${one(work)}h`, 怠速工时: `${one(trend.idle[index] || 0)}h` };
     } else {
@@ -314,9 +316,7 @@ export default function StatisticsReport({ device }) {
     return { id: index, date: period === 'daily' ? formatDate(baseDate) : period === 'weekly' ? `2025/11/${17 + index}` : `2025/11/${String(index + 1).padStart(2, '0')}`, ...values };
   });
   const showToast = (message) => { setToast(message); window.setTimeout(() => setToast(''), 1800); };
-  const trendSeries = [
-    { key: 'hourly', label: '平均每小时油耗', unit: ' L/h', color: '#ff862d', data: trend.hourly },
-  ];
+  const trendSeries = config.isPaver ? [] : [{ key: 'hourly', label: '平均每小时油耗', unit: ' L/h', color: '#ff862d', data: trend.hourly }];
   const metricComparison = period === 'weekly' ? '对比上周' : period === 'monthly' ? '对比上月' : null;
   return <div className="statistics-report">
     <div className="report-toolbar">
@@ -326,12 +326,12 @@ export default function StatisticsReport({ device }) {
     </div>
     {mode === 'chart' ? <div className={`report-chart-layout ${period}`}>
       <SectionCard title="指标概览" extra={metricComparison} className="metric-overview"><div className={`report-metrics columns-${metrics.length}`}>{metrics.map((metric) => <div className="report-metric" key={metric.label}><div><strong>{metric.value == null ? '--' : one(metric.value)}</strong><span>{metric.unit}</span>{metric.change != null && <em className={metric.change >= 0 ? 'is-up' : 'is-down'}>{metric.change >= 0 ? '↗' : '↘'} {Math.abs(metric.change)}%</em>}</div><small>{metric.label}</small></div>)}</div></SectionCard>
-      {period === 'daily' && <SectionCard title="开工时段分布" className="daily-distribution"><GanttChart workHours={number(device?.today?.workHours)} idleHours={number(device?.today?.idleHours)} device={device} /></SectionCard>}
+      {period === 'daily' && <SectionCard title={config.isPaver ? '怠速时段分布' : '开工时段分布'} className="daily-distribution"><GanttChart workHours={number(device?.today?.workHours)} idleHours={number(device?.today?.idleHours)} device={device} /></SectionCard>}
       {period !== 'daily' && <div className={`period-dashboard ${period}`}>
         <SectionCard title="运行日历" icon="calendar" className="calendar-panel"><Calendar trend={trend} period={period} device={device} /></SectionCard>
-        <SectionCard title="开工时段分布" className="distribution-panel"><WorkDistributionGrid trend={trend} period={period} device={device} /></SectionCard>
-        <SectionCard title="工时分类占比" className="category-panel"><CategoryBars trend={trend} period={period} device={device} /></SectionCard>
-        <SectionCard title="平均每小时油耗趋势" className="trend-panel"><div className="chart-subtitle">平均每小时油耗(L/h)</div><TooltipLineChart labels={labels} tooltipLabels={chartLabels.tooltip} series={trendSeries} /></SectionCard>
+        <SectionCard title={config.isPaver ? '怠速时段分布' : '开工时段分布'} className="distribution-panel"><WorkDistributionGrid trend={trend} period={period} device={device} /></SectionCard>
+        <SectionCard title={config.isPaver ? '怠速工时占比' : '工时分类占比'} className="category-panel"><CategoryBars trend={trend} period={period} device={device} /></SectionCard>
+        {!config.isPaver && <SectionCard title="平均每小时油耗趋势" className="trend-panel"><div className="chart-subtitle">平均每小时油耗(L/h)</div><TooltipLineChart labels={labels} tooltipLabels={chartLabels.tooltip} series={trendSeries} /></SectionCard>}
       </div>}
     </div> : <ListView rows={rows} columns={columns} onExport={() => showToast('报表导出任务已创建')} />}
     {toast && <div className="report-toast">{toast}</div>}

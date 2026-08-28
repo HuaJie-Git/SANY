@@ -256,13 +256,11 @@ export const DEVICES = [
       当前油位: '70%',
     },
     today: {
-      workHours: 7.5,
       idleHours: 1.5,
     },
     cumulative: {
       摊铺距离: '12680m',
       totalFuel: '200L',
-      总工作小时: '2000h',
     },
     warnings: [
       {

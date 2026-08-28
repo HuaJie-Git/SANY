@@ -5,9 +5,7 @@ export const WORK_STATUS_COLORS = {
   其他: '#e5e7eb',
 };
 
-export const getPrimaryWorkStatus = (device) => (
-  device?.type === '摊铺机' ? '行驶' : '工作'
-);
+export const getPrimaryWorkStatus = (device) => (device?.type === '摊铺机' ? null : '工作');
 
 export const buildDaySegments = (workHours, idleHours, primaryStatus) => {
   const work = Number(workHours) || 0;
@@ -20,7 +18,7 @@ export const buildDaySegments = (workHours, idleHours, primaryStatus) => {
     cursor = 8;
   }
 
-  if (work > 0 && cursor < 24) {
+  if (primaryStatus && work > 0 && cursor < 24) {
     const end = Math.min(cursor + work, 24);
     segments.push({ start: cursor, end, status: primaryStatus });
     cursor = end;

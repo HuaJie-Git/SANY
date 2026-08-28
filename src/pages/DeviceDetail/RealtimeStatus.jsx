@@ -19,7 +19,7 @@ const FIELD_CONFIG = {
 
 // 历史累计数据按机型配置：字段表“累计工况 / 累计工况、数据报表”确认字段
 const CUMULATIVE_CONFIG = {
-  摊铺机: [['总工作时间', 'totalWorkHours'], ['总油耗', 'totalFuel'], ['摊铺距离', '摊铺距离']],
+  摊铺机: [['总油耗', 'totalFuel'], ['摊铺距离', '摊铺距离']],
   压路机: [['总工作时间', 'totalWorkHours'], ['总油耗', 'totalFuel'], ['总里程', 'totalMileage']],
   平地机: [['总工作时间', 'totalWorkHours'], ['总油耗', 'totalFuel'], ['总里程', 'totalMileage']],
   泵车: [['总里程', 'totalMileage'], ['总泵送方量', 'totalPumpingVolume'], ['总油耗', 'totalFuel'], ['总工作时间', 'totalWorkHours']],
@@ -41,7 +41,7 @@ function Gantt24h({ device, workHours, idleHours }) {
   const primary = getPrimaryWorkStatus(device);
   const ranges = useMemo(() => buildDaySegments(workHours, idleHours, primary), [workHours, idleHours, primary]);
   const ticks = Array.from({ length: 13 }, (_, i) => i * 2);
-  const legend = isPaver(device) ? ['行驶', '怠速'] : ['工作', '怠速'];
+  const legend = isPaver(device) ? ['怠速'] : ['工作', '怠速'];
   return (
     <div className="gantt-wrap">
       <div className="gantt-scale">{ticks.map((h) => <span key={h} style={{ left: `${(h / 24) * 100}%` }}>{h === 24 ? '24' : h}</span>)}</div>
@@ -102,6 +102,7 @@ export default function RealtimeStatus({ device }) {
   const cumulative = device.cumulative || {};
   const workHours = Number(today.workHours || 0);
   const idleHours = Number(today.idleHours || 0);
+  const paver = isPaver(device);
   const fields = (FIELD_CONFIG[device.type] || Object.keys(realtime)).filter((key) => key in realtime).map((key) => ({ key, value: realtime[key] }));
   const fuel = today.totalFuel || today.fuelConsumption || cumulative.totalFuel || '124L';
   const hourlyFuel = today.fuelPerWorkHour || '15.2L/h';
@@ -118,8 +119,8 @@ export default function RealtimeStatus({ device }) {
 
       <div className="realtime-dashboard">
         <div className="dashboard-left">
-          <section className="dashboard-card today-work-card"><SectionTitle icon="◷" title="今日工时" tone="purple" /><div className="today-numbers"><div><strong>{workHours}<em>h</em></strong><small>工作时长</small></div><div><strong>{idleHours}<em>h</em></strong><small>怠速工时</small></div></div><Gantt24h device={device} workHours={workHours} idleHours={idleHours} /></section>
-          <section className="dashboard-card today-fuel-card"><SectionTitle icon="◒" title="今日油耗" tone="orange" /><div className="fuel-numbers"><div><strong>{fuel}</strong><small>总油耗</small></div><div><strong>{hourlyFuel}</strong><small>每小时油耗</small></div></div><OilBars device={device} /><div className="chart-axis"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div></section>
+          <section className="dashboard-card today-work-card"><SectionTitle icon="◷" title={paver ? '今日怠速工时' : '今日工时'} tone="purple" /><div className="today-numbers">{!paver && <div><strong>{workHours}<em>h</em></strong><small>工作时长</small></div>}<div><strong>{idleHours}<em>h</em></strong><small>怠速工时</small></div></div><Gantt24h device={device} workHours={paver ? 0 : workHours} idleHours={idleHours} /></section>
+          <section className="dashboard-card today-fuel-card"><SectionTitle icon="◒" title="今日油耗" tone="orange" /><div className="fuel-numbers"><div><strong>{fuel}</strong><small>总油耗</small></div>{!paver && <div><strong>{hourlyFuel}</strong><small>每小时油耗</small></div>}</div><OilBars device={device} /><div className="chart-axis"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div></section>
           <section className="dashboard-card cumulative-card"><SectionTitle icon="◒" title="历史累计数据" tone="orange" /><div className="history-items">{historyItems.map((item) => <div key={item.label}><strong>{item.value}</strong><small>{item.label}</small></div>)}</div></section>
         </div>
         <section className="map-card"><LocalMap device={device} /></section>

@@ -52,8 +52,8 @@ export default function HistoryTrack({ device }) {
   const [zoom, setZoom] = useState(1);
   const timerRef = useRef(null);
 
-  const track = MAKE_TRACK(deviceCode);
   const paver = isPaverDevice(device);
+  const track = paver ? MAKE_TRACK(deviceCode).filter((record) => record.status === '怠速') : MAKE_TRACK(deviceCode);
 
   /* ── playback ── */
   const stopPlay = useCallback(() => { setIsPlaying(false); if (timerRef.current) clearInterval(timerRef.current); timerRef.current = null; }, []);
