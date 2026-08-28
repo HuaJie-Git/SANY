@@ -114,18 +114,14 @@ const DEVICE_DATA = {
       summary: [
         ['摊铺距离', '1,860', 'm'],
         ['油耗', '120', 'L'],
-        ['每小时油耗', '22.2', 'L/h'],
-        ['工时', '7.5', 'h'],
         ['怠速工时', '1.5', 'h'],
       ],
-      workDist: [0,0,0,0,3,3,3,3,3,2,2,3,0,0,3,3,3,3,2,2,3,0,0,0],
+      workDist: [0,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,0,2,2,0,0,0],
     },
     weekly: {
       summary: [
         ['摊铺距离', '8,650', 'm', 12],
         ['油耗', '260', 'L', 12],
-        ['每小时油耗', '22.0', 'L/h', -5],
-        ['工时', '42.8', 'h', 5],
         ['怠速工时', '6.2', 'h', -5],
       ],
       calDays: [
@@ -138,19 +134,15 @@ const DEVICE_DATA = {
         { d: 7 },
       ],
       fuelTrend: [53,61,53,44,49,0,0],
-      workH: [7.8,8.5,7.2,6.8,7.4,0,0],
       idleH: [1.2,1.5,1.0,1.1,1.3,0,0],
     },
     monthly: {
       summary: [
         ['摊铺距离', '36,800', 'm', 12],
         ['油耗', '1,086', 'L', 12],
-        ['每小时油耗', '22.1', 'L/h', 5],
-        ['工时', '138.6', 'h', 5],
         ['怠速工时', '22.5', 'h', 5],
       ],
       fuelTrend: [47,48,53,45,49,0,0, 45,41,54,48,40,0,0, 47,51,45,45,49,0,0, 43,47,53,44,50,0,0, 45,49,48],
-      workH: [7.5,8.2,6.8,7.6,8.5,0,0,7.2,6.5,8.3,7.8,6.2,0,0,7.6,8.4,6.6,7.3,8.1,0,0,7.4,6.9,8.2,7.7,6.3,0,0,7.5,8.0],
       idleH: [1.0,1.3,0.8,1.1,1.5,0,0,0.9,0.7,1.4,1.2,0.6,0,0,1.1,1.4,0.8,1.0,1.3,0,0,1.0,0.8,1.3,1.1,0.7,0,0,1.0,1.2],
     },
   },
@@ -357,6 +349,53 @@ const DEVICE_DATA = {
       idleH: [0.8,1.1,0.7,0.9,1.2,0,0,0.8,0.6,1.1,0.9,0.5,0,0,1.0,1.2,0.7,0.9,1.1,0,0,0.8,0.7,1.0,0.9,0.6,0,0,0.8,1.0],
     },
   },
+  '纯电搅拌车': {
+    supportsTrajectory: true,
+    electric: true,
+    daily: {
+      fuelLevel: null,
+      summary: [
+        ['里程', '360', 'km'],
+        ['用电量', '150', 'kWh'],
+        ['平均每小时能耗', '20', 'kWh/h'],
+        ['工时', '7.5', 'h'],
+      ],
+      workDist: [0,0,0,0,1,1,1,1,1,2,2,1,0,0,1,1,1,1,2,2,1,0,0,0],
+    },
+    weekly: {
+      summary: [
+        ['里程', '657', 'km', 12],
+        ['用电量', '301.2', 'kWh', -5],
+        ['平均每小时能耗', '6.2', 'kWh/h', 3],
+        ['工时', '48.5', 'h', 5],
+        ['怠速工时', '7.5', 'h', -5],
+      ],
+      calDays: [
+        { d: 1, amount: null, fuel: 48 },
+        { d: 2, amount: null, fuel: 56 },
+        { d: 3, amount: null, fuel: 52 },
+        { d: 4, amount: null, fuel: 44 },
+        { d: 5, amount: null, fuel: 40 },
+        { d: 6 },
+        { d: 7 },
+      ],
+      fuelTrend: [48,56,52,44,40,0,0],
+      workH: [8.2,9.5,8.8,7.6,8.2,0,0],
+      idleH: [1.2,1.5,1.0,1.1,1.3,0,0],
+    },
+    monthly: {
+      summary: [
+        ['里程', '1,657', 'km', 12],
+        ['用电量', '2,301.2', 'kWh', 5],
+        ['平均每小时能耗', '15.5', 'kWh/h', 5],
+        ['工时', '148.6', 'h', 5],
+        ['怠速工时', '27.5', 'h', 5],
+      ],
+      fuelTrend: [52,56,60,54,58,0,0, 53,51,59,56,49,0,0, 55,59,52,53,58,0,0, 51,55,59,53,57,0,0, 51,58,55],
+      workH: [8.0,9.3,7.6,8.4,9.0,0,0,8.2,7.4,9.1,8.6,7.0,0,0,8.7,9.2,7.3,8.0,8.9,0,0,8.1,7.7,9.0,8.5,7.2,0,0,8.3,8.8],
+      idleH: [1.1,1.4,0.9,1.2,1.5,0,0,1.0,0.8,1.3,1.1,0.7,0,0,1.2,1.4,0.9,1.1,1.3,0,0,1.0,0.9,1.2,1.1,0.8,0,0,1.0,1.3],
+    },
+  },
 };
 
 const WEEKDAY = ['周日','周一','周二','周三','周四','周五','周六'];
@@ -431,7 +470,7 @@ const TrajectoryMap = () => (
 );
 
 /* ──────────────── monthly calendar grid ──────────────── */
-const MonthCalendar = ({ dailyData, amountUnit, highlight }) => {
+const MonthCalendar = ({ dailyData, amountUnit, resourceUnit = 'L', highlight }) => {
   const now = new Date(2026, 6, 1);
   const y = now.getFullYear(), m = now.getMonth();
   const firstDay = new Date(y, m, 1).getDay();
@@ -465,7 +504,7 @@ const MonthCalendar = ({ dailyData, amountUnit, highlight }) => {
                     {amt}{amountUnit}
                   </div>
                 )}
-                {hasFuel && <div className="text-[8px] leading-tight text-[#999]">{fuel}L</div>}
+                {hasFuel && <div className="text-[8px] leading-tight text-[#999]">{fuel}{resourceUnit}</div>}
               </div>
             );
           })}
@@ -476,7 +515,7 @@ const MonthCalendar = ({ dailyData, amountUnit, highlight }) => {
 };
 
 /* ──────────────── weekly calendar ──────────────── */
-const WeekCalendar = ({ days, amountUnit }) => (
+const WeekCalendar = ({ days, amountUnit, resourceUnit = 'L' }) => (
   <div>
     <div className="grid grid-cols-7 gap-px text-center text-[10px] text-[#999] mb-1">{WEEKDAY.map((d) => <div key={d} className="py-0.5">{d}</div>)}</div>
     <div className="grid grid-cols-7 gap-px">
@@ -487,7 +526,7 @@ const WeekCalendar = ({ days, amountUnit }) => (
           <div key={i} className={`rounded-md p-1.5 text-center ${(hasAmt || hasFuel) ? 'bg-[#fff8e1]' : 'bg-gray-50'}`}>
             <div className={`text-[11px] font-medium ${!hasAmt && !hasFuel ? 'text-[#ccc]' : ''}`}>{day.d}</div>
             {hasAmt && <div className="text-[9px] leading-tight text-[#333]">{day.amount}{amountUnit}</div>}
-            {hasFuel && <div className="text-[9px] leading-tight text-[#999]">{day.fuel}L</div>}
+            {hasFuel && <div className="text-[9px] leading-tight text-[#999]">{day.fuel}{resourceUnit}</div>}
           </div>
         );
       })}
@@ -496,11 +535,11 @@ const WeekCalendar = ({ days, amountUnit }) => (
 );
 
 /* ──────────────── summary card ──────────────── */
-const SummaryCard = ({ data, isDaily, period }) => {
+const SummaryCard = ({ data, isDaily, period, title = '今日数据' }) => {
   if (isDaily) {
     return (
       <div className="rounded-2xl bg-white p-4 shadow-sm">
-        <div className="text-[15px] font-semibold mb-4">今日数据</div>
+        <div className="text-[15px] font-semibold mb-4">{title}</div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-5">
           {data.map(([label, value, unit]) => (
             <div key={label}>
@@ -547,12 +586,14 @@ const DailyView = ({ deviceName }) => {
   const deviceData = DEVICE_DATA[deviceName];
   const d = deviceData?.daily;
   if (!d) return null;
+  const isPaver = deviceName === '三一摊铺机';
+  const isElectric = deviceData?.electric;
   return (
     <div className="space-y-3">
       <div className="px-1 text-[11px] text-[#999]">以下数据为设备所在地当日数据实时统计</div>
-      <SummaryCard data={d.summary} isDaily />
+      <SummaryCard data={d.summary} isDaily title={isElectric ? '今日能耗' : '今日数据'} />
       <div className="rounded-2xl bg-white p-4 shadow-sm">
-        <div className="text-[15px] font-semibold mb-1">当日工时分布</div>
+        <div className="text-[15px] font-semibold mb-1">{isPaver ? '当日怠速工时分布' : (isElectric ? '每日工作分布' : '当日工时分布')}</div>
         <WorkStatusTimeline segments={d.workDist} />
       </div>
       {deviceData.supportsTrajectory !== false ? (
@@ -582,38 +623,37 @@ const WeeklyView = ({ deviceName, baseDate }) => {
   const dev = DEVICE_DATA[deviceName];
   const d = dev?.weekly;
   if (!d) return null;
+  const isPaver = deviceName === '三一摊铺机';
+  const isElectric = dev?.electric;
   const tooltipLabels = d.fuelTrend.map((_, index) => formatFullDate(shiftDate(baseDate, index)));
   return (
     <div className="space-y-3">
       <SummaryCard data={d.summary} period="weekly" />
       <div className="rounded-2xl bg-white p-4 shadow-sm">
         <div className="text-[15px] font-semibold mb-3">设备运行日历</div>
-        <WeekCalendar days={d.calDays} amountUnit={dev.amountUnit} />
+        <WeekCalendar days={d.calDays} amountUnit={dev.amountUnit} resourceUnit={isElectric ? 'kWh' : 'L'} />
       </div>
-      <div className="rounded-2xl bg-white p-4 shadow-sm">
-        <div className="text-[15px] font-semibold mb-1">平均每小时油耗趋势</div>
+      {!isPaver && <div className="rounded-2xl bg-white p-4 shadow-sm">
+        <div className="text-[15px] font-semibold mb-1">{isElectric ? '平均每小时能耗趋势' : '平均每小时油耗趋势'}</div>
         <LineChart
           series={[
-            { key: 'hourlyFuel', label: '平均每小时油耗', unit: ' L/h', data: d.fuelTrend.map((fuel, i) => Number((fuel / (d.workH[i] || 1)).toFixed(2))), color: '#ff862d' },
+            { key: 'hourlyFuel', label: isElectric ? '平均每小时能耗' : '平均每小时油耗', unit: isElectric ? ' kWh/h' : ' L/h', data: d.fuelTrend.map((fuel, i) => Number((fuel / (d.workH[i] || 1)).toFixed(2))), color: '#ff862d' },
           ]}
           labels={['周一','周二','周三','周四','周五','周六','周日']}
           tooltipLabels={tooltipLabels}
-          yUnit="L/h"
+          yUnit={isElectric ? 'kWh/h' : 'L/h'}
         />
-      </div>
+      </div>}
       <div className="rounded-2xl bg-white p-4 shadow-sm">
-        <div className="text-[15px] font-semibold mb-1">工时分布</div>
+        <div className="text-[15px] font-semibold mb-1">{isPaver ? '怠速工时分布' : '工时分布'}</div>
         <LineChart
-          series={[
-            { key: 'work', label: '工作', unit: ' h', data: d.workH, color: '#4dabf7' },
-            { key: 'idle', label: '怠速', unit: ' h', data: d.idleH, color: '#95e1d3' },
-          ]}
+          series={isPaver ? [{ key: 'idle', label: '怠速', unit: ' h', data: d.idleH, color: '#95e1d3' }] : [{ key: 'work', label: '工作', unit: ' h', data: d.workH, color: '#4dabf7' }, { key: 'idle', label: '怠速', unit: ' h', data: d.idleH, color: '#95e1d3' }]}
           labels={['周一','周二','周三','周四','周五','周六','周日']}
-          yMax={Math.max(...d.workH, ...d.idleH) * 1.2}
+          yMax={Math.max(...(isPaver ? d.idleH : [...d.workH, ...d.idleH])) * 1.2}
           yUnit="h"
         />
         <div className="mt-2 flex items-center justify-center gap-4 text-[10px] text-[#666]">
-          <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-[#4dabf7]" />工作</span>
+          {!isPaver && <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-[#4dabf7]" />工作</span>}
           <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-[#95e1d3]" />怠速</span>
         </div>
       </div>
@@ -626,6 +666,8 @@ const MonthlyView = ({ deviceName, baseDate }) => {
   const dev = DEVICE_DATA[deviceName];
   const d = dev?.monthly;
   if (!d) return null;
+  const isPaver = deviceName === '三一摊铺机';
+  const isElectric = dev?.electric;
   const monthLabels = Array.from({ length: d.fuelTrend.length }, (_, i) => `${i + 1}`);
   const tooltipLabels = d.fuelTrend.map((_, index) => formatFullDate(shiftDate(baseDate, index)));
   const hasDailyAmount = Array.isArray(d.amountTrend) && d.amountTrend.some((amount) => amount != null && Number(amount) > 0);
@@ -635,32 +677,29 @@ const MonthlyView = ({ deviceName, baseDate }) => {
       <SummaryCard data={d.summary} period="monthly" />
       <div className="rounded-2xl bg-white p-4 shadow-sm">
         <div className="text-[15px] font-semibold mb-3">设备运行日历</div>
-        <MonthCalendar dailyData={dailyData} amountUnit={dev.amountUnit} highlight />
+        <MonthCalendar dailyData={dailyData} amountUnit={dev.amountUnit} resourceUnit={isElectric ? 'kWh' : 'L'} highlight />
       </div>
-      <div className="rounded-2xl bg-white p-4 shadow-sm">
-        <div className="text-[15px] font-semibold mb-1">平均每小时油耗趋势</div>
+      {!isPaver && <div className="rounded-2xl bg-white p-4 shadow-sm">
+        <div className="text-[15px] font-semibold mb-1">{isElectric ? '平均每小时能耗趋势' : '平均每小时油耗趋势'}</div>
         <LineChart
           series={[
-            { key: 'mHourlyFuel', label: '平均每小时油耗', unit: ' L/h', data: d.fuelTrend.map((fuel, i) => Number((fuel / (d.workH[i] || 1)).toFixed(2))), color: '#ff862d' },
+            { key: 'mHourlyFuel', label: isElectric ? '平均每小时能耗' : '平均每小时油耗', unit: isElectric ? ' kWh/h' : ' L/h', data: d.fuelTrend.map((fuel, i) => Number((fuel / (d.workH[i] || 1)).toFixed(2))), color: '#ff862d' },
           ]}
           labels={monthLabels}
           tooltipLabels={tooltipLabels}
-          yUnit="L/h"
+          yUnit={isElectric ? 'kWh/h' : 'L/h'}
         />
-      </div>
+      </div>}
       <div className="rounded-2xl bg-white p-4 shadow-sm">
-        <div className="text-[15px] font-semibold mb-1">工时分布</div>
+        <div className="text-[15px] font-semibold mb-1">{isPaver ? '怠速工时分布' : '工时分布'}</div>
         <LineChart
-          series={[
-            { key: 'mWork', label: '工作', unit: ' h', data: d.workH, color: '#4dabf7' },
-            { key: 'mIdle', label: '怠速', unit: ' h', data: d.idleH, color: '#95e1d3' },
-          ]}
+          series={isPaver ? [{ key: 'mIdle', label: '怠速', unit: ' h', data: d.idleH, color: '#95e1d3' }] : [{ key: 'mWork', label: '工作', unit: ' h', data: d.workH, color: '#4dabf7' }, { key: 'mIdle', label: '怠速', unit: ' h', data: d.idleH, color: '#95e1d3' }]}
           labels={monthLabels}
-          yMax={Math.max(...d.workH, ...d.idleH) * 1.2}
+          yMax={Math.max(...(isPaver ? d.idleH : [...d.workH, ...d.idleH])) * 1.2}
           yUnit="h"
         />
         <div className="mt-2 flex items-center justify-center gap-4 text-[10px] text-[#666]">
-          <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-[#4dabf7]" />工作</span>
+          {!isPaver && <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-[#4dabf7]" />工作</span>}
           <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-[#95e1d3]" />怠速</span>
         </div>
       </div>

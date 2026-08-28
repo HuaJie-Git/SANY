@@ -13,6 +13,7 @@ const ContentFeed = forwardRef(({ showPublishPage, setShowPublishPage, setIsComm
   const [selectedContentType, setSelectedContentType] = useState('');
   const [selectedPost, setSelectedPost] = useState(null);
   const [selectedCommentId, setSelectedCommentId] = useState(null);
+  const [interactionTargetStatus, setInteractionTargetStatus] = useState(null);
   const [topicDetail, setTopicDetail] = useState(null); // { topicName, source }
   const [communitySubTab, setCommunitySubTab] = useState('我的'); // 社区二级Tab
   const [communityTabKey, setCommunityTabKey] = useState(0);
@@ -83,6 +84,7 @@ const ContentFeed = forwardRef(({ showPublishPage, setShowPublishPage, setIsComm
     const latestPost = allPosts.find((p) => p.id === post.id) || post;
     setSelectedPost(latestPost);
     setSelectedCommentId(interactionContext?.commentId || null);
+    setInteractionTargetStatus(interactionContext?.targetStatus || null);
   };
 
   // 删除后回到社区「我的」列表，并刷新瀑布流内容。
@@ -92,6 +94,7 @@ const ContentFeed = forwardRef(({ showPublishPage, setShowPublishPage, setIsComm
     setCommunityItems((items) => items.filter((item) => item.id !== postId));
     setSelectedPost(null);
     setSelectedCommentId(null);
+    setInteractionTargetStatus(null);
     setTopicDetail(null);
     setActiveTab('社区');
     setCommunitySubTab('我的');
@@ -381,7 +384,12 @@ const ContentFeed = forwardRef(({ showPublishPage, setShowPublishPage, setIsComm
       <PostDetail
         post={selectedPost}
         targetCommentId={selectedCommentId}
-        onBack={() => setSelectedPost(null)}
+        targetStatus={interactionTargetStatus}
+        onBack={() => {
+          setSelectedPost(null);
+          setSelectedCommentId(null);
+          setInteractionTargetStatus(null);
+        }}
         onTopicClick={(topicName) => {
           setSelectedPost(null);
           handleTopicClick(topicName, 'postDetail');

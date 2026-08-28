@@ -49,9 +49,9 @@ const MACHINE_DATA = {
       ['振捣设定值', '70.1', 'HZ'],
       ['当前油位', '70', '%'],
     ],
-    workDist: [0,0,0,0,3,3,3,3,3,2,2,3,0,0,3,3,3,3,2,2,3,0,0,0],
-    today: [['怠速工时', '1.5', 'h'], ['工时', '7.5', 'h']],
-    cumulative: [['摊铺距离', '12,680', 'm'], ['总油耗', '200', 'L'], ['总工作小时', '2,000', 'H']],
+    workDist: [0,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,0,2,2,0,0,0],
+    today: [['怠速工时', '1.5', 'h']],
+    cumulative: [['摊铺距离', '12,680', 'm'], ['总油耗', '200', 'L']],
   },
   '三一泵车': {
     supportsTrajectory: false,
@@ -115,6 +115,35 @@ const MACHINE_DATA = {
     today: [['怠速工时', '1.1', 'h'], ['工时', '7.8', 'h']],
     cumulative: [['铣刨距离', '12,580', 'm'], ['总油耗', '198', 'L'], ['发动机小时数', '1,890', 'h']],
   },
+  '纯电搅拌车': {
+    supportsTrajectory: true,
+    electric: true,
+    model: 'SYM5310BEV',
+    plate: '湘A · SYM5310BEV',
+    status: '行驶',
+    realtime: [
+      ['车辆状态', '行驶'],
+      ['车速', '35', 'km/h'],
+      ['充电状态', '未充电'],
+      ['续航里程', '330', 'km'],
+      ['剩余电量', '70', '%'],
+      ['搅拌桶方向', '正转'],
+      ['搅拌桶转速', '1,000', 'r/min'],
+      ['剩余充电时长', '1.5', 'h'],
+      ['整车电压', '24', 'V'],
+    ],
+    workDist: [0,0,0,0,1,1,1,1,1,2,2,1,0,0,1,1,1,1,2,2,1,0,0,0],
+    today: [
+      ['开机时长', '8', 'h'],
+      ['工时', '5', 'h'],
+      ['怠速工时', '3', 'h'],
+    ],
+    cumulative: [
+      ['总里程', '5,000', 'km'],
+      ['总电耗', '13,214', 'kWh'],
+      ['充电量', '2,000', 'kWh'],
+    ],
+  },
 };
 
 const Icon = ({ type, size = 20 }) => {
@@ -148,6 +177,23 @@ const Metric = ({ item }) => {
     </div>
   );
 };
+
+/* 行驶轨迹地图（本地 SVG 模拟，无外部依赖） */
+const TrajectoryMap = () => (
+  <div className="relative mt-3 h-[180px] overflow-hidden rounded-xl" style={{ background: 'linear-gradient(135deg,#e8f4e8 0%,#d4e8d0 30%,#c8dcc4 60%,#dce8d8 100%)' }}>
+    <svg className="absolute inset-0 h-full w-full" viewBox="0 0 320 180" preserveAspectRatio="none" aria-hidden="true">
+      <line x1="0" y1="90" x2="320" y2="90" stroke="#fff" strokeWidth="6" opacity=".7" />
+      <line x1="160" y1="0" x2="160" y2="180" stroke="#fff" strokeWidth="4" opacity=".5" />
+      <line x1="0" y1="30" x2="320" y2="30" stroke="#fff" strokeWidth="2" opacity=".35" />
+      <line x1="0" y1="150" x2="320" y2="150" stroke="#fff" strokeWidth="2" opacity=".35" />
+      <path d="M40 140 Q100 60 180 80 Q260 100 300 40" fill="none" stroke="#4dabf7" strokeWidth="4" strokeDasharray="8 4" />
+      <circle cx="40" cy="140" r="6" fill="#34a853" stroke="#fff" strokeWidth="2" />
+      <circle cx="300" cy="40" r="6" fill="#ea4335" stroke="#fff" strokeWidth="2" />
+      <text x="40" y="158" fontSize="8" fill="#333" textAnchor="middle">起点</text>
+      <text x="300" y="30" fontSize="8" fill="#333" textAnchor="middle">当前</text>
+    </svg>
+  </div>
+);
 
 const WorkConditionDetail = ({ device, onBack, onNavigate, backLabel = '返回资产列表' }) => {
   const [hint, setHint] = useState('');
@@ -191,14 +237,18 @@ const WorkConditionDetail = ({ device, onBack, onNavigate, backLabel = '返回�
               )}
             </div>
           </div>
-          <div className="mt-4 grid grid-cols-4 gap-2">
-            {[
+          <div className={`mt-4 grid gap-2 ${data.electric ? 'grid-cols-3' : 'grid-cols-4'}`}>
+            {(data.electric ? [
+              ["report", "数据报表", () => onNavigate?.('dataReport')],
+              ["parts", "零部件图册", () => showHint('零部件图册')],
+              ["service", "自助服务", () => showHint('自助服务')],
+            ] : [
               ["report", "数据报表", () => onNavigate?.('dataReport')],
               ["parts", "零部件图册", () => showHint('零部件图册')],
               ["service", "自助服务", () => showHint('自助服务')],
               ["grid", "更多操作", () => showHint('更多操作')],
               ...(["三一铣刨机", "三一摊铺机"].includes(device?.name) ? [["training", "培训资料", () => showHint('培训资料')]] : []),
-            ].map(([icon, label, fn]) => (
+            ]).map(([icon, label, fn]) => (
               <button key={label} type="button" aria-label={label} onClick={fn} className="h-[76px] rounded-[12px] border border-[#aeb5bf] flex flex-col items-center justify-center gap-1.5 text-[#303640] active:bg-gray-50"><Icon type={icon}/><span className="text-[11px] text-[#68707d] leading-tight">{label}</span></button>
             ))}
           </div>
@@ -210,11 +260,25 @@ const WorkConditionDetail = ({ device, onBack, onNavigate, backLabel = '返回�
           <div className="mt-6 grid grid-cols-2 gap-x-6 gap-y-7">{data.realtime.map((item) => <Metric key={item[0]} item={item} />)}</div>
         </section>
 
+        {data.supportsTrajectory && (
+          <section className="rounded-[14px] bg-white px-4 py-5 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
+            <div className="flex items-center justify-between">
+              <h2 className="text-[16px] font-semibold">行驶轨迹</h2>
+              <span className="text-[12px] text-[#2377f3]">查看详情</span>
+            </div>
+            <TrajectoryMap />
+            <div className="mt-3 space-y-1 text-[11px] text-[#666]">
+              <div>起点位置：湖南省长沙市宁乡经开区</div>
+              <div>当前位置：湖南省长沙市宁乡经开区</div>
+            </div>
+          </section>
+        )}
+
         <section className="rounded-[14px] bg-white px-4 py-5 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
           <div className="flex items-center gap-1.5"><h2 className="text-[16px] font-semibold">今日数据</h2><span className="h-4 w-4 rounded-full bg-[#303640] text-center text-[10px] leading-4 text-white">?</span></div>
-          <div className="mt-7 grid grid-cols-2 gap-6">{data.today.map((item) => <Metric key={item[0]} item={item} />)}</div>
+          <div className={`mt-7 grid gap-6 ${data.today.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>{data.today.map((item) => <Metric key={item[0]} item={item} />)}</div>
           <WorkStatusTimeline segments={data.workDist} />
-          <FuelLevelChart level={fuelLevel} />
+          {!data.electric && <FuelLevelChart level={fuelLevel} />}
         </section>
 
         <section className="rounded-[14px] bg-white px-4 py-5 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">

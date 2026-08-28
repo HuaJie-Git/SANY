@@ -17,6 +17,8 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
   const [activeTab, setActiveTab] = useState('我的');
   const [drillDown, setDrillDown] = useState(null);
   const [showInteractions, setShowInteractions] = useState(false);
+  const [interactionHint, setInteractionHint] = useState('');
+  const interactionHintTimerRef = useRef(null);
   const [communityInteractions, setCommunityInteractions] = useState(() => getCommunityInteractions());
   const tabContainerRef = useRef(null);
   const sentinelRef = useRef(null);
@@ -28,12 +30,11 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
   // 二级Tab
   const tabs = ['占位话题1', '占位话题2', '全部话题', '关注', '我的'];
 
-  const unreadInteractions = communityInteractions.filter((item) => item.unread);
+  const supportedInteractionTypes = new Set(['post_comment', 'post_audit_pass', 'post_audit_reject']);
+  const unreadInteractions = communityInteractions.filter((item) => item.unread && supportedInteractionTypes.has(item.interactionType));
 
   const interactionMeta = {
-    post_comment: { label: '评论', badge: '帖子' },
-    comment_reply: { label: '回复', badge: '评论' },
-    comment_like: { label: '', badge: '评论' },
+    post_comment: { label: '评论', badge: '评论' },
     post_audit_pass: { label: '', badge: '已通过' },
     post_audit_reject: { label: '', badge: '审核未通过' },
   };
@@ -44,7 +45,7 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
     return Number.isFinite(parsed) ? parsed : 0;
   };
 
-  const sortedInteractions = [...communityInteractions].sort((a, b) => {
+  const sortedInteractions = communityInteractions.filter((item) => supportedInteractionTypes.has(item.interactionType)).sort((a, b) => {
     if (a.unread !== b.unread) return a.unread ? -1 : 1;
     const timeDiff = getInteractionTimestamp(b) - getInteractionTimestamp(a);
     if (timeDiff !== 0) return timeDiff;
@@ -53,11 +54,22 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
 
   const handleInteractionClick = (item) => {
     const post = posts.find((candidate) => candidate.id === item.postId);
-    if (!post) return;
     markCommunityInteractionRead(item.id);
     setCommunityInteractions(getCommunityInteractions());
-    onPostClick?.(post, { commentId: item.commentId, interactionType: item.interactionType });
+    if (!post) {
+      setInteractionHint('该内容已删除');
+      clearTimeout(interactionHintTimerRef.current);
+      interactionHintTimerRef.current = window.setTimeout(() => setInteractionHint(''), 1800);
+      return;
+    }
+    onPostClick?.(post, {
+      commentId: item.commentId,
+      interactionType: item.interactionType,
+      targetStatus: item.targetStatus,
+    });
   };
+
+  useEffect(() => () => clearTimeout(interactionHintTimerRef.current), []);
 
   const handleMarkAllRead = () => {
     markAllCommunityInteractionsRead();
@@ -198,9 +210,13 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
       </div>
       {sortedInteractions.map((item) => {
         const post = posts.find((candidate) => candidate.id === item.postId);
+        const isDeletedPost = item.targetStatus === 'post_deleted' || item.targetStatus === 'inaccessible';
+        const isDeletedComment = item.targetStatus === 'comment_deleted';
         const isAudit = item.interactionType === 'post_audit_pass' || item.interactionType === 'post_audit_reject';
         const meta = interactionMeta[item.interactionType] || { label: '新的社区互动', badge: '社区' };
-        const summaryText = meta.label ? `${meta.label}：${item.summary}` : item.summary;
+        const summaryText = (isDeletedComment || isDeletedPost)
+          ? '该内容已删除'
+          : (meta.label ? `${meta.label}：${item.summary}` : item.summary);
         const card = <span className={`mt-1 h-2 w-2 flex-shrink-0 rounded-full ${item.unread ? 'bg-brand-red' : 'bg-transparent'}`} />;
         const auditContent = isAudit ? (
           <>
@@ -223,17 +239,28 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
         ) : null;
 
         if (isAudit) {
-          if (item.interactionType === 'post_audit_reject') {
-            return (
-              <button type="button" key={item.id} className="flex w-full items-start gap-3 rounded-xl bg-white px-3 py-3 text-left shadow-sm active:bg-gray-50" onClick={() => handleInteractionClick(item)}>
-                {auditContent}
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#c0c4cc" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
-              </button>
-            );
-          }
           return (
             <div key={item.id} className="flex w-full items-start gap-3 rounded-xl bg-white px-3 py-3 text-left shadow-sm">
               {auditContent}
+            </div>
+          );
+        }
+
+        if (isDeletedPost || isDeletedComment) {
+          return (
+            <div key={item.id} className="flex w-full items-start gap-3 rounded-xl border border-gray-100 bg-gray-50 px-3 py-3 text-left">
+              {card}
+              <span className="min-w-0 flex-1">
+                <span className="flex min-w-0 items-center justify-between gap-2 text-[13px] text-gray-500">
+                  <strong className="min-w-0 truncate">{item.actorName}</strong>
+                  <span className="flex-shrink-0 rounded bg-gray-200 px-1.5 py-0.5 text-[10px] text-gray-500">{meta.badge}</span>
+                </span>
+                <span className="mt-1 block text-[12px] text-gray-500">该内容已删除</span>
+                <span className="mt-1 flex min-w-0 items-center justify-between gap-2 text-[11px] text-gray-400">
+                  <span className="min-w-0 truncate">来自：{post?.title || item.sourceTitle || '社区帖子'}</span>
+                  <time className="flex-shrink-0 whitespace-nowrap" dateTime={item.createdAt ? String(item.createdAt) : undefined}>{item.time}</time>
+                </span>
+              </span>
             </div>
           );
         }
@@ -246,7 +273,7 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
                 <strong className="min-w-0 truncate">{item.actorName}</strong>
                 <span className="flex-shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500">{meta.badge}</span>
               </span>
-              <span className="mt-1 block truncate text-[12px] text-gray-500">{summaryText}</span>
+              <span className={`mt-1 block truncate text-[12px] ${isDeletedComment ? 'text-gray-400' : 'text-gray-500'}`}>{summaryText}</span>
               <span className="mt-1 flex min-w-0 items-center justify-between gap-2 text-[11px] text-gray-400">
                 <span className="min-w-0 truncate">来自：{post?.title || '社区帖子'}</span>
                 <time className="flex-shrink-0 whitespace-nowrap" dateTime={item.createdAt ? String(item.createdAt) : undefined}>{item.time}</time>
@@ -256,6 +283,11 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
           </button>
         );
       })}
+      {interactionHint && (
+        <div className="pointer-events-none fixed bottom-24 left-1/2 z-[70] -translate-x-1/2 rounded-full bg-gray-900/85 px-4 py-2 text-[12px] text-white shadow-lg" role="status">
+          {interactionHint}
+        </div>
+      )}
     </div>
   );
 

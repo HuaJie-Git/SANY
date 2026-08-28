@@ -345,9 +345,9 @@ export const deleteComment = (commentId) => {
 
 // 社区内部互动演示数据。interactionType 与服务端字段保持一致，真实接入时由接口替换。
 let _communityInteractions = [
-  { id: 'interaction-001', interactionType: 'post_comment', actorId: 'user-002', actorName: '机手小赵', postId: 101, commentId: 17, summary: '这个检查流程很实用，收藏了！', time: '刚刚', createdAt: 5, unread: true },
-  { id: 'interaction-002', interactionType: 'comment_reply', actorId: 'user-003', actorName: '老司机李', postId: 1, commentId: 25, summary: '现场连续作业一整天没问题，补能也很方便。', time: '18分钟前', createdAt: 4, unread: true },
-  { id: 'interaction-003', interactionType: 'comment_like', actorId: 'user-004', actorName: '效率达人', postId: 1, commentId: 24, summary: '赞了你的评论', time: '12分钟前', createdAt: 3, unread: true },
+  { id: 'interaction-006', interactionType: 'post_comment', actorId: 'user-002', actorName: '机手小赵', postId: 101, commentId: 26, summary: '该内容已删除', sourceTitle: '分享下我的操作经验，新手们必看', time: '刚刚', createdAt: 7, unread: true, targetStatus: 'comment_deleted' },
+  { id: 'interaction-007', interactionType: 'post_comment', actorId: 'user-007', actorName: '工地老张', postId: 104, commentId: 99, summary: '该内容已删除', sourceTitle: '吊装作业全过程记录', time: '2分钟前', createdAt: 6, unread: true, targetStatus: 'post_deleted' },
+  { id: 'interaction-001', interactionType: 'post_comment', actorId: 'user-002', actorName: '机手小赵', postId: 101, commentId: 17, summary: '这个检查流程很实用，收藏了！', sourceTitle: '分享下我的操作经验，新手们必看', time: '刚刚', createdAt: 5, unread: true },
   { id: 'interaction-004', interactionType: 'post_audit_pass', actorId: 'audit-system', actorName: '内容审核', postId: 102, summary: '你的帖子已通过审核', time: '昨天 16:20', createdAt: 2, unread: true, auditStatus: 'approved' },
   { id: 'interaction-005', interactionType: 'post_audit_reject', actorId: 'audit-system', actorName: '内容审核', postId: 105, summary: '你的帖子未通过审核', time: '昨天 15:45', createdAt: 1, unread: true, auditStatus: 'rejected', auditReason: '内容包含未经证实的安全操作建议，请补充可靠来源或修改表述后重新提交。' },
 ];

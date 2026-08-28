@@ -82,6 +82,15 @@ const Asset = ({ onDeviceClick, navigationContext }) => {
       statusColor: 'text-green-500'
     },
     {
+      id: 16,
+      name: '纯电搅拌车',
+      code: 'SYM5310BEV-8001',
+      image: 'images/审核/搅拌车.jpg',
+      status: 'online',
+      statusText: '行驶',
+      statusColor: 'text-green-500'
+    },
+    {
       id: 1,
       name: '三一挖掘机',
       code: 'KT10SESE50393',

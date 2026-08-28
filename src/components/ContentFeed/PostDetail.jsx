@@ -13,7 +13,7 @@ import ViewCountBadge from './ViewCountBadge';
 
 const COMMENT_MAX_LENGTH = 500;
 
-const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId }) => {
+const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, targetStatus }) => {
   const [liked, setLiked] = useState(post.isLiked || false);
   const [likeCount, setLikeCount] = useState(post.likes);
   const [commentText, setCommentText] = useState('');
@@ -227,9 +227,18 @@ const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId }) =
             <div className="mt-4 rounded-lg border border-red-100 bg-red-50 px-3 py-2.5">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[13px] font-medium text-brand-red">审核未通过</span>
-                <span className="text-[11px] text-red-400">仅自己可见</span>
               </div>
               <p className="mt-1.5 text-[12px] leading-[1.6] text-gray-600">未通过原因：{post.auditReason}</p>
+            </div>
+          )}
+          {targetStatus === 'comment_deleted' && (
+            <div className="mt-4 flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-[12px] text-gray-500" role="status">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 8v4" />
+                <path d="M12 16h.01" />
+              </svg>
+              <span>该内容已删除</span>
             </div>
           )}
         </div>
