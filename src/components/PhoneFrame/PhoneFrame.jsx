@@ -1,8 +1,8 @@
 import React from 'react';
+import { ExperienceBanner, ExperienceServiceRail, FeedbackFloatingButton, LoginPrompt } from '../ExperienceMode/ExperienceMode';
 
-const PhoneFrame = ({ topNav, bottomNav, children, hideGradient = false, floatingButton, statusBarTheme = 'light', hideStatusBar = false }) => {
+const PhoneFrame = ({ topNav, bottomNav, children, hideGradient = false, floatingButton, statusBarTheme = 'light', hideStatusBar = false, experienceMode = false, onLogin, onFeedback, onInquiry, showFeedback = false, showServiceRail = false, showLoginPrompt = false, onCloseLogin }) => {
   const statusColor = statusBarTheme === 'dark' ? '#222831' : '#FFFFFF';
-
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-8">
       {/* iPhone 手机框 */}
@@ -67,6 +67,10 @@ const PhoneFrame = ({ topNav, bottomNav, children, hideGradient = false, floatin
                 {floatingButton}
               </div>
             )}
+            {showServiceRail && <ExperienceServiceRail onCustomerVoice={onFeedback} onInquiry={onInquiry} />}
+            {showFeedback && !showServiceRail && <FeedbackFloatingButton onClick={onFeedback} />}
+            {experienceMode && <ExperienceBanner onLogin={onLogin} />}
+            <LoginPrompt visible={showLoginPrompt} onClose={onCloseLogin} onLogin={onLogin} />
           </div>
         </div>
 

@@ -25,6 +25,8 @@ import TaskList from '../TaskList/TaskList';
 import DivisionSwitcher from '../../components/DivisionSwitcher/DivisionSwitcher';
 import AllApplications from '../AllApplications/AllApplications';
 import MessageCenter from '../MessageCenter/MessageCenter';
+import { CustomerVoice, InquiryForm } from '../../components/ExperienceMode/ExperienceMode';
+import { trackLeadIntent } from '../../utils/tracking';
 import { readApplicationOrder } from '../../data/appCatalog';
 import { getMessageUnreadCount } from '../../data/messages';
 
@@ -169,6 +171,10 @@ const Home = () => {
   // 每次进入首页先回到 SanVIST 总览；事业部切换仅在当前使用会话内生效。
   const [currentDivisionId, setCurrentDivisionId] = useState('sanvist');
   const [showDivisionSwitcher, setShowDivisionSwitcher] = useState(false);
+  const [experienceMode, setExperienceMode] = useState(() => window.localStorage.getItem('sanvist_experience_mode') === '1');
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [showCustomerVoice, setShowCustomerVoice] = useState(false);
+  const [inquiryContext, setInquiryContext] = useState(null);
   const [isSwitchingDivision, setIsSwitchingDivision] = useState(false);
   const [divisionToast, setDivisionToast] = useState('');
   const [showDivisionCoachmark, setShowDivisionCoachmark] = useState(() => (
@@ -178,6 +184,29 @@ const Home = () => {
   const contentRef = useRef(null); // 内容区域ref
   const contentFeedRef = useRef(null); // ContentFeed ref
   const currentDivision = BUSINESS_SCOPES.find((division) => division.id === currentDivisionId) || BUSINESS_SCOPES[0];
+
+  const enterExperienceMode = () => {
+    setExperienceMode(true);
+    window.localStorage.setItem('sanvist_experience_mode', '1');
+  };
+  const handleLogin = () => {
+    setShowLoginPrompt(false);
+    setExperienceMode(false);
+    window.localStorage.removeItem('sanvist_experience_mode');
+  };
+  const toggleExperienceMode = () => {
+    if (experienceMode) {
+      setExperienceMode(false);
+      window.localStorage.removeItem('sanvist_experience_mode');
+      return;
+    }
+    enterExperienceMode();
+  };
+  const requireLogin = () => setShowLoginPrompt(true);
+  const openInquiry = (source, context = {}) => {
+    trackLeadIntent.inquiryFormOpen(source, context);
+    setInquiryContext({ source, ...context });
+  };
 
   const rememberDivisionGuide = () => {
     window.localStorage.setItem('sanvist_division_guide_version', DIVISION_GUIDE_VERSION);
@@ -262,6 +291,10 @@ const Home = () => {
   };
 
   const handleTabChange = (tab) => {
+    if (experienceMode && tab === 'ai') {
+      requireLogin();
+      return;
+    }
     setActiveTab(tab);
     setAssetNavigationContext(null);
     setAuditNavigationContext(null);
@@ -359,8 +392,18 @@ const Home = () => {
         setShowSearchPage(true);
         break;
       case 'ai':
+        if (experienceMode) {
+          requireLogin();
+          break;
+        }
         setNavigationSource(null);
         setActiveTab('ai');
+        break;
+      case 'feedback':
+        setShowCustomerVoice(true);
+        break;
+      case 'inquiry':
+        openInquiry('homepage_quick_access');
         break;
       case 'profile':
         setNavigationSource(null);
@@ -392,6 +435,32 @@ const Home = () => {
     setCurrentPage(null);
     restoreNavigationSource();
   };
+
+  if (showCustomerVoice) {
+    return (
+      <PhoneFrame topNav={null} bottomNav={null} hideGradient={true} hideStatusBar={true}>
+        <CustomerVoice
+          onBack={() => setShowCustomerVoice(false)}
+          onInquiry={(context) => {
+            setShowCustomerVoice(false);
+            openInquiry('customer_voice_inquiry', context);
+          }}
+        />
+      </PhoneFrame>
+    );
+  }
+
+  if (inquiryContext) {
+    return (
+      <PhoneFrame topNav={null} bottomNav={null} hideGradient={true} hideStatusBar={true}>
+        <InquiryForm
+          context={inquiryContext}
+          onBack={() => setInquiryContext(null)}
+          onSubmit={(context) => trackLeadIntent.inquirySubmit(context.source, context)}
+        />
+      </PhoneFrame>
+    );
+  }
 
   if (showAllApplications) {
     return (
@@ -614,6 +683,12 @@ const Home = () => {
   if (activeTab === 'ai') {
     return (
       <PhoneFrame
+        experienceMode={experienceMode}
+        showFeedback={experienceMode}
+        onFeedback={() => setShowCustomerVoice(true)}
+        showLoginPrompt={showLoginPrompt}
+        onCloseLogin={() => setShowLoginPrompt(false)}
+        onLogin={handleLogin}
         topNav={
           <div className="h-[60px] px-4 flex items-center justify-between">
             {/* 返回按钮 */}
@@ -643,10 +718,16 @@ const Home = () => {
   if (activeTab === 'asset') {
     return (
       <PhoneFrame
+        experienceMode={experienceMode}
+        showFeedback={experienceMode}
+        onFeedback={() => setShowCustomerVoice(true)}
+        showLoginPrompt={showLoginPrompt}
+        onCloseLogin={() => setShowLoginPrompt(false)}
+        onLogin={handleLogin}
         topNav={
           <div className="h-[60px] px-4 flex items-center justify-between">
             {/* 绑定设备按钮 - 左边 */}
-            <button className="flex items-center px-3 py-1.5 border border-white/40 rounded-full text-xs text-white">
+            <button onClick={experienceMode ? requireLogin : undefined} className="flex items-center px-3 py-1.5 border border-white/40 rounded-full text-xs text-white">
               <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/>
               </svg>
@@ -664,7 +745,7 @@ const Home = () => {
           <BottomNav activeTab={activeTab} onTabChange={handleTabChange} showProfileDot={!userRole} />
         }
       >
-        <Asset navigationContext={assetNavigationContext} onDeviceClick={(device) => setSelectedWorkCondition(device)} />
+        <Asset demoMode={experienceMode} navigationContext={assetNavigationContext} onDeviceClick={(device) => setSelectedWorkCondition(device)} />
       </PhoneFrame>
     );
   }
@@ -673,6 +754,12 @@ const Home = () => {
   if (activeTab === 'audit') {
     return (
       <PhoneFrame
+        experienceMode={experienceMode}
+        showFeedback={experienceMode}
+        onFeedback={() => setShowCustomerVoice(true)}
+        showLoginPrompt={showLoginPrompt}
+        onCloseLogin={() => setShowLoginPrompt(false)}
+        onLogin={handleLogin}
         topNav={
           <div className="h-[60px] px-4 flex items-center">
             {/* 搜索框和筛选图标在一起 */}
@@ -708,6 +795,12 @@ const Home = () => {
   if (activeTab === 'profile') {
     return (
       <PhoneFrame
+        experienceMode={experienceMode}
+        showFeedback={experienceMode}
+        onFeedback={() => setShowCustomerVoice(true)}
+        showLoginPrompt={showLoginPrompt}
+        onCloseLogin={() => setShowLoginPrompt(false)}
+        onLogin={handleLogin}
         topNav={
           <div className="h-[60px] px-4 py-2 flex items-center">
             {/* 用户头像 */}
@@ -753,13 +846,21 @@ const Home = () => {
           <BottomNav activeTab={activeTab} onTabChange={handleTabChange} showProfileDot={!userRole} />
         }
       >
-        <Profile userRole={userRole} onRoleConfirm={(role) => setUserRole(role)} />
+        <Profile userRole={userRole} onRoleConfirm={(role) => setUserRole(role)} onFeedback={() => setShowCustomerVoice(true)} />
       </PhoneFrame>
     );
   }
 
   return (
     <PhoneFrame
+      experienceMode={experienceMode}
+      showFeedback={experienceMode}
+      onFeedback={() => setShowCustomerVoice(true)}
+      showServiceRail={experienceMode}
+      onInquiry={() => openInquiry('homepage_service_rail')}
+      showLoginPrompt={showLoginPrompt}
+      onCloseLogin={() => setShowLoginPrompt(false)}
+      onLogin={handleLogin}
       topNav={
         <TopNav
           onSearchClick={handleSearchClick}
@@ -804,6 +905,7 @@ const Home = () => {
             onNavigate={(action) => handleBusinessNavigate(action)}
             primaryItems={currentDivision.isGlobal ? null : currentDivision.quickItems}
             applications={orderedApplications}
+            showInquiryShortcut={experienceMode}
           />
 
         {/* 最近查看 */}
@@ -836,6 +938,7 @@ const Home = () => {
               setShowPublishPage={setShowPublishPage}
               setIsCommunityPublishEligible={setIsCommunityPublishEligible}
               setIsCommunityPublishViewportActive={setIsCommunityPublishViewportActive}
+              onInquiry={(context) => openInquiry('homepage_ad_banner', context)}
             />
           </div>
         </div>
@@ -846,6 +949,8 @@ const Home = () => {
             onSelect={handleDivisionSelect}
             onClose={() => !isSwitchingDivision && setShowDivisionSwitcher(false)}
             isSwitching={isSwitchingDivision}
+            experienceMode={experienceMode}
+            onToggleExperience={toggleExperienceMode}
           />
         )}
         {divisionToast && <div className="absolute bottom-24 left-1/2 z-[100] -translate-x-1/2 rounded-full bg-black/75 px-4 py-2 text-[12px] text-white">{divisionToast}</div>}

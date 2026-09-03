@@ -6,8 +6,9 @@ import PostDetail from './PostDetail';
 import TopicDetailPage from './TopicDetailPage';
 import ViewCountBadge from './ViewCountBadge';
 import { deletePost, getTopicById, posts as allPosts } from './communityData';
+import { trackLeadIntent } from '../../utils/tracking';
 
-const ContentFeed = forwardRef(({ showPublishPage, setShowPublishPage, setIsCommunityPublishEligible, setIsCommunityPublishViewportActive }, ref) => {
+const ContentFeed = forwardRef(({ showPublishPage, setShowPublishPage, setIsCommunityPublishEligible, setIsCommunityPublishViewportActive, onInquiry }, ref) => {
   const [activeTab, setActiveTab] = useState('全部');
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedContentType, setSelectedContentType] = useState('');
@@ -500,10 +501,11 @@ const ContentFeed = forwardRef(({ showPublishPage, setShowPublishPage, setIsComm
               />
               {/* 渐变遮罩 + 广告文案 */}
               <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent flex items-center">
-                <div className="px-4">
+                <div className="px-4 pr-[112px]">
                   <div className="text-white text-[16px] font-bold">{adItems[currentAd].title}</div>
                   <div className="text-white/80 text-[11px] mt-1">{adItems[currentAd].subtitle}</div>
                 </div>
+                {onInquiry && <button type="button" onClick={(e) => { e.stopPropagation(); trackLeadIntent.serviceEntryClick('ad_inquiry', 'homepage_ad_banner'); onInquiry({ campaign: adItems[currentAd].title }); }} className="absolute bottom-2 right-3 flex h-7 items-center gap-1 rounded-md bg-brand-red px-2.5 text-[11px] font-medium text-white">我要询价 <span aria-hidden="true">›</span></button>}
               </div>
               {/* 关闭按钮 - 右上角 */}
               <div
@@ -530,9 +532,6 @@ const ContentFeed = forwardRef(({ showPublishPage, setShowPublishPage, setIsComm
                   onClick={() => setCurrentAd(index)}
                 />
               ))}
-            </div>
-            <div className="absolute bottom-1.5 right-2 bg-black/40 text-white/80 text-[9px] px-1.5 py-0.5 rounded">
-              广告
             </div>
           </div>
 

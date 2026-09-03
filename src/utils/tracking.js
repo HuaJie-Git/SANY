@@ -9,6 +9,29 @@ const getUserId = () => {
 };
 
 /**
+ * 意向留资埋点。
+ * 原型阶段保留统一事件和字段，接入 MOSS/分析 SDK 时只需替换此处。
+ */
+const trackIntent = (event, payload = {}) => {
+  const properties = {
+    user_id: getUserId(),
+    event_time: new Date().toISOString(),
+    ...payload,
+  };
+  console.log(`[埋点] ${event}`, properties);
+  window.analytics?.track?.(event, properties);
+};
+
+export const trackLeadIntent = {
+  serviceEntryClick: (entry, source) => trackIntent('service_entry_click', { entry, source }),
+  inquiryFormOpen: (source, context = {}) => trackIntent('inquiry_form_open', { source, ...context }),
+  inquirySubmit: (source, context = {}) => trackIntent('inquiry_submit', { source, ...context }),
+  modelCompareStart: (models) => trackIntent('model_compare_start', { models }),
+  modelCompareResultView: (models) => trackIntent('model_compare_result_view', { models }),
+  modelCompareInquiryClick: (models) => trackIntent('model_compare_inquiry_click', { models }),
+};
+
+/**
  * 角色引导埋点
  */
 export const trackRoleGuide = {

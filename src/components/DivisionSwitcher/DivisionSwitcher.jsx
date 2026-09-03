@@ -1,6 +1,6 @@
 import React from 'react';
 
-const DivisionSwitcher = ({ divisions, currentDivision, onSelect, onClose, isSwitching }) => {
+const DivisionSwitcher = ({ divisions, currentDivision, onSelect, onClose, isSwitching, experienceMode = false, onToggleExperience }) => {
   return (
     <div className="absolute inset-0 z-[90] flex items-end bg-black/50" onClick={onClose}>
       <div className="flex max-h-[82%] w-full flex-col rounded-t-[28px] bg-white px-5 pb-6 pt-3 text-[#252b33]" onClick={(event) => event.stopPropagation()}>
@@ -55,6 +55,19 @@ const DivisionSwitcher = ({ divisions, currentDivision, onSelect, onClose, isSwi
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-200 border-t-[#e60012]" />正在切换首页…
           </div>
         )}
+
+        <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-[#f7f8fa] px-3 py-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <strong className="text-[14px] text-[#252b33]">体验模式</strong>
+              <span className={`rounded-full px-2 py-0.5 text-[10px] ${experienceMode ? 'bg-[#fff0f1] text-[#e60012]' : 'bg-gray-200 text-gray-500'}`}>{experienceMode ? '已开启' : '已关闭'}</span>
+            </div>
+            <p className="mt-1 text-[11px] leading-4 text-gray-500">浏览固定演示数据，不影响真实业务</p>
+          </div>
+          <button type="button" role="switch" aria-checked={experienceMode} aria-label={experienceMode ? '关闭体验模式' : '开启体验模式'} onClick={onToggleExperience} className={`relative h-7 w-12 flex-shrink-0 rounded-full transition-colors ${experienceMode ? 'bg-[#e60012]' : 'bg-gray-300'}`}>
+            <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.28)] transition-[left] ${experienceMode ? 'left-6' : 'left-1'}`} />
+          </button>
+        </div>
       </div>
     </div>
   );

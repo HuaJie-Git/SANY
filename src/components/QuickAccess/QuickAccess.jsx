@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 
-const QuickAccess = ({ onNavigate, primaryItems, applications = [] }) => {
+const QuickAccess = ({ onNavigate, primaryItems, applications = [], showInquiryShortcut = false }) => {
   const [currentScreen, setCurrentScreen] = useState(0);
   const scrollRef = useRef(null);
 
@@ -14,7 +14,7 @@ const QuickAccess = ({ onNavigate, primaryItems, applications = [] }) => {
   const shortcutOverrides = {
     assets: { name: '产品中心', icon: '产品', color: '#96CEB4' },
   };
-  const firstScreenItems = primaryItems?.length
+  const baseFirstScreenItems = primaryItems?.length
     ? primaryItems
     : applications.length
       ? applications.slice(0, 5).map((app, index) => ({
@@ -23,6 +23,10 @@ const QuickAccess = ({ onNavigate, primaryItems, applications = [] }) => {
           isHalfHidden: index === 4,
         }))
       : defaultFirstScreenItems;
+  const inquiryShortcut = { id: 'experience-inquiry', name: '我要询价', icon: '询价', color: '#FFE3D6', target: 'inquiry' };
+  const firstScreenItems = showInquiryShortcut
+    ? [...baseFirstScreenItems.slice(0, 4), inquiryShortcut]
+    : baseFirstScreenItems;
 
   const secondScreenItems = [
     { id: 5, name: '机群报表', icon: '报表', color: '#FFEAA7' },
@@ -30,6 +34,7 @@ const QuickAccess = ({ onNavigate, primaryItems, applications = [] }) => {
     { id: 7, name: '考勤管理', icon: '考勤', color: '#98D8C8' },
     { id: 8, name: '服务中心', icon: '服务', color: '#F7DC6F' },
     { id: 9, name: '三一新闻', icon: '新闻', color: '#BB8FCE' },
+    ...(showInquiryShortcut ? [inquiryShortcut] : []),
     { id: 10, name: '网点分布', icon: '网点', color: '#85C1E9' },
     { id: 11, name: '自助服务', icon: '自助', color: '#82E0AA' },
     { id: 12, name: '调研问卷', icon: '问卷', color: '#F8C471' },
@@ -39,7 +44,7 @@ const QuickAccess = ({ onNavigate, primaryItems, applications = [] }) => {
 
   // 动态高度计算
   const firstScreenHeight = 96; // 第一屏高度
-  const secondScreenHeight = 180; // 第二屏高度
+  const secondScreenHeight = Math.ceil(secondScreenItems.length / 5) * 88; // 第二屏高度
   const currentHeight = currentScreen === 0 ? firstScreenHeight : secondScreenHeight;
 
   const handleScroll = () => {
@@ -65,6 +70,10 @@ const QuickAccess = ({ onNavigate, primaryItems, applications = [] }) => {
       return;
     }
     const itemName = item.name;
+    if (itemName === '客户心声') {
+      onNavigate?.({ target: 'feedback' });
+      return;
+    }
     // 检查是否是需要手机号验证的功能
     if (phoneRequiredFunctions.includes(itemName)) {
       // 跳转到对应的功能页面
@@ -207,6 +216,14 @@ const QuickAccess = ({ onNavigate, primaryItems, applications = [] }) => {
               <path d="M17 15l2 2M17 17l2-2" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           );
+        case '询价':
+          return (
+            <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="3" y="4" width="18" height="16" rx="2" stroke="#181C26" strokeWidth="2" />
+              <path d="M7 9h10M7 13h6" stroke="#181C26" strokeWidth="2" strokeLinecap="round" />
+              <path d="M16 16h.01" stroke="#E60012" strokeWidth="3" strokeLinecap="round" />
+            </svg>
+          );
         case '心声':
           return (
             <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -276,18 +293,8 @@ const QuickAccess = ({ onNavigate, primaryItems, applications = [] }) => {
 
         {/* 第二屏 - 两行图标 */}
         <div className="flex-shrink-0 w-[343px]" style={{ scrollSnapAlign: 'start' }}>
-          {/* 第一行 */}
-          <div className="flex justify-between mb-2">
-            {secondScreenItems.slice(0, 5).map((item) => (
-              <button type="button" key={item.id} className="flex flex-col items-center" style={{ width: '68px' }} onClick={() => handleFunctionClick(item)}>
-                {renderIcon(item.icon)}
-                <span className="text-[11px] text-text-primary mt-1 text-center">{item.name}</span>
-              </button>
-            ))}
-          </div>
-          {/* 第二行 */}
-          <div className="flex justify-between">
-            {secondScreenItems.slice(5, 10).map((item) => (
+          <div className="grid grid-cols-5 gap-y-2">
+            {secondScreenItems.map((item) => (
               <button type="button" key={item.id} className="flex flex-col items-center" style={{ width: '68px' }} onClick={() => handleFunctionClick(item)}>
                 {renderIcon(item.icon)}
                 <span className="text-[11px] text-text-primary mt-1 text-center">{item.name}</span>

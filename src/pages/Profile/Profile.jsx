@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import RoleGuideModal from '../../components/RoleGuideModal/RoleGuideModal';
 
-const Profile = ({ userRole, onRoleConfirm }) => {
+const Profile = ({ userRole, onRoleConfirm, onFeedback }) => {
   const [showModal, setShowModal] = useState(false);
 
   // 进入页面自动弹出角色引导弹窗（未填写角色时）
@@ -230,6 +230,7 @@ const Profile = ({ userRole, onRoleConfirm }) => {
         {menuItems.map((item, index) => (
           <button
             key={item.id}
+            onClick={() => item.name === 'APP反馈' && onFeedback?.()}
             className={`w-full flex items-center px-4 py-4 hover:bg-gray-50 transition-colors ${
               index !== menuItems.length - 1 ? 'border-b border-gray-50' : ''
             }`}

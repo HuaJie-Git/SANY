@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const Asset = ({ onDeviceClick, navigationContext }) => {
+const Asset = ({ onDeviceClick, navigationContext, demoMode = false }) => {
   const [activeTab, setActiveTab] = useState(
     navigationContext?.kind === 'status' && ['online', 'offline'].includes(navigationContext.value)
       ? navigationContext.value
@@ -178,7 +178,16 @@ const Asset = ({ onDeviceClick, navigationContext }) => {
     : [];
 
   const keyword = searchQuery.trim().toLowerCase();
-  const devices = [...contextualDevices, ...baseDevices].filter((device) => {
+  const demoDevices = [
+    { id: 17, name: '挖掘机演示设备', code: 'EXC-DEMO-001', image: 'images/审核/挖掘机.jpg', status: 'online', statusText: '工作', statusColor: 'text-green-500' },
+    { id: 18, name: '汽车起重机演示设备', code: 'CRN-DEMO-002', image: 'images/审核/起重机.jpg', status: 'online', statusText: '作业', statusColor: 'text-green-500' },
+    { id: 19, name: '自装卸车演示设备', code: 'SLF-DEMO-003', image: 'images/asset-models/sany_truck_pump.jpg', status: 'offline', statusText: '离线', statusColor: 'text-gray-400' },
+    { id: 20, name: '装载机演示设备', code: 'LDR-DEMO-004', image: 'images/asset-models/sany_grader.jpg', status: 'online', statusText: '行驶', statusColor: 'text-green-500' },
+    { id: 16, name: '纯电搅拌车演示设备', code: 'MIX-DEMO-005', image: 'images/审核/搅拌车.jpg', status: 'online', statusText: '行驶', statusColor: 'text-green-500' },
+    { id: 21, name: '宽体车演示设备', code: 'WBT-DEMO-006', image: 'images/审核/搅拌车.jpg', status: 'online', statusText: '装载', statusColor: 'text-green-500' },
+  ];
+  const listedDevices = demoMode ? demoDevices : baseDevices;
+  const devices = [...contextualDevices, ...listedDevices].filter((device) => {
     const matchesSearch = !keyword || `${device.name}${device.code}`.toLowerCase().includes(keyword);
     if (!matchesSearch) return false;
     if (!navigationContext) return true;
@@ -246,6 +255,7 @@ const Asset = ({ onDeviceClick, navigationContext }) => {
 
       {/* 设备列表 - 可滑动区域 */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+        {demoMode && <div className="rounded-lg bg-red-50 px-3 py-2 text-[11px] text-brand-red">演示资产 · 固定示例数据，仅用于体验</div>}
         {devices.map((device) => {
           const cardClass = 'bg-white rounded-xl p-3 flex items-center shadow-sm cursor-pointer active:scale-[0.99] transition-transform';
           return (
