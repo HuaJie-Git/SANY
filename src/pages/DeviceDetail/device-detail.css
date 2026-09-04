@@ -152,6 +152,10 @@
 .calendar-weekdays { margin-bottom: 4px; color: #999fa8; font-size: 8px; text-align: center; }
 .calendar-days > div { min-width: 0; min-height: 34px; padding: 3px 2px; border: 1px solid #eef1f3; border-radius: 2px; background: #f8f9fa; text-align: center; }
 .calendar-days > div.has-data { border-color: #d8e8f7; background: #eef7ff; }
+.calendar-days > div.grader-high { border-color: #e7ddd3; background: #fff0e3; }
+.calendar-days > div.grader-medium { border-color: #ede5a5; background: #fff9a9; }
+.calendar-days > div.grader-low { border-color: #d4e4f6; background: #eaf3ff; }
+.calendar-days > div.grader-empty { border-color: #eef0f2; background: #fafafa; }
 .calendar-days b, .calendar-days span, .calendar-days small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .calendar-days b { color: #525b65; font-size: 8px; }
 .calendar-days span { margin-top: 2px; color: #313943; font-size: 7px; }
@@ -163,6 +167,10 @@
 .calendar-legend i { width: 8px; height: 5px; display: inline-block; }
 .calendar-legend i.amount { background: #d8eaf8; }
 .calendar-legend i.fuel { background: #ffe1b8; }
+.calendar-legend i.grader-high { background: #ffe0c4; }
+.calendar-legend i.grader-medium { background: #fff19a; }
+.calendar-legend i.grader-low { background: #d8e9ff; }
+.calendar-legend i.grader-empty { border: 1px solid #b8c0ca; background: #fff; }
 .work-distribution { position: relative; display: flex; flex-direction: column; gap: 4px; padding-top: 14px; }
 .work-time-scale { position: absolute; top: 0; left: 21px; right: 0; height: 11px; }
 .work-time-scale b { position: absolute; transform: translateX(-50%); color: #a0a6ae; font-size: 7px; font-weight: 400; }

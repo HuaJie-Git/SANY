@@ -9,8 +9,8 @@ const formatHourTime = (hour) => {
 
 const FIELD_CONFIG = {
   摊铺机: ['设备状态', '当前油位', '车速', '摊铺距离', '水温', '发动机转速', '机油压力', '振捣设定值'],
-  压路机: ['设备状态', '当前油位', '水温', '振动频率', '机油压力'],
-  平地机: ['设备状态', '当前油位', '水温', '振动频率', '机油压力'],
+  压路机: ['设备状态', '当前油位', '水温'],
+  平地机: ['设备状态', '当前油位', '水温'],
   泵车: ['设备状态', '车速', '当前油位'],
   拖泵: ['设备状态', '液压油温', '泵送排量', '当前油位'],
   车载泵: ['设备状态', '发动机转速', '柴油机转速', '泵送排量', '当前油位'],
@@ -20,8 +20,8 @@ const FIELD_CONFIG = {
 // 历史累计数据按机型配置：字段表“累计工况 / 累计工况、数据报表”确认字段
 const CUMULATIVE_CONFIG = {
   摊铺机: [['总油耗', 'totalFuel'], ['摊铺距离', '摊铺距离']],
-  压路机: [['总工作时间', 'totalWorkHours'], ['总油耗', 'totalFuel'], ['总里程', 'totalMileage']],
-  平地机: [['总工作时间', 'totalWorkHours'], ['总油耗', 'totalFuel'], ['总里程', 'totalMileage']],
+  压路机: [['总工作时间', 'totalWorkHours'], ['总油耗', 'totalFuel']],
+  平地机: [['总工作时间', 'totalWorkHours'], ['总油耗', 'totalFuel']],
   泵车: [['总里程', 'totalMileage'], ['总泵送方量', 'totalPumpingVolume'], ['总油耗', 'totalFuel'], ['总工作时间', 'totalWorkHours']],
   拖泵: [['总泵送次数', 'totalPumpingCount'], ['总油耗', 'totalFuel'], ['总泵送方量', 'totalPumpingVolume'], ['总工作时间', 'totalWorkHours']],
   车载泵: [['总油耗', 'totalFuel'], ['总泵送方量', 'totalPumpingVolume'], ['总工作时间', 'totalWorkHours']],

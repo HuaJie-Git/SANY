@@ -19,13 +19,13 @@ const typeConfig = (device) => {
   const paver = type === '摊铺机';
   const roller = type === '压路机';
   const METRICS = {
-    摊铺机: [['油耗', 'L'], ['怠速工时', 'h'], ['摊铺距离', 'm']],
-    压路机: [['油耗', 'L'], ['工时', 'h'], ['怠速工时', 'h']],
-    平地机: [['油耗', 'L'], ['工时', 'h'], ['怠速工时', 'h'], ['每小时油耗', 'L/h']],
-    泵车: [['油耗', 'L'], ['工时', 'h'], ['怠速工时', 'h'], ['每小时油耗', 'L/h'], ['泵送方量', 'm³']],
-    拖泵: [['油耗', 'L'], ['工时', 'h'], ['怠速工时', 'h'], ['每小时油耗', 'L/h'], ['泵送方量', 'm³'], ['泵送次数', '次']],
-    车载泵: [['油耗', 'L'], ['工时', 'h'], ['怠速工时', 'h'], ['每小时油耗', 'L/h'], ['泵送方量', 'm³']],
-    铣刨机: [['油耗', 'L'], ['工时', 'h'], ['怠速工时', 'h'], ['每小时油耗', 'L/h'], ['铣刨距离', 'm']],
+    摊铺机: [['油耗', 'L'], ['平均每小时油耗', 'L/h'], ['怠速工时', 'h'], ['摊铺距离', 'm']],
+    压路机: [['油耗', 'L'], ['工时', 'h'], ['怠速工时', 'h'], ['平均每小时油耗', 'L/h']],
+    平地机: [['油耗', 'L'], ['工时', 'h'], ['怠速工时', 'h'], ['平均每小时油耗', 'L/h']],
+    泵车: [['油耗', 'L'], ['工时', 'h'], ['怠速工时', 'h'], ['平均每小时油耗', 'L/h'], ['泵送方量', 'm³']],
+    拖泵: [['油耗', 'L'], ['工时', 'h'], ['怠速工时', 'h'], ['平均每小时油耗', 'L/h'], ['泵送方量', 'm³'], ['泵送次数', '次']],
+    车载泵: [['油耗', 'L'], ['工时', 'h'], ['怠速工时', 'h'], ['平均每小时油耗', 'L/h'], ['泵送方量', 'm³']],
+    铣刨机: [['油耗', 'L'], ['工时', 'h'], ['怠速工时', 'h'], ['平均每小时油耗', 'L/h'], ['铣刨距离', 'm']],
   };
   const amountLabel = type === '铣刨机' ? '铣刨距离' : ['泵车', '拖泵', '车载泵'].includes(type) ? '泵送方量' : paver ? '摊铺距离' : null;
   return {
@@ -223,7 +223,62 @@ function Calendar({ trend, period, device }) {
   const labels = period === 'weekly' ? ['日', '一', '二', '三', '四', '五', '六'] : ['日', '一', '二', '三', '四', '五', '六'];
   const hasFuelSeries = trend.fuel.some((value) => value != null && value > 0);
   const hasAmountSeries = Boolean(config.amountLabel && trend.amount.some((value) => value != null && value > 0));
-  return <div className={`run-calendar ${period}`}><div className="calendar-weekdays">{labels.map((label) => <span key={label}>{label}</span>)}</div><div className="calendar-days">{Array.from({ length: count }, (_, i) => { const fuel = trend.fuel[i]; const amount = trend.amount[i]; const hasFuel = fuel != null && fuel > 0; const hasAmount = Boolean(config.amountLabel && amount != null && amount > 0); return <div className={hasFuel || hasAmount ? 'has-data' : ''} key={i}><b>{i + 1}</b>{hasAmount && <span>{amount}{config.amountUnit}</span>}{hasFuel && <small>{fuel}L</small>}</div>; })}</div><div className="calendar-legend">{hasAmountSeries && <span><i className="amount" />每日{config.amountLabel}</span>}{hasFuelSeries && <span><i className="fuel" />每日油耗</span>}</div></div>;
+  const isPaverWeekly = device?.type === '摊铺机' && period === 'weekly';
+  const isPaverMonthly = device?.type === '摊铺机' && period === 'monthly';
+  const isSpecialCalendar = ['平地机', '压路机'].includes(device?.type) && period !== 'daily';
+  const isSpecialWeekly = isSpecialCalendar && period === 'weekly';
+  const paverMonthly = [
+    { distance: null, fuel: null },
+    { distance: '48', fuel: '8' },
+    { distance: '292', fuel: '36' },
+    { distance: '141', fuel: '23' },
+    ...Array.from({ length: 26 }, () => ({ distance: null, fuel: null })),
+  ];
+  const paverWeekly = [
+    { date: 30, distance: '338', fuel: '43' },
+    { date: 31, distance: '529', fuel: '58' },
+    { date: 1, distance: null, fuel: null },
+    { date: 2, distance: '48', fuel: '8' },
+    { date: 3, distance: '292', fuel: '36' },
+    { date: 4, distance: '33', fuel: '12' },
+    { date: 5, distance: null, fuel: null },
+  ];
+  const specialWeekly = device?.type === '压路机' ? [
+    { date: 30, work: '20.06', fuel: '115.5', level: 'high' },
+    { date: 31, work: '20.4', fuel: '113.5', level: 'high' },
+    { date: 1, work: '20.47', fuel: '147.5', level: 'high' },
+    { date: 2, work: '15.7', fuel: '126', level: 'high' },
+    { date: 3, work: '1.62', fuel: '37', level: 'low' },
+    { date: 4, work: '8.58', fuel: '79', level: 'medium' },
+    { date: 5, work: null, fuel: null, level: 'empty' },
+  ] : [
+    { date: 30, work: '8.35', fuel: '93', level: 'medium' },
+    { date: 31, work: '15.98', fuel: '194.5', level: 'high' },
+    { date: 1, work: '20.23', fuel: '273', level: 'high' },
+    { date: 2, work: '20.46', fuel: '292', level: 'high' },
+    { date: 3, work: '20.05', fuel: '267.5', level: 'high' },
+    { date: 4, work: '10.16', fuel: '123.5', level: 'high' },
+    { date: 5, work: null, fuel: null, level: 'empty' },
+  ];
+  const calendarLabels = isPaverWeekly || isPaverMonthly ? ['周日', '周一', '周二', '周三', '周四', '周五', '周六'] : labels;
+  const leadingEmpty = isPaverMonthly ? 2 : 0;
+  return <div className={`run-calendar ${period}`}><div className="calendar-weekdays">{calendarLabels.map((label) => <span key={label}>{label}</span>)}</div><div className="calendar-days">{Array.from({ length: count + leadingEmpty }, (_, slot) => {
+    if (slot < leadingEmpty) return <div key={`empty-${slot}`} aria-hidden="true" style={{ visibility: 'hidden' }} />;
+    const i = slot - leadingEmpty;
+    if (isPaverWeekly || isPaverMonthly) {
+      const item = isPaverWeekly ? paverWeekly[i] : paverMonthly[i];
+      return <div className="has-data" key={i}><b>{isPaverWeekly ? item.date : i + 1}</b><span>{item.distance != null ? `${item.distance}km` : '-'}</span><small>{item.fuel != null ? `${item.fuel}L` : '-'}</small></div>;
+    }
+    const weekly = isSpecialWeekly ? specialWeekly[i] : null;
+    const monthlyWork = isSpecialCalendar && period === 'monthly' ? trend.work[i] || 0 : null;
+    const special = weekly || (isSpecialCalendar && period === 'monthly' ? { date: i + 1, work: monthlyWork ? one(monthlyWork) : null, fuel: trend.fuel[i] || null, level: monthlyWork >= 10 ? 'high' : monthlyWork >= 6 ? 'medium' : monthlyWork > 0 ? 'low' : 'empty' } : null);
+    const fuel = special ? special.fuel : trend.fuel[i];
+    const amount = trend.amount[i];
+    const hasFuel = fuel != null && fuel !== '' && Number(fuel) > 0;
+    const hasAmount = Boolean(config.amountLabel && amount != null && amount > 0);
+    const hasData = special ? special.work != null : hasFuel || hasAmount;
+    return <div className={`${hasData ? 'has-data' : ''}${special ? ` grader-${special.level}` : ''}`} key={i}><b>{special ? special.date : i + 1}</b>{special ? <>{special.work ? <span>{special.work}h</span> : <span>-</span>}{special.fuel ? <small>{special.fuel}L</small> : <small>-</small>}</> : <>{hasAmount && <span>{amount}{config.amountUnit}</span>}{hasFuel && <small>{fuel}L</small>}</>}</div>;
+  })}</div>{!isPaverWeekly && !isPaverMonthly && <div className="calendar-legend">{isSpecialCalendar ? <><span><i className="grader-high" />≥10h</span><span><i className="grader-medium" />6–10h</span><span><i className="grader-low" />0.5–6h</span><span><i className="grader-empty" />&lt;0.5h</span></> : <>{hasAmountSeries && <span><i className="amount" />每日{config.amountLabel}</span>}{hasFuelSeries && <span><i className="fuel" />每日油耗</span>}</>}</div>}</div>;
 }
 
 function metricData(device, period, trend) {
@@ -239,7 +294,7 @@ function metricData(device, period, trend) {
     油耗: 2,
     工时: 2,
     怠速工时: -2,
-    每小时油耗: -2,
+    平均每小时油耗: -2,
     泵送方量: 2,
     泵送次数: 2,
     铣刨距离: 2,
@@ -255,7 +310,7 @@ function metricData(device, period, trend) {
     const amount = number(device?.today?.pumpingVolume ?? device?.today?.millingDistance);
     const pumpCount = number(device?.today?.pumpingCount);
     const base = [dailyFuel, workHours, idleHours, hourly(dailyFuel, workHours)];
-    const values = config.isPaver ? [dailyFuel, idleHours, number(device?.today?.pavingDistance)] : config.isRoller ? [dailyFuel, workHours, idleHours] : type === '拖泵' ? [...base, amount, pumpCount] : isAmountType ? [...base, amount] : base;
+    const values = config.isPaver ? [dailyFuel, hourly(dailyFuel, workHours), idleHours, number(device?.today?.pavingDistance)] : config.isRoller ? [dailyFuel, workHours, idleHours, hourly(dailyFuel, workHours)] : type === '拖泵' ? [...base, amount, pumpCount] : isAmountType ? [...base, amount] : base;
     return buildMetrics(values);
   }
   const fuel = trend.fuel.reduce((sum, value) => sum + value, 0);
@@ -267,7 +322,13 @@ function metricData(device, period, trend) {
   const hasPumpCount = trend.pumpCount.some((value) => value != null);
   const pumpCount = hasPumpCount ? trend.pumpCount.reduce((sum, value) => sum + (value || 0), 0) : null;
   const base = [fuel, work, idle, hourly(fuel, work)];
-  const values = config.isPaver ? [fuel, idle, distance] : config.isRoller ? [fuel, work, idle] : type === '拖泵' ? [...base, distance, pumpCount] : isAmountType ? [...base, distance] : base;
+    const values = config.isPaver ? [fuel, hourly(fuel, work), idle, distance] : config.isRoller ? [fuel, work, idle, hourly(fuel, work)] : type === '拖泵' ? [...base, distance, pumpCount] : isAmountType ? [...base, distance] : base;
+  if (type === '压路机' && period === 'weekly') {
+    return buildMetrics([618.5, 86.83, 36.05, 7.12]).map((metric, index) => ({
+      ...metric,
+      displayValue: index === 0 ? '618.5' : Number(metric.value).toFixed(2),
+    }));
+  }
   return buildMetrics(values);
 }
 
@@ -303,11 +364,11 @@ export default function StatisticsReport({ device }) {
     const type = device?.type;
     let values;
     if (config.isPaver) {
-      values = { 油耗: `${fuel}L`, 怠速工时: `${one(trend.idle[index] || 0)}h`, 摊铺距离: `${Math.round(fuel * 33.8)}m` };
+      values = { 油耗: `${fuel}L`, 平均每小时油耗: `${work ? one(fuel / work) : '--'}L/h`, 怠速工时: `${one(trend.idle[index] || 0)}h`, 摊铺距离: `${Math.round(fuel * 33.8)}m` };
     } else if (config.isRoller) {
-      values = { 油耗: `${fuel}L`, 工时: `${one(work)}h`, 怠速工时: `${one(trend.idle[index] || 0)}h` };
+      values = { 油耗: `${fuel}L`, 工时: `${one(work)}h`, 怠速工时: `${one(trend.idle[index] || 0)}h`, 平均每小时油耗: `${work ? one(fuel / work) : '--'}L/h` };
     } else {
-      values = { 油耗: `${fuel}L`, 工时: `${one(work)}h`, 怠速工时: `${one(trend.idle[index] || 0)}h`, 每小时油耗: `${work ? one(fuel / work) : '--'}L/h` };
+      values = { 油耗: `${fuel}L`, 工时: `${one(work)}h`, 怠速工时: `${one(trend.idle[index] || 0)}h`, 平均每小时油耗: `${work ? one(fuel / work) : '--'}L/h` };
       const amount = trend.amount[index];
       if (type === '铣刨机') values['铣刨距离'] = amount == null ? '--' : `${Math.round(amount)}m`;
       else if (type === '泵车' || type === '拖泵' || type === '车载泵') values['泵送方量'] = amount == null ? '--' : `${one(amount)}m³`;
@@ -316,7 +377,7 @@ export default function StatisticsReport({ device }) {
     return { id: index, date: period === 'daily' ? formatDate(baseDate) : period === 'weekly' ? `2025/11/${17 + index}` : `2025/11/${String(index + 1).padStart(2, '0')}`, ...values };
   });
   const showToast = (message) => { setToast(message); window.setTimeout(() => setToast(''), 1800); };
-  const trendSeries = config.isPaver ? [] : [{ key: 'hourly', label: '平均每小时油耗', unit: ' L/h', color: '#ff862d', data: trend.hourly }];
+  const trendSeries = [{ key: 'hourly', label: '平均每小时油耗', unit: ' L/h', color: '#ff862d', data: trend.hourly }];
   const metricComparison = period === 'weekly' ? '对比上周' : period === 'monthly' ? '对比上月' : null;
   return <div className="statistics-report">
     <div className="report-toolbar">
@@ -325,13 +386,13 @@ export default function StatisticsReport({ device }) {
       <div className="report-view-controls"><button type="button" title="图表视图" className={mode === 'chart' ? 'is-active' : ''} onClick={() => setMode('chart')}><Icon name="chart" size={13} />图表</button><button type="button" title="列表视图" className={mode === 'list' ? 'is-active' : ''} onClick={() => setMode('list')}><Icon name="table" size={13} />列表</button></div>
     </div>
     {mode === 'chart' ? <div className={`report-chart-layout ${period}`}>
-      <SectionCard title="指标概览" extra={metricComparison} className="metric-overview"><div className={`report-metrics columns-${metrics.length}`}>{metrics.map((metric) => <div className="report-metric" key={metric.label}><div><strong>{metric.value == null ? '--' : one(metric.value)}</strong><span>{metric.unit}</span>{metric.change != null && <em className={metric.change >= 0 ? 'is-up' : 'is-down'}>{metric.change >= 0 ? '↗' : '↘'} {Math.abs(metric.change)}%</em>}</div><small>{metric.label}</small></div>)}</div></SectionCard>
+      <SectionCard title="指标概览" extra={metricComparison} className="metric-overview"><div className={`report-metrics columns-${metrics.length}`}>{metrics.map((metric) => <div className="report-metric" key={metric.label}><div><strong>{metric.value == null ? '--' : (metric.displayValue ?? one(metric.value))}</strong><span>{metric.unit}</span>{metric.change != null && <em className={metric.change >= 0 ? 'is-up' : 'is-down'}>{metric.change >= 0 ? '↗' : '↘'} {Math.abs(metric.change)}%</em>}</div><small>{metric.label}</small></div>)}</div></SectionCard>
       {period === 'daily' && <SectionCard title={config.isPaver ? '怠速时段分布' : '开工时段分布'} className="daily-distribution"><GanttChart workHours={number(device?.today?.workHours)} idleHours={number(device?.today?.idleHours)} device={device} /></SectionCard>}
       {period !== 'daily' && <div className={`period-dashboard ${period}`}>
         <SectionCard title="运行日历" icon="calendar" className="calendar-panel"><Calendar trend={trend} period={period} device={device} /></SectionCard>
         <SectionCard title={config.isPaver ? '怠速时段分布' : '开工时段分布'} className="distribution-panel"><WorkDistributionGrid trend={trend} period={period} device={device} /></SectionCard>
         <SectionCard title={config.isPaver ? '怠速工时占比' : '工时分类占比'} className="category-panel"><CategoryBars trend={trend} period={period} device={device} /></SectionCard>
-        {!config.isPaver && <SectionCard title="平均每小时油耗趋势" className="trend-panel"><div className="chart-subtitle">平均每小时油耗(L/h)</div><TooltipLineChart labels={labels} tooltipLabels={chartLabels.tooltip} series={trendSeries} /></SectionCard>}
+        <SectionCard title="平均每小时油耗趋势" className="trend-panel"><div className="chart-subtitle">平均每小时油耗(L/h)</div><TooltipLineChart labels={labels} tooltipLabels={chartLabels.tooltip} series={trendSeries} /></SectionCard>
       </div>}
     </div> : <ListView rows={rows} columns={columns} onExport={() => showToast('报表导出任务已创建')} />}
     {toast && <div className="report-toast">{toast}</div>}

@@ -24,9 +24,7 @@ export const DEVICES = [
       设备状态: '行驶',
       水温: '80°C',
       发动机转速: '1480r/min',
-      机油压力: '2.3Bar',
       当前油位: '70%',
-      振动频率: '60/min',
     },
     today: {
       workHours: 7.5,
@@ -35,7 +33,6 @@ export const DEVICES = [
     cumulative: {
       totalFuel: '200L',
       totalWorkHours: '2000h',
-      totalMileage: '435km',
     },
     warnings: [
       {
@@ -143,8 +140,6 @@ export const DEVICES = [
       水温: '68°C',
       发动机转速: '0r/min',
       当前油位: '48.6%',
-      振动频率: '60/min',
-      机油压力: '2.3Bar',
     },
     today: {
       workHours: 5.6,
@@ -153,7 +148,6 @@ export const DEVICES = [
     cumulative: {
       totalFuel: '168L',
       totalWorkHours: '1620h',
-      totalMileage: '435km',
     },
     warnings: [],
     archive: {
