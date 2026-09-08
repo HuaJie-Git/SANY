@@ -6,15 +6,19 @@ const Chevron = () => (
   </svg>
 );
 
-export default function Header() {
+function MessageIcon() {
+  return <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6.5 16.5h11l-1.25-2.2V10a4.25 4.25 0 0 0-8.5 0v4.3zM9.5 19a2.7 2.7 0 0 0 5 0"/></svg>;
+}
+
+export default function Header({ onOpenNotifications }) {
   return (
     <header className="sany-topbar">
-      <div className="sany-brand">My <span>SANY</span></div>
+      <div className="sany-brand my-sany-brand" aria-label="My SANY"><i>My</i><b>SANY</b></div>
       <div className="sany-topbar-actions">
-        <button type="button" className="topbar-select">◉ 中文 <Chevron /></button>
-        <button type="button" className="topbar-select">三一集团 <Chevron /></button>
-        <button type="button" className="topbar-icon" aria-label="通知">♧</button>
-        <button type="button" className="topbar-user"><span className="topbar-avatar">S</span> 张经理 <Chevron /></button>
+        <button type="button" className="topbar-message" aria-label="消息通知，5 条未读" onClick={onOpenNotifications}><span className="topbar-notice-icon"><MessageIcon/><b>5</b></span><span>消息中心</span></button>
+        <button type="button" className="topbar-language" aria-label="语言：简体中文" title="简体中文"><span className="globe-mark">◎</span> 简体中文</button>
+        <button type="button" className="topbar-select" title="三一测试租户">三一测试租户 <Chevron /></button>
+        <button type="button" className="topbar-user" title="一包，。"><span className="topbar-avatar">S</span><span>一包，。</span><Chevron /></button>
       </div>
     </header>
   );

@@ -51,7 +51,7 @@ export const DEVICES = [
       updater: '系统管理员',
       台账信息: [
         { label: '项目自编号', value: 'PRJ-GRD-001' },
-        { label: '资产编号', value: 'ZC-2024-30091' },
+        { label: '设备编号', value: 'ZC-2024-30091' },
         { label: '设备类型', value: '平地机' },
         { label: '关联项目', value: '宁乡经开区道路建设项目' },
         { label: '联系人', value: '王工' },
@@ -155,7 +155,7 @@ export const DEVICES = [
       updater: '系统管理员',
       台账信息: [
         { label: '项目自编号', value: 'PRJ-RLR-002' },
-        { label: '资产编号', value: 'ZC-2023-60121' },
+        { label: '设备编号', value: 'ZC-2023-60121' },
         { label: '设备类型', value: '压路机' },
         { label: '关联项目', value: '宁乡经开区道路建设项目' },
         { label: '联系人', value: '王工' },
@@ -273,7 +273,7 @@ export const DEVICES = [
       updater: '系统管理员',
       台账信息: [
         { label: '项目自编号', value: 'PRJ-PAV-003' },
-        { label: '资产编号', value: 'ZC-2024-80151' },
+        { label: '设备编号', value: 'ZC-2024-80151' },
         { label: '设备类型', value: '摊铺机' },
         { label: '关联项目', value: '宁乡经开区道路建设项目' },
         { label: '联系人', value: '王工' },
@@ -350,17 +350,17 @@ export const DEVICES = [
   },
   {
     id: 4,
-    code: 'SYM5230THB-4001',
-    model: 'SYM5230THB',
-    type: '泵车',
+    code: 'SYM5310BEV-8001',
+    model: 'SYM5310BEV',
+    type: '纯电搅拌车',
     status: '行驶',
     updateTime: '2026-07-24 16:20',
-    image: `${ASSET_BASE}images/asset-models/sany_pump.jpg`,
-    name: '三一泵车',
+    image: `${ASSET_BASE}images/asset-models/sany_truck_pump.jpg`,
+    name: '纯电搅拌车',
     realtime: {
-      设备状态: '行驶',
-      车速: '82km/h',
-      当前油位: '68%',
+      车辆状态: '行驶',
+      搅拌桶方向: '正转',
+      剩余电量: '70%',
     },
     today: {
       totalFuel: '185L',
@@ -378,8 +378,8 @@ export const DEVICES = [
     warnings: [
       {
         time: '2026-07-24 12:40',
-        name: '泵送压力异常',
-        desc: '泵送压力波动超过设定阈值',
+        name: '搅拌桶液压系统压力异常',
+        desc: '液压系统压力波动超过设定阈值',
       },
       {
         time: '2026-07-24 09:05',
@@ -391,9 +391,9 @@ export const DEVICES = [
       updateTime: '2026-07-24 15:30:00',
       updater: '系统管理员',
       台账信息: [
-        { label: '项目自编号', value: 'PRJ-PMP-004' },
-        { label: '资产编号', value: 'ZC-2024-40011' },
-        { label: '设备类型', value: '泵车' },
+        { label: '项目自编号', value: 'PRJ-MIX-004' },
+        { label: '设备编号', value: 'ZC-2024-80011' },
+        { label: '设备类型', value: '纯电搅拌车' },
         { label: '关联项目', value: '长沙梅溪湖房建项目' },
         { label: '联系人', value: '李工' },
         { label: '联系电话', value: '139****2506' },
@@ -405,7 +405,7 @@ export const DEVICES = [
       主机厂信息: [
         { label: '物联状态', value: '已物联' },
         { label: '质保状态', value: '在保' },
-        { label: '设备编号', value: 'SYM5230THB-4001' },
+        { label: '设备编号', value: 'SYM5310BEV-8001' },
         { label: '制造商', value: '三一重工' },
       ],
       绑定信息: [
@@ -419,7 +419,7 @@ export const DEVICES = [
         date: '2026-07-15',
         type: '定期保养',
         hours: 1710,
-        description: '更换机油、机滤、泵送油缸密封圈',
+        description: '检查搅拌桶液压系统并更换滤芯',
         operator: '李强',
       },
       {
@@ -427,7 +427,7 @@ export const DEVICES = [
         date: '2026-06-22',
         type: '故障维修',
         hours: 1635,
-        description: '更换输送管磨损弯头',
+        description: '更换搅拌桶液压管路密封件',
         operator: '张伟',
       },
     ],
@@ -435,8 +435,8 @@ export const DEVICES = [
       {
         id: 'AR007',
         time: '2026-07-24 12:40',
-        name: '泵送压力异常',
-        desc: '泵送压力波动超过设定阈值',
+        name: '搅拌桶液压系统压力异常',
+        desc: '液压系统压力波动超过设定阈值',
         status: '未处理',
         handler: '--',
       },
@@ -452,7 +452,7 @@ export const DEVICES = [
     project: {
       name: '长沙梅溪湖房建项目',
       period: '2026-02-20 至 2026-11-30',
-      role: '泵送作业',
+      role: '混凝土运输',
       status: '进行中',
       address: '湖南省长沙市岳麓区梅溪湖',
     },
@@ -510,7 +510,7 @@ export const DEVICES = [
       updater: '系统管理员',
       台账信息: [
         { label: '项目自编号', value: 'PRJ-TRP-005' },
-        { label: '资产编号', value: 'ZC-2023-50012' },
+        { label: '设备编号', value: 'ZC-2023-50012' },
         { label: '设备类型', value: '拖泵' },
         { label: '关联项目', value: '长沙梅溪湖房建项目' },
         { label: '联系人', value: '李工' },
@@ -634,7 +634,7 @@ export const DEVICES = [
       updater: '系统管理员',
       台账信息: [
         { label: '项目自编号', value: 'PRJ-TPM-006' },
-        { label: '资产编号', value: 'ZC-2024-60013' },
+        { label: '设备编号', value: 'ZC-2024-60013' },
         { label: '设备类型', value: '车载泵' },
         { label: '关联项目', value: '长沙梅溪湖房建项目' },
         { label: '联系人', value: '李工' },
@@ -757,7 +757,7 @@ export const DEVICES = [
       updater: '系统管理员',
       台账信息: [
         { label: '项目自编号', value: 'PRJ-MIL-007' },
-        { label: '资产编号', value: 'ZC-2025-70014' },
+        { label: '设备编号', value: 'ZC-2025-70014' },
         { label: '设备类型', value: '铣刨机' },
         { label: '关联项目', value: '长沙机场大道改造项目' },
         { label: '联系人', value: '赵工' },

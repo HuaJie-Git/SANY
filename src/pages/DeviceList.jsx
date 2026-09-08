@@ -8,7 +8,7 @@ const COLUMNS = [
   { key: 'online', label: '在线状态', width: 90 },
   { key: 'runStatus', label: '运行状态', width: 90 },
   { key: 'updateTime', label: '数据更新时间', width: 180 },
-  { key: 'assetId', label: '资产编号', width: 100 },
+  { key: 'assetId', label: '设备编号', width: 100 },
   { key: 'ownership', label: '设备归属类型', width: 110 },
   { key: 'project', label: '关联项目', width: 130 },
   { key: 'org', label: '所属组织', width: 160 },
@@ -157,7 +157,7 @@ export default function DeviceList({ onSelectDevice, preset, onClearPreset }) {
           </span>
           <input
             type="text"
-            placeholder="设备序列号、项目自编号、资产编号、车牌号"
+            placeholder="设备序列号、项目自编号、设备编号、车牌号"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{ ...inputStyle, width: '100%', paddingLeft: 32, boxSizing: 'border-box' }}
@@ -280,7 +280,7 @@ export default function DeviceList({ onSelectDevice, preset, onClearPreset }) {
                       {/* 数据更新时间 */}
                       <td style={tdStyle}>{device.updateTime || '--'}</td>
 
-                      {/* 资产编号 */}
+                      {/* 设备编号 */}
                       <td style={tdStyle}>--</td>
 
                       {/* 设备归属类型 */}

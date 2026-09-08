@@ -21,12 +21,22 @@ function showToast(message) {
   setTimeout(() => toast.remove(), 1600);
 }
 
-export default function DeviceDetail({ device, deviceIndex, totalDevices, onBack, onDeviceChange }) {
-  const [activeTab, setActiveTab] = useState('实时状态');
+export default function DeviceDetail({ device, deviceIndex, totalDevices, onBack, onDeviceChange, initialTab = '实时状态', escEvent, backLabel = '返回设备列表' }) {
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [showStopModal, setShowStopModal] = useState(false);
   const deviceCode = device?.code || '--';
   const deviceImage = device?.image || '';
   const projectName = device?.projectName || device?.project?.name || '--';
+
+  const selectTab = (tab) => {
+    setActiveTab(tab);
+    const nextHash = `/devices/${encodeURIComponent(deviceCode)}?tab=${encodeURIComponent(tab)}`;
+    if (window.location.hash !== `#${nextHash}`) window.history.replaceState(null, '', `#${nextHash}`);
+  };
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [deviceIndex, initialTab]);
 
   useEffect(() => {
     if (!showStopModal) return undefined;
@@ -39,7 +49,7 @@ export default function DeviceDetail({ device, deviceIndex, totalDevices, onBack
   return (
     <div className="device-detail-page">
       <div className="detail-toolbar">
-        <button type="button" className="back-button" onClick={onBack}>‹ <span>返回设备列表</span></button>
+        <button type="button" className="back-button" onClick={onBack}>‹ <span>{backLabel}</span></button>
         <div className="device-switcher">
           <button type="button" disabled={deviceIndex <= 0} onClick={() => { onDeviceChange(deviceIndex - 1); setActiveTab('实时状态'); }}>‹ 上一台</button>
           <select value={deviceCode} onChange={(event) => { const index = DEVICES.findIndex((item) => item.code === event.target.value); if (index >= 0) onDeviceChange(index); }} aria-label="选择设备">
@@ -64,9 +74,17 @@ export default function DeviceDetail({ device, deviceIndex, totalDevices, onBack
           <button type="button" className="stop-button" onClick={() => setShowStopModal(true)}>◉ 恢复</button>
         </div>
         <div className="detail-tabs">
-          {TAB_LIST.map((tab) => <button type="button" key={tab} className={activeTab === tab ? 'is-active' : ''} onClick={() => setActiveTab(tab)}>{tab}</button>)}
+          {TAB_LIST.map((tab) => <button type="button" key={tab} className={activeTab === tab ? 'is-active' : ''} onClick={() => selectTab(tab)}>{tab}</button>)}
         </div>
       </section>
+
+      {escEvent && (
+        <section className="device-esc-panel" aria-labelledby="device-esc-title">
+          <div className="device-esc-heading"><span>ESC</span><div><p>搅拌车设备事件</p><h2 id="device-esc-title">{escEvent.title}</h2></div><b>搅拌车</b></div>
+          <p className="device-esc-summary">{escEvent.summary}</p>
+          <div className="device-esc-meta"><span>发生时间：{escEvent.occurredAt}</span><span>事件编号：{escEvent.eventNo}</span></div>
+        </section>
+      )}
 
       <ActiveComponent device={device} />
 
