@@ -21,7 +21,7 @@ function showToast(message) {
   setTimeout(() => toast.remove(), 1600);
 }
 
-export default function DeviceDetail({ device, deviceIndex, totalDevices, onBack, onDeviceChange, initialTab = '实时状态', escEvent, backLabel = '返回设备列表' }) {
+export default function DeviceDetail({ device, deviceIndex, totalDevices, onBack, onDeviceChange, initialTab = '实时状态', backLabel = '返回设备列表' }) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [showStopModal, setShowStopModal] = useState(false);
   const deviceCode = device?.code || '--';
@@ -77,14 +77,6 @@ export default function DeviceDetail({ device, deviceIndex, totalDevices, onBack
           {TAB_LIST.map((tab) => <button type="button" key={tab} className={activeTab === tab ? 'is-active' : ''} onClick={() => selectTab(tab)}>{tab}</button>)}
         </div>
       </section>
-
-      {escEvent && (
-        <section className="device-esc-panel" aria-labelledby="device-esc-title">
-          <div className="device-esc-heading"><span>ESC</span><div><p>搅拌车设备事件</p><h2 id="device-esc-title">{escEvent.title}</h2></div><b>搅拌车</b></div>
-          <p className="device-esc-summary">{escEvent.summary}</p>
-          <div className="device-esc-meta"><span>发生时间：{escEvent.occurredAt}</span><span>事件编号：{escEvent.eventNo}</span></div>
-        </section>
-      )}
 
       <ActiveComponent device={device} />
 

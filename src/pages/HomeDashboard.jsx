@@ -22,12 +22,10 @@ const DEFAULT_MODULES = [
 ];
 
 const DEFAULT_LINKS = [
-  { id: 'device-management', label: '设备管理', meta: '主导航 · 设备管理', action: 'devices', visible: true, tone: 'red' },
-  { id: 'project-management', label: '项目管理', meta: '主导航 · 项目管理', action: 'projects', visible: true, tone: 'blue' },
-  { id: 'data-dashboard', label: '数据大屏', meta: '主导航 · 数据大屏', action: 'dashboard', visible: true, tone: 'orange' },
-  { id: 'monitoring-center', label: '监控中心', meta: '主导航 · 监控中心', action: 'monitoring', visible: true, tone: 'green' },
-  { id: 'maintenance-navigation', label: '设备保养', meta: '主导航 · 设备保养', action: 'maintenance', visible: true, tone: 'purple' },
-  { id: 'repair-management', label: '维修管理', meta: '主导航 · 维修管理', action: 'repair', visible: true, tone: 'blue' },
+  { id: 'map-monitor', label: '地图监控', meta: '监控中心 · 地图监控', action: 'map-monitor', visible: true, tone: 'blue' },
+  { id: 'warning-center', label: '预警中心', meta: '监控中心 · 预警中心', action: 'warning-center', visible: true, tone: 'orange' },
+  { id: 'maintenance-navigation', label: '设备保养', meta: '设备管理 · 设备保养', action: 'maintenance', visible: true, tone: 'green' },
+  { id: 'project-management', label: '项目管理', meta: '项目管理', action: 'projects', visible: true, tone: 'red' },
 ];
 
 const QUICK_ACTIONS = [
@@ -64,13 +62,20 @@ const FEATURES = [
 ];
 
 const SEARCH_CATEGORIES = ['设备', '品牌', '设备类型', '运行状态', '项目', '审核'];
+const HOME_TASK_LIMIT = 3;
+const HOME_AUDIT_EVENT_LIMIT = 3;
 const DEVICE_DETAIL_SHORTCUTS = ['实时状态', '统计报表', '设备档案', '历史轨迹', '保养管理', '预警记录', '报停记录', '参与项目'];
 const isSearchRecent = (item) => ['asset', 'project', 'audit'].includes(item?.kind) || (item?.kind === 'facet' && SEARCH_CATEGORIES.includes(item.category));
 const recentDisplayTitle = (item) => {
   if (item?.kind !== 'asset') return item?.title;
   const device = DEVICES.find((candidate) => candidate.id === item.refId || candidate.code === item.title);
-  const modelName = device?.type || item.modelName || item.title;
-  return `机型名称：${modelName}`;
+  const brand = device?.brand || item.brand || '--';
+  const serialNumber = device?.code || item.serialNumber || item.title || '--';
+  return `${brand} · ${serialNumber}`;
+};
+const recentDisplayMeta = (item) => {
+  if (item?.kind !== 'asset' || typeof item.meta !== 'string') return item?.meta;
+  return item.meta.split(' · ').slice(0, 2).join(' · ');
 };
 
 function getTimeGreeting(date) {
@@ -141,22 +146,48 @@ function buildDefaultTodos() {
     .filter((alarm) => alarm.status !== '已处理')
     .map((alarm) => ({ ...alarm, device, deviceIndex })));
   return [
-    { id: 'todo-alarm', category: '现场勘察', priority: '高', title: alarmTasks[0]?.name || '设备离线预警跟进', meta: `${DEVICES[0].code} · 王立军`, due: '今天 16:00', status: '待处理', progress: 0, device: DEVICES[0], type: 'task' },
-    { id: 'todo-maintenance', category: '挖掘任务', priority: '中', title: 'SY215C-8890 月度保养检查', meta: `${DEVICES[0].code} · 陈海峰`, due: '今天 18:00', status: '处理中', progress: 1, device: DEVICES[0], type: 'maintenance' },
-    { id: 'todo-inspection', category: '现场勘察', priority: '低', title: '昆明地铁站设备铭牌照片收集', meta: `${DEVICES[2].code} · 赵磊`, due: '明天 09:00', status: '已完成', progress: 2, device: DEVICES[2], type: 'inspection' },
-    { id: 'todo-repair', category: '吊装任务', priority: '高', title: '汽车起重机例行巡检', meta: `${DEVICES[2].code} · 张明`, due: '明天 12:00', status: '处理中', progress: 1, device: DEVICES[2], type: 'repair' },
-    { id: 'todo-parts', category: '运输任务', priority: '中', title: '备件加急运输', meta: `${DEVICES[1].code} · 陈海峰`, due: '8 月 15 日', status: '待处理', progress: 0, device: DEVICES[1], type: 'parts' },
+    { id: 'todo-alarm', category: '现场勘察', priority: '高', title: alarmTasks[0]?.name || '设备离线预警跟进', meta: `${DEVICES[0].code} · 王立军`, deadline: '2026-09-09 16:00:00', status: '待处理', progress: 0, device: DEVICES[0], type: 'task' },
+    { id: 'todo-maintenance', category: '挖掘任务', priority: '中', title: 'SY215C-8890 月度保养检查', meta: `${DEVICES[0].code} · 陈海峰`, deadline: '2026-09-09 18:00:00', status: '处理中', progress: 1, device: DEVICES[0], type: 'maintenance' },
+    { id: 'todo-inspection', category: '现场勘察', priority: '低', title: '昆明地铁站设备铭牌照片收集', meta: `${DEVICES[2].code} · 赵磊`, deadline: '2026-09-10 09:00:00', status: '已完成', progress: 2, device: DEVICES[2], type: 'inspection' },
+    { id: 'todo-repair', category: '吊装任务', priority: '高', title: '汽车起重机例行巡检', meta: `${DEVICES[2].code} · 张明`, deadline: '2026-09-10 12:00:00', status: '处理中', progress: 1, device: DEVICES[2], type: 'repair' },
+    { id: 'todo-parts', category: '运输任务', priority: '中', title: '备件加急运输', meta: `${DEVICES[1].code} · 陈海峰`, deadline: '2026-09-15 18:00:00', status: '待处理', progress: 0, device: DEVICES[1], type: 'parts' },
   ];
+}
+
+function normalizeDeadline(item) {
+  if (item?.deadline) return item.deadline;
+  const value = String(item?.due || '');
+  const time = value.match(/(\d{1,2}):(\d{2})/);
+  const hour = time ? time[1].padStart(2, '0') : '23';
+  const minute = time ? time[2] : '59';
+  const base = new Date();
+  if (value.includes('明天')) base.setDate(base.getDate() + 1);
+  const monthDay = value.match(/(\d{1,2})\s*月\s*(\d{1,2})\s*日/);
+  if (monthDay) base.setMonth(Number(monthDay[1]) - 1, Number(monthDay[2]));
+  const date = `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, '0')}-${String(base.getDate()).padStart(2, '0')}`;
+  return `${date} ${hour}:${minute}:00`;
 }
 
 function normalizeTodoItems(items) {
   const typeMap = { '任务': '现场勘察', '异常': '现场勘察', '检查': '现场勘察', '维保': '挖掘任务', '维修': '吊装任务', '配件': '运输任务' };
   return (Array.isArray(items) ? items : buildDefaultTodos()).map((item) => ({
     ...item,
+    deadline: normalizeDeadline(item),
     category: typeMap[item.category] || item.category || '现场勘察',
     priority: item.priority === '紧急' ? '高' : ['高', '中', '低'].includes(item.priority) ? item.priority : '中',
     status: item.status === '待受理' || item.status === '待确认' ? '待处理' : item.status,
   }));
+}
+
+function todoDeadlineValue(item) {
+  const timestamp = new Date(String(item?.deadline || '').replace(' ', 'T')).getTime();
+  return Number.isNaN(timestamp) ? Number.MAX_SAFE_INTEGER : timestamp;
+}
+
+function isTodayDeadline(deadline) {
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  return String(deadline || '').startsWith(today);
 }
 
 function Icon({ name, size = 18 }) {
@@ -183,6 +214,7 @@ function Icon({ name, size = 18 }) {
     asset: <><rect x="3" y="8" width="18" height="10" rx="2"/><path d="M7 18v2M17 18v2M7 8l2-4h6l2 4M7 13h.01M17 13h.01"/></>,
     project: <><path d="M4 20V6h6l2 2h8v12z"/><path d="M8 12h8M8 16h5"/></>,
     more: <><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></>,
+    sort: <><path d="M8 5v14M8 5 5 8M8 5l3 3M16 19V5M16 19l-3-3M16 19l3-3"/></>,
     trend: <><path d="M4 19V5M4 19h16"/><path d="m7 15 4-4 3 2 5-6"/></>,
     fuel: <><path d="M6 21V4h9v17M5 21h11M8 8h5"/><path d="M15 7h2l2 3v7a2 2 0 0 0 2 2"/></>,
   };
@@ -341,6 +373,9 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
   const [robotOpen, setRobotOpen] = useState(false);
   const [energyMode, setEnergyMode] = useState('oil');
   const [todoFilter, setTodoFilter] = useState('待处理');
+  const [todoSortAsc, setTodoSortAsc] = useState(true);
+  const [auditGroup, setAuditGroup] = useState('设备异常');
+  const [auditSortDesc, setAuditSortDesc] = useState(true);
   const [draggingId, setDraggingId] = useState(null);
   const [actionDraggingId, setActionDraggingId] = useState(null);
   const [linkDraggingId, setLinkDraggingId] = useState(null);
@@ -350,7 +385,6 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
   const [robotInput, setRobotInput] = useState('');
   const [robotMessages, setRobotMessages] = useState([{ role: 'bot', text: '你好，张经理。我可以跨设备、项目和任务定位问题，并把结果直接转成任务、维修召请或配件需求。' }]);
   const [auditNotice, setAuditNotice] = useState('');
-  const [selectedAudit, setSelectedAudit] = useState(null);
   const [bindingOpen, setBindingOpen] = useState(false);
   const [bindingCode, setBindingCode] = useState('');
   const [bindingMessage, setBindingMessage] = useState('');
@@ -381,11 +415,7 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
 
   const assignedTodos = useMemo(() => todoItems
     .slice()
-    .sort((a, b) => {
-      const statusRank = { '待处理': 0, '处理中': 1, '已完成': 2 };
-      const dueRank = (item) => item.due.includes('今天') ? 0 : item.due.includes('明天') ? 1 : 2;
-      return (statusRank[a.status] ?? 3) - (statusRank[b.status] ?? 3) || dueRank(a) - dueRank(b);
-    }), [todoItems]);
+    .sort((a, b) => (todoSortAsc ? 1 : -1) * (todoDeadlineValue(a) - todoDeadlineValue(b))), [todoItems, todoSortAsc]);
   const taskFilters = useMemo(() => [
     { id: '待处理', label: '待处理', count: assignedTodos.filter((item) => item.status === '待处理').length },
     { id: '处理中', label: '处理中', count: assignedTodos.filter((item) => item.status === '处理中').length },
@@ -394,6 +424,13 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
   const filteredTodos = todoFilter === '全部'
     ? assignedTodos
     : assignedTodos.filter((item) => item.status === todoFilter);
+  const visibleAuditEvents = useMemo(() => AUDIT_EVENTS
+    .filter((event) => event.group === auditGroup && event.status !== '已完成')
+    .slice()
+    .sort((a, b) => {
+      const diff = new Date(a.time).getTime() - new Date(b.time).getTime();
+      return auditSortDesc ? -diff : diff;
+    }), [auditGroup, auditSortDesc]);
 
   const usage = useMemo(() => {
     const work = DEVICES.reduce((sum, device, index) => sum + Number(device.today?.workHours || 0) * (5.1 + index * 0.12), 0);
@@ -509,6 +546,8 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
   };
   const openSettings = (tab) => { setDraftModules(modules); setDraftActions(actionConfig); setDraftLinks(links); setEditorTab(tab); setSettingsOpen(true); };
   const openQuickLink = (link) => {
+    if (link.action === 'map-monitor') return onOpenBusiness?.('map-monitor');
+    if (link.action === 'warning-center') return onOpenBusiness?.('warning-center');
     if (link.action === 'devices') return openList('设备管理', DEVICES.map((item) => item.id));
     if (link.action === 'projects') return openList('项目管理 · 全部项目设备', DEVICES.map((item) => item.id));
     if (link.action === 'dashboard') return openList('数据大屏 · 运行设备', usage.activeIds);
@@ -525,7 +564,7 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
       priority: meta.priority,
       title: issue || meta.title,
       meta: `${device?.code || DEVICES[0].code} · 待分配`,
-      due: '今天',
+      deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString('sv-SE'),
       status: '待处理',
       progress: 0,
       device: device || DEVICES[0],
@@ -611,7 +650,7 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
       const event = AUDIT_EVENTS.find((entry) => entry.id === item.refId);
       if (!event) { setAuditNotice('该审核记录已不存在，可进入审核模块查看其他记录。'); return; }
       rememberRecent(item);
-      setSelectedAudit(event);
+      onOpenBusiness?.('audit', { eventId: event.id });
       return;
     }
     if (item.kind === 'facet') {
@@ -634,7 +673,7 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
     if (item.type === '审核') {
       rememberRecent({ id: item.id, kind: 'audit', refId: item.payload.id, title: item.title, meta: `审核 · ${item.meta}`, icon: 'inspection' });
       setSearchOpen(false);
-      setSelectedAudit(item.payload);
+      onOpenBusiness?.('audit', { eventId: item.payload.id });
       return;
     }
     if (item.type === '设备') return openAsset(item.payload.device, true);
@@ -644,17 +683,6 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
       setSearchOpen(false);
       return openList(`${item.type} · ${item.title}`, item.payload.deviceIds);
     }
-  };
-
-  const openAssetMap = (device) => {
-    rememberRecent({ id: `asset-${device.id}-map`, kind: 'asset', refId: device.id, title: device.code, meta: '设备 · 地图监控', icon: 'asset' });
-    setSearchOpen(false);
-    onOpenBusiness?.('map-monitor');
-  };
-
-  const openAssetAudit = (device) => {
-    rememberRecent({ id: `asset-${device.id}-audit`, kind: 'asset', refId: device.id, title: device.code, meta: '设备 · 审核', icon: 'asset' });
-    openAudit();
   };
 
   const updateQuickNavigation = useCallback(() => {
@@ -743,24 +771,23 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
 
   // 一级模块整行列表：每个 module.id 对应一个独立整行容器，渲染顺序由 modules 数组驱动，为后续个性化排序预留。
   const moduleContent = {
-    tasks: <ModuleCard title="我的任务" subtitle="分配给我" className="is-span-12 is-task-module" action={<button type="button" className="module-text-action" onClick={() => openFeature(FEATURES[1])}>查看全部任务 <Icon name="arrow" size={14}/></button>}>
+    tasks: <ModuleCard title="我的任务" className="is-span-12 is-task-module" action={<button type="button" className="module-text-action" onClick={() => openFeature(FEATURES[1])}>查看全部任务 <Icon name="arrow" size={14}/></button>}>
       <div className="todo-stage-board">{taskFilters.map((filter) => <button type="button" key={filter.id} className={`${todoFilter === filter.id ? 'is-active' : ''}${filter.tone ? ` is-${filter.tone}` : ''}`} aria-pressed={todoFilter === filter.id} title={`${filter.label}：${filter.count} 条`} onClick={() => setTodoFilter(todoFilter === filter.id ? '全部' : filter.id)}><strong>{filter.count}</strong><span>{filter.label}</span></button>)}</div>
-      <div className="todo-list-head"><span>{todoFilter === '全部' ? '全部任务' : taskFilters.find((filter) => filter.id === todoFilter)?.label}</span><small>按截止时间升序</small></div>
-      <div className="todo-list">{filteredTodos.slice(0, 4).map((item) => <div className="todo-row" key={item.id}><button type="button" className="todo-main" title={`${item.title} · ${item.status} · ${item.priority} · ${item.category} · ${item.meta} · 截止 ${item.due}`} onClick={() => setWorkflow({ issue: item.title, device: item.device, type: item.type })}><div className="todo-title"><span className={`todo-status is-${item.status}`}>{item.status}</span><span className={`todo-priority priority-${item.priority}`}>{item.priority}</span><small>{item.category}</small><strong>{item.title}</strong></div><div className="todo-meta"><span>{item.meta}</span><time className={`todo-due${item.due.includes('今天') ? ' is-today' : ''}`}>截止 {item.due}</time></div></button><button type="button" className="todo-handle" onClick={() => setWorkflow({ issue: item.title, device: item.device, type: item.type })}>{item.status === '待处理' ? '开始处理' : item.status === '处理中' ? '更新进度' : '查看详情'}</button></div>)}{filteredTodos.length === 0 && <div className="todo-empty"><span><Icon name="task" size={20}/></span><div><strong>没有符合条件的任务</strong><small>可切换上方状态，查看其他分配给我的任务。</small></div><button type="button" onClick={() => setTodoFilter('全部')}>查看全部</button></div>}</div>
+      <div className="todo-sort-row"><button type="button" className="list-sort-button" onClick={() => setTodoSortAsc((value) => !value)} aria-label={`按截止时间${todoSortAsc ? '降序' : '升序'}排序`} title={`切换为截止时间${todoSortAsc ? '降序' : '升序'}`}><span>截止时间</span><b aria-hidden="true">{todoSortAsc ? '↑' : '↓'}</b></button></div>
+      <div className="todo-list">{filteredTodos.slice(0, HOME_TASK_LIMIT).map((item) => <div className="todo-row" key={item.id}><button type="button" className="todo-main" title={`${item.title} · ${item.status} · ${item.priority} · ${item.category} · ${item.meta} · 截止 ${item.deadline}`} onClick={() => setWorkflow({ issue: item.title, device: item.device, type: item.type })}><div className="todo-title"><span className={`todo-status is-${item.status}`}>{item.status}</span><span className={`todo-priority priority-${item.priority}`}>{item.priority}</span><small>{item.category}</small><strong>{item.title}</strong></div><div className="todo-meta"><span>{item.meta}</span><time className={`todo-due${isTodayDeadline(item.deadline) ? ' is-today' : ''}`}>截止 {item.deadline}</time></div></button></div>)}{filteredTodos.length === 0 && <div className="todo-empty"><span><Icon name="task" size={20}/></span><div><strong>没有符合条件的任务</strong><small>可切换上方状态，查看其他分配给我的任务。</small></div><button type="button" onClick={() => setTodoFilter('全部')}>查看全部</button></div>}</div>
     </ModuleCard>,
-    audit: <ModuleCard title="审核概览" subtitle="待处理事件与未读提醒" className="is-span-12" action={<button type="button" className="module-text-action" onClick={openAudit}>进入审核 <Icon name="arrow" size={14}/></button>}>
-      <div className="audit-summary-head"><button type="button" className="audit-total" onClick={openAudit}><strong>{AUDIT_GROUPS.reduce((sum, item) => sum + item.count, 0)}</strong><span>待处理事件</span></button><button type="button" className="audit-unread" onClick={openAudit}><b>{AUDIT_GROUPS.reduce((sum, item) => sum + item.unread, 0)}</b><span>未读新事件</span></button></div>
-      <div className="audit-groups">{AUDIT_GROUPS.map((group) => <button type="button" key={group.id} className={`audit-group ${group.tone}`} title={`${group.label}：${group.count} 条待处理，${group.unread} 条未读`} onClick={openAudit}><span>{group.label}</span><strong>{group.count}</strong>{group.unread > 0 && <i>新{group.unread}</i>}</button>)}</div>
-      <div className="audit-events"><div className="audit-events-title"><span>最近事件</span><small>按发生时间倒序</small></div>{AUDIT_EVENTS.map((event) => <button type="button" key={event.id} className="audit-event" title={`${event.type} · ${event.device} · ${event.time}`} onClick={openAudit}><i className={event.tone}/><span><strong>{event.type}{event.unread && <em>新</em>}</strong><small>{event.device} · {event.group}</small></span><time>{event.time}</time></button>)}</div>
+    audit: <ModuleCard title="审核概览" className="is-span-12" action={<button type="button" className="module-text-action" onClick={openAudit}>进入审核 <Icon name="arrow" size={14}/></button>}>
+      <div className="audit-groups">{AUDIT_GROUPS.map((group) => <button type="button" key={group.id} className={`audit-group ${group.tone}${auditGroup === group.label ? ' is-active' : ''}`} title={`${group.label}：${group.count} 条待处理，${group.unread} 条未读`} onClick={() => setAuditGroup(group.label)}><span>{group.label}</span><strong>{group.count}</strong>{group.unread > 0 && <i>新{group.unread}</i>}</button>)}</div>
+      <div className="audit-events"><div className="audit-events-title is-sort-only"><button type="button" className="list-sort-button audit-sort-toggle" onClick={() => setAuditSortDesc((value) => !value)} aria-label={`按发生时间${auditSortDesc ? '正序' : '倒序'}排序`} title={`切换为发生时间${auditSortDesc ? '正序' : '倒序'}`}><span>发生时间</span><b aria-hidden="true">{auditSortDesc ? '↓' : '↑'}</b></button></div>{visibleAuditEvents.length ? visibleAuditEvents.slice(0, HOME_AUDIT_EVENT_LIMIT).map((event) => <button type="button" key={event.id} className="audit-event" title={`${event.type} · ${event.device} · ${event.time}`} onClick={openAudit}><i className={event.tone}/><span><strong>{event.type}{event.unread && <em>新</em>}</strong><small>{event.device} · {event.deviceType}</small></span><time>{event.time}</time></button>) : <div className="audit-empty">暂无数据</div>}</div>
     </ModuleCard>,
-    maintenance: <ModuleCard title="计划保养" subtitle="按保养工时掌握设备状态，点击卡片查看对应保养清单" className="is-span-12 home-maintenance" action={<button type="button" className="module-text-action" onClick={() => onOpenBusiness?.('maintenance')}>查看全部 <Icon name="arrow" size={14}/></button>}>
+    maintenance: <ModuleCard title="计划保养" className="is-span-12 home-maintenance" action={<button type="button" className="module-text-action" onClick={() => onOpenBusiness?.('maintenance')}>查看全部 <Icon name="arrow" size={14}/></button>}>
       <div className="maintenance-compact-stats">{maintenanceBuckets.map((bucket) => <button type="button" key={bucket.id} className={bucket.tone} onClick={() => onOpenBusiness?.('maintenance', { status: bucket.id })}><span className="maintenance-bucket-title"><i aria-hidden="true"/>{bucket.label}</span><strong>{bucket.assets.length}<em>台设备</em></strong></button>)}</div>
     </ModuleCard>,
     operations: <ModuleCard title="设备运行概览" className="is-span-12" action={<button type="button" className="scope-chip" onClick={() => openList('我的管辖设备', DEVICES.map((item) => item.id))}>统计范围：我管辖的 {DEVICES.length} 台设备</button>}>
       <div className="operations-layout"><section className="operation-usage"><div className="operation-section-title"><div><Icon name="trend"/><span>运行概览</span></div><small>运行状态来源：设备管理</small></div><div className="operation-status-summary" aria-label="设备运行状态统计">{usage.statusGroups.map((group) => <button type="button" key={group.status} onClick={() => openList(`运行状态 · ${group.status}`, group.ids)}><span><i/>{group.status}</span><strong>{group.count}<em>台设备</em></strong></button>)}</div><div className="operation-kpis"><button type="button" onClick={() => openList('过去 7 天有运行数据的设备', DEVICES.map((item) => item.id))}><span>工时</span><strong>{formatHours(usage.total)}<em>h</em></strong></button><button type="button" onClick={() => openList('高怠速关注设备', usage.idleIds)}><span>怠速工时</span><strong>{formatHours(usage.idle)}<em>h</em></strong></button><button type="button" title="作业效率 = 有效作业时间 ÷ 总运行时间，点击查看高怠速设备" onClick={() => openList('高怠速关注设备', usage.idleIds)}><span>作业效率</span><strong>{Math.round((usage.work / usage.total) * 100)}<em>%</em></strong></button></div><div className="operation-chart">{usage.daily.map((value, index) => <div key={index}><i style={{ height: `${value}%` }}/><span>周{['一', '二', '三', '四', '五', '六', '日'][index]}</span></div>)}</div></section><aside className="operation-fuel"><div className="operation-section-title"><div><Icon name="fuel"/><span>能耗概览</span></div><small>过去 7 天</small></div><div className="energy-tabs" role="tablist" aria-label="能耗类型"><button type="button" role="tab" aria-selected={energyMode === 'oil'} className={energyMode === 'oil' ? 'is-active' : ''} onClick={() => setEnergyMode('oil')}>油耗</button><button type="button" role="tab" aria-selected={energyMode === 'electricity'} className={energyMode === 'electricity' ? 'is-active' : ''} onClick={() => setEnergyMode('electricity')}>电耗</button></div>{energyMode === 'oil' ? <><button type="button" className="fuel-callout" onClick={() => openList('高油耗关注设备', energy.highIds)}><strong>{formatHours(energy.total)}<em>L</em></strong><div><span>累计油耗</span><small>日均 {formatHours(energy.daily)} L · 点击查看高油耗设备</small></div></button><div className="fuel-distribution">{energy.groups.map((group) => <button type="button" key={group.id} onClick={() => openList(`日均油耗 ${group.label} 的设备`, group.ids)}><span>{group.label}</span><div><i style={{ width: `${Math.max(4, (group.ids.length / DEVICES.length) * 100)}%` }}/></div><strong>{group.ids.length} 台</strong></button>)}</div></> : <div className="energy-empty"><span><Icon name="fuel"/></span><strong>暂无电耗数据</strong><small>当前管辖设备尚未接入电耗采集，接入后将在此展示累计电耗、日均电耗和设备分布。</small></div>}</aside></div>
     </ModuleCard>,
     links: <ModuleCard title="快速链接" className="is-span-12 is-links">
-      <div className="quick-links">{links.filter((link) => link.visible).map((link) => <button type="button" key={link.id} title={`${link.label} · ${link.meta}`} onClick={() => openQuickLink(link)}><span className={link.tone}><Icon name="link"/></span><div><strong>{link.label}</strong><small>{link.meta}</small></div><Icon name="arrow" size={14}/></button>)}</div>
+      <div className="quick-links">{links.filter((link) => link.visible).map((link) => <button type="button" key={link.id} title={link.label} onClick={() => openQuickLink(link)}><span className={link.tone}><Icon name="link"/></span><div><strong>{link.label}</strong></div><Icon name="arrow" size={14}/></button>)}</div>
     </ModuleCard>,
     projects: <ModuleCard title="重点项目" subtitle="在场设备与项目运行状态" className="is-span-12" action={<span className="module-count">{PROJECTS.length} 个进行中</span>}>
       <div className="project-list">{PROJECTS.slice(0, 3).map((project) => <button type="button" key={project.id} title={`${project.name} · ${project.project?.address || '项目地址待补充'}`} onClick={() => openProject(project, false)}><span><Icon name="project"/></span><div><strong>{project.name}</strong><small>{project.project?.address || '项目地址待补充'}</small></div><b>{project.deviceIds.length} 台设备</b><Icon name="arrow" size={14}/></button>)}</div>
@@ -783,9 +810,6 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
         <p>当前原型提供已绑定设备样例，新增绑定流程待补充。</p>
       </form>
     </Drawer>}
-    {selectedAudit && <Drawer title="审核记录" subtitle={selectedAudit.type} onClose={() => setSelectedAudit(null)} footer={<button type="button" className="primary" onClick={() => { setSelectedAudit(null); openAudit(); }}>进入审核模块</button>}>
-      <dl className="search-audit-detail"><dt>事件内容</dt><dd>{selectedAudit.type}</dd><dt>审核分类</dt><dd>{selectedAudit.group}</dd><dt>关联设备</dt><dd>{selectedAudit.device}</dd><dt>发生时间</dt><dd>{selectedAudit.time}</dd><dt>阅读状态</dt><dd>{selectedAudit.unread ? '未读' : '已读'}</dd></dl>
-    </Drawer>}
     {auditNotice && <div className="home-inline-notice" role="status">{auditNotice}</div>}
     <section className={`home-hero${searchOpen && query ? ' is-search-open' : ''}`}>
       <div className="hero-grid"/>
@@ -800,11 +824,11 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
         </section>}
       </div>
       <div className="hero-recent">
-        <div className="recent-strip"><span className="recent-label">最近访问</span><div className="recent-items">{recentItems.length ? recentItems.slice(0, 4).map((item) => <button type="button" className="recent-chip" key={item.id} title={`${recentDisplayTitle(item)} · ${item.meta}`} onClick={() => openRecentItem(item)}><i><Icon name={item.icon || 'link'} size={15}/></i><span><strong>{recentDisplayTitle(item)}</strong><small>{item.meta}</small></span></button>) : <span className="recent-empty">暂无数据</span>}</div>{recentItems.length > 4 && <div className="recent-more-wrap"><button ref={recentMoreRef} type="button" className="recent-more" aria-expanded={recentOpen} aria-haspopup="dialog" onClick={() => setRecentOpen((open) => !open)}><Icon name="more" size={17}/><span>更多</span><b>{Math.min(recentItems.length - 4, 6)}</b></button></div>}</div>
+        <div className="recent-strip"><span className="recent-label">最近访问</span><div className="recent-items">{recentItems.length ? recentItems.slice(0, 4).map((item) => <button type="button" className="recent-chip" key={item.id} title={`${recentDisplayTitle(item)} · ${recentDisplayMeta(item)}`} onClick={() => openRecentItem(item)}><i><Icon name={item.icon || 'link'} size={15}/></i><span><strong>{recentDisplayTitle(item)}</strong><small>{recentDisplayMeta(item)}</small></span></button>) : <span className="recent-empty">暂无数据</span>}</div>{recentItems.length > 4 && <div className="recent-more-wrap"><button ref={recentMoreRef} type="button" className="recent-more" aria-expanded={recentOpen} aria-haspopup="dialog" onClick={() => setRecentOpen((open) => !open)}><Icon name="more" size={17}/><span>更多</span><b>{Math.min(recentItems.length - 4, 6)}</b></button></div>}</div>
       </div>
     </section>
 
-    {recentOpen && <div ref={recentPopoverRef} className="recent-popover" style={recentPanelPosition ? { top: `${recentPanelPosition.top}px`, insetInlineEnd: `${recentPanelPosition.insetInlineEnd}px` } : undefined} role="dialog" aria-label="更多最近访问"><header><div><strong>更多最近访问</strong><small>最多展示第 5–10 条搜索访问记录</small></div><button type="button" onClick={() => setRecentOpen(false)} aria-label="关闭最近访问"><Icon name="close" size={15}/></button></header><div className="recent-popover-list">{recentItems.slice(4, 10).map((item) => <button type="button" key={item.id} title={`${recentDisplayTitle(item)} · ${item.meta}`} onClick={() => { setRecentOpen(false); openRecentItem(item); }}><i><Icon name={item.icon || 'link'} size={16}/></i><span><strong>{recentDisplayTitle(item)}</strong><small>{item.meta}</small></span><Icon name="arrow" size={14}/></button>)}</div></div>}
+    {recentOpen && <div ref={recentPopoverRef} className="recent-popover" style={recentPanelPosition ? { top: `${recentPanelPosition.top}px`, insetInlineEnd: `${recentPanelPosition.insetInlineEnd}px` } : undefined} role="dialog" aria-label="更多最近访问"><header><div><strong>更多最近访问</strong><small>最多展示第 5–10 条搜索访问记录</small></div><button type="button" onClick={() => setRecentOpen(false)} aria-label="关闭最近访问"><Icon name="close" size={15}/></button></header><div className="recent-popover-list">{recentItems.slice(4, 10).map((item) => <button type="button" key={item.id} title={`${recentDisplayTitle(item)} · ${recentDisplayMeta(item)}`} onClick={() => { setRecentOpen(false); openRecentItem(item); }}><i><Icon name={item.icon || 'link'} size={16}/></i><span><strong>{recentDisplayTitle(item)}</strong><small>{recentDisplayMeta(item)}</small></span><Icon name="arrow" size={14}/></button>)}</div></div>}
 
     <div className="home-content">
       <section className="quick-actions-section">

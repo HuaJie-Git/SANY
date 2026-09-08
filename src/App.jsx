@@ -52,6 +52,7 @@ function App() {
   const [notificationOpen, setNotificationOpen] = useState(false)
   const [messageCenterOpen, setMessageCenterOpen] = useState(false)
   const [messageCategory, setMessageCategory] = useState('all')
+  const [auditEventId, setAuditEventId] = useState(null)
 
   useEffect(() => {
     const syncEscEvent = (event) => {
@@ -99,6 +100,7 @@ function App() {
     }
     if (BUSINESS_VIEWS.includes(nextView)) {
       setListPreset(null)
+      setAuditEventId(nextView === 'audit' ? options.eventId || null : null)
       const statusQuery = nextView === 'maintenance' && options.status ? `?status=${encodeURIComponent(options.status)}` : ''
       window.location.hash = `/${nextView}${statusQuery}`
       return
@@ -144,10 +146,9 @@ function App() {
               backLabel={detailReturnView === 'messages' ? '返回消息中心' : detailReturnView === 'esc-events' ? '返回ESC事件' : '返回设备列表'}
               onDeviceChange={(index) => navigate('detail', { index })}
               initialTab={detailTab}
-              escEvent={DEVICES[selectedDeviceIndex]?.type?.includes('搅拌') && DEVICES[selectedDeviceIndex]?.code === escEvent.serialNumber ? escEvent : null}
             />
           )}
-          {BUSINESS_VIEWS.includes(view) && <BusinessModulePage moduleKey={view} />}
+          {BUSINESS_VIEWS.includes(view) && <BusinessModulePage moduleKey={view} initialEventId={auditEventId} />}
         </main>
       </div>
       {notificationOpen && <NotificationPopover

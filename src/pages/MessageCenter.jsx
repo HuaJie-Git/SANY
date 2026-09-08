@@ -22,7 +22,7 @@ export default function MessageCenter({ escEvent, initialCategory = 'all', onOpe
   const acknowledged = Boolean(escEvent.acknowledgedAt) || allRead;
   const allUnreadCount = (acknowledged ? 0 : 1) + (allRead ? 0 : MAINTENANCE_MESSAGES.length);
   const messages = useMemo(() => {
-    const esc = { id: 'esc', type: 'esc', title: `ESC 事件：${escEvent.deviceName}`, time: escEvent.occurredAt.slice(11), copy: `${escEvent.deviceName}（${escEvent.serialNumber}）触发 ESC 事件，请立即查看设备工况。`, unread: !acknowledged };
+    const esc = { id: 'esc', type: 'esc', title: 'ESC 事件', time: escEvent.occurredAt.slice(11), copy: `${escEvent.deviceName}（${escEvent.serialNumber}）触发 ESC 事件，请立即查看设备工况。`, unread: !acknowledged };
     const care = MAINTENANCE_MESSAGES.map((item) => ({ ...item, type: 'care', unread: !allRead }));
     const selected = category === 'care' ? care : [esc, ...care];
     return onlyUnread ? selected.filter((item) => item.unread) : selected;
