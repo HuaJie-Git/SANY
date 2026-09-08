@@ -12,7 +12,7 @@ const QuickAccess = ({ onNavigate, primaryItems, applications = [], showInquiryS
     { id: 5, name: '机群报表', icon: '报表', color: '#FFEAA7', isHalfHidden: true },
   ];
   const shortcutOverrides = {
-    assets: { name: '产品中心', icon: '产品', color: '#96CEB4' },
+    assets: { name: '产品中心', icon: '产品', color: '#96CEB4', target: 'productCenter' },
   };
   const baseFirstScreenItems = primaryItems?.length
     ? primaryItems
@@ -70,6 +70,10 @@ const QuickAccess = ({ onNavigate, primaryItems, applications = [], showInquiryS
       return;
     }
     const itemName = item.name;
+    if (itemName === '产品中心') {
+      onNavigate?.({ target: 'productCenter' });
+      return;
+    }
     if (itemName === '客户心声') {
       onNavigate?.({ target: 'feedback' });
       return;

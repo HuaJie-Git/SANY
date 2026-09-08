@@ -281,7 +281,7 @@ let _comments = [
   { id: 14, postId: 1, userId: 'user-006', userName: '安全员小李', userAvatar: 'images/机手社区/挖掘机/挖掘机_04.jpg', content: '安全检查做足了，效率反而更高。', time: '32分钟前', rootCommentId: 1, parentCommentId: 1, replyToUserId: 'user-002', likeCount: 1, isLiked: false },
   { id: 15, postId: 1, userId: 'user-007', userName: '工地老张', userAvatar: 'images/机手社区/三一起重机/三一起重机_03.jpg', content: '现场管理也可以照这个思路做。', time: '20分钟前', rootCommentId: 1, parentCommentId: 1, replyToUserId: 'user-002', likeCount: 0, isLiked: false },
   { id: 16, postId: 1, userId: 'user-008', userName: '新手学徒', userAvatar: 'images/机手社区/三一重卡/三一重卡_03.jpg', content: '收藏了，明天上班试试。', time: '10分钟前', rootCommentId: 1, parentCommentId: 1, replyToUserId: 'user-002', likeCount: 0, isLiked: false },
-  { id: 2, postId: 1, userId: 'user-004', userName: '效率达人', userAvatar: 'images/机手社区/泵车/泵车_04.jpg', content: '确实，起步检查很重要', time: '3小时前', rootCommentId: 2, parentCommentId: null, replyToUserId: null, likeCount: 9, isLiked: false },
+  { id: 2, postId: 1, userId: 'user-004', userName: '效率达人', userAvatar: 'images/机手社区/泵车/泵车_04.jpg', content: '确实，起步检查很重要', time: '3小时前', rootCommentId: 2, parentCommentId: null, replyToUserId: null, likeCount: 9, isLiked: false, status: 'deleted', deleteReason: '违规内容' },
   { id: 17, postId: 101, userId: 'user-002', userName: '机手小赵', userAvatar: 'images/机手社区/三一起重机/三一起重机_03.jpg', content: '这个检查流程很实用，收藏了！', time: '2小时前', rootCommentId: 17, parentCommentId: null, replyToUserId: null, likeCount: 12, isLiked: false },
   { id: 18, postId: 101, userId: 'user-004', userName: '效率达人', userAvatar: 'images/机手社区/泵车/泵车_04.jpg', content: '建议再补充一下收工后的停机步骤。', time: '1小时前', rootCommentId: 17, parentCommentId: 17, replyToUserId: 'user-002', likeCount: 4, isLiked: false },
   { id: 19, postId: 101, userId: 'user-005', userName: '维修专家', userAvatar: 'images/机手社区/三一起重机/三一起重机_06.jpg', content: '液压油和冷却液也要一起看。', time: '52分钟前', rootCommentId: 17, parentCommentId: 17, replyToUserId: 'user-002', likeCount: 2, isLiked: false },
@@ -306,6 +306,14 @@ const COMMENT_MAX_LENGTH = 500;
 
 export const getCommentsByPostId = (postId) =>
   _comments.filter((c) => c.postId === postId);
+
+export const softDeleteComment = (commentId, reason = '违规内容') => {
+  const target = _comments.find((comment) => comment.id === commentId);
+  if (!target) return false;
+  target.status = 'deleted';
+  target.deleteReason = reason;
+  return true;
+};
 
 export const addComment = (postId, content, commentOptions = {}) => {
   const user = getCurrentUser();

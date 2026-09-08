@@ -20,15 +20,18 @@ import AIAssistant from '../AIAssistant/AIAssistant';
 import DeviceDetail from '../DeviceDetail/DeviceDetail';
 import WorkConditionDetail from '../WorkConditionDetail/WorkConditionDetail';
 import DataReport from '../DataReport/DataReport';
+import DataAnalysis from '../DataAnalysis/DataAnalysis';
 import RecentDetail from '../RecentDetail/RecentDetail';
 import TaskList from '../TaskList/TaskList';
 import DivisionSwitcher from '../../components/DivisionSwitcher/DivisionSwitcher';
 import AllApplications from '../AllApplications/AllApplications';
 import MessageCenter from '../MessageCenter/MessageCenter';
+import ProductCenter from '../ProductCenter/ProductCenter';
 import { CustomerVoice, InquiryForm } from '../../components/ExperienceMode/ExperienceMode';
 import { trackLeadIntent } from '../../utils/tracking';
 import { readApplicationOrder } from '../../data/appCatalog';
-import { getMessageUnreadCount } from '../../data/messages';
+import { getMessageUnreadCount, MESSAGE_READ_STORAGE_KEY } from '../../data/messages';
+import { ESC_EVENT_STORAGE_KEY, readEscEvent } from '../../data/escEvent';
 
 const BUSINESS_SCOPES = [
   {
@@ -152,11 +155,13 @@ const Home = () => {
   const [selectedDevice, setSelectedDevice] = useState(null); // 选中的设备详情
   const [selectedWorkCondition, setSelectedWorkCondition] = useState(null); // 资产工况详情
   const [dataReportDevice, setDataReportDevice] = useState(null); // 数据报表设备
+  const [dataAnalysisDevice, setDataAnalysisDevice] = useState(null); // 数据分析设备
   const [showRecentList, setShowRecentList] = useState(false); // 是否显示最近查看列表
   const [showAllApplications, setShowAllApplications] = useState(false);
   const [showMessageCenter, setShowMessageCenter] = useState(false);
   const [orderedApplications, setOrderedApplications] = useState(() => readApplicationOrder());
   const [messageUnreadCount, setMessageUnreadCount] = useState(() => getMessageUnreadCount());
+  const [escEvent, setEscEvent] = useState(() => readEscEvent());
   const [navigationSource, setNavigationSource] = useState(null);
   const [pageContext, setPageContext] = useState(null);
   const [assetNavigationContext, setAssetNavigationContext] = useState(null);
@@ -188,6 +193,8 @@ const Home = () => {
   const enterExperienceMode = () => {
     setExperienceMode(true);
     window.localStorage.setItem('sanvist_experience_mode', '1');
+    setDivisionToast('体验模式已开启');
+    window.setTimeout(() => setDivisionToast(''), 1800);
   };
   const handleLogin = () => {
     setShowLoginPrompt(false);
@@ -198,6 +205,8 @@ const Home = () => {
     if (experienceMode) {
       setExperienceMode(false);
       window.localStorage.removeItem('sanvist_experience_mode');
+      setDivisionToast('体验模式已关闭');
+      window.setTimeout(() => setDivisionToast(''), 1800);
       return;
     }
     enterExperienceMode();
@@ -207,6 +216,14 @@ const Home = () => {
     trackLeadIntent.inquiryFormOpen(source, context);
     setInquiryContext({ source, ...context });
   };
+  useEffect(() => {
+    const syncEscEvent = (event) => {
+      if (event.key === ESC_EVENT_STORAGE_KEY) setEscEvent(readEscEvent());
+      if (event.key === MESSAGE_READ_STORAGE_KEY) setMessageUnreadCount(getMessageUnreadCount());
+    };
+    window.addEventListener('storage', syncEscEvent);
+    return () => window.removeEventListener('storage', syncEscEvent);
+  }, []);
 
   const rememberDivisionGuide = () => {
     window.localStorage.setItem('sanvist_division_guide_version', DIVISION_GUIDE_VERSION);
@@ -343,6 +360,10 @@ const Home = () => {
   const handleBusinessNavigate = (incomingAction, source = null) => {
     const action = typeof incomingAction === 'string' ? { target: incomingAction } : incomingAction;
     if (!action?.target) return;
+    if (experienceMode && ['parts', 'service', 'maintenance'].includes(action.target)) {
+      requireLogin();
+      return;
+    }
     hideSourceSurface(source);
     setNavigationSource(source);
     setPageContext(action.context ? { ...action.context, source } : (source ? { source } : null));
@@ -379,6 +400,7 @@ const Home = () => {
       case 'parts':
       case 'service':
       case 'maintenance':
+      case 'productCenter':
         setCurrentPage(action.target);
         break;
       case 'taskList':
@@ -534,6 +556,24 @@ const Home = () => {
   }
 
   // 如果显示数据报表页
+  if (dataAnalysisDevice) {
+    return (
+      <PhoneFrame
+        topNav={null}
+        bottomNav={null}
+        hideGradient={true}
+        statusBarTheme="dark"
+      >
+        <DataAnalysis
+          onBack={() => {
+            setDataAnalysisDevice(null);
+            if (!selectedWorkCondition) restoreNavigationSource();
+          }}
+        />
+      </PhoneFrame>
+    );
+  }
+
   if (dataReportDevice) {
     return (
       <PhoneFrame
@@ -564,6 +604,7 @@ const Home = () => {
       >
         <WorkConditionDetail
           device={selectedWorkCondition}
+          escEvent={selectedWorkCondition?.code === escEvent.serialNumber ? escEvent : null}
           backLabel={currentPage === 'assetList' ? '返回资产列表' : navigationSource === 'search' ? '返回全域搜索' : '返回'}
           onBack={() => {
             setSelectedWorkCondition(null);
@@ -571,6 +612,7 @@ const Home = () => {
           }}
           onNavigate={(page) => {
             if (page === 'dataReport') setDataReportDevice(selectedWorkCondition);
+            if (page === 'dataAnalysis') setDataAnalysisDevice(selectedWorkCondition);
           }}
         />
       </PhoneFrame>
@@ -659,6 +701,8 @@ const Home = () => {
       switch (currentPage) {
         case 'parts':
           return <PartsOrder onBack={closeCurrentPage} initialQuery={pageContext?.query} initialItem={pageContext?.item} />;
+        case 'productCenter':
+          return <ProductCenter onBack={closeCurrentPage} initialItem={pageContext?.item} />;
         case 'service':
           return <ServiceRequest onBack={closeCurrentPage} />;
         case 'maintenance':
@@ -672,7 +716,7 @@ const Home = () => {
       <PhoneFrame
         topNav={null}
         bottomNav={null}
-        hideStatusBar={['parts', 'service', 'maintenance'].includes(currentPage)}
+        hideStatusBar={['parts', 'service', 'maintenance', 'productCenter'].includes(currentPage)}
       >
         {renderPage()}
       </PhoneFrame>
@@ -745,7 +789,15 @@ const Home = () => {
           <BottomNav activeTab={activeTab} onTabChange={handleTabChange} showProfileDot={!userRole} />
         }
       >
-        <Asset demoMode={experienceMode} navigationContext={assetNavigationContext} onDeviceClick={(device) => setSelectedWorkCondition(device)} />
+        <Asset
+          demoMode={experienceMode}
+          navigationContext={assetNavigationContext}
+          onDeviceClick={(device) => setSelectedWorkCondition(device)}
+          onUnavailable={(device) => {
+            setDivisionToast(`${device.displayName || device.name}详情即将补充`);
+            window.setTimeout(() => setDivisionToast(''), 1800);
+          }}
+        />
       </PhoneFrame>
     );
   }

@@ -1,8 +1,41 @@
 import React, { useMemo, useRef, useState } from 'react';
 import FuelLevelChart from '../../components/FuelLevelChart/FuelLevelChart';
 import WorkStatusTimeline from '../../components/WorkStatusTimeline/WorkStatusTimeline';
+import IconFont from '../../components/IconFont/IconFont';
 
 const MACHINE_DATA = {
+  挖掘机: {
+    supportsTrajectory: false,
+    model: 'SY014CF',
+    plate: 'SV-22 · Kolkata',
+    status: '工作',
+    reportTime: '2026-09-03 16:57:57 (UTC+5.5)',
+    realtime: [
+      ['发动机转速', '1245.18', 'RPM'],
+      ['油位', '31.62', '%'],
+      ['档位', '9'],
+      ['冷却水温', '53.07', '°C'],
+    ],
+    workDist: [0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    today: [['当日总工时', '0.01', 'h'], ['当日无动作工时', '0.01', 'h']],
+    cumulative: [['累计工时', '2352.75', 'h']],
+  },
+  '三一挖掘机': {
+    supportsTrajectory: false,
+    model: 'SY014CF',
+    plate: 'SV-22 · Kolkata',
+    status: '工作',
+    reportTime: '2026-09-03 16:57:57 (UTC+5.5)',
+    realtime: [
+      ['发动机转速', '1245.18', 'RPM'],
+      ['油位', '31.62', '%'],
+      ['档位', '9'],
+      ['冷却水温', '53.07', '°C'],
+    ],
+    workDist: [0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    today: [['当日总工时', '0.01', 'h'], ['当日无动作工时', '0.01', 'h']],
+    cumulative: [['累计工时', '2352.75', 'h']],
+  },
   '三一平地机': {
     supportsTrajectory: false,
     model: 'SMG200',
@@ -147,7 +180,10 @@ const MACHINE_DATA = {
 };
 
 const Icon = ({ type, size = 20 }) => {
+  const iconMap = { report: 'report', behavior: 'chart', nav: 'navigation', grid: 'grid', parts: 'book', training: 'book', service: 'service', pin: 'location', clock: 'clock' };
+  if (iconMap[type]) return <IconFont name={iconMap[type]} size={size} />;
   const paths = {
+    behavior: <><path d="M4 18V6M4 18h16"/><path d="m7 14 3-4 3 2 4-6"/></>,
     /* 数据报表：屏幕/趋势图 */
     report: <><rect x="3" y="4" width="18" height="13" rx="2" strokeWidth="1.6"/><path d="M8 20h8" strokeWidth="1.6"/><path d="M12 17v3" strokeWidth="1.6"/><path d="M7 12l3-3 3 2 4-4" strokeWidth="1.6" strokeLinejoin="round"/></>,
     /* 零部件图册：书本+齿轮 */
@@ -199,8 +235,9 @@ const WorkConditionDetail = ({ device, onBack, onNavigate, backLabel = '返回�
   const [hint, setHint] = useState('');
   const timerRef = useRef(null);
   const data = MACHINE_DATA[device?.name] || MACHINE_DATA['三一平地机'];
-  const reportTime = '2026-07-24 12:00:23';
-  const fuelLevel = useMemo(() => data.realtime.find(([label]) => label === '当前油位')?.[1] || '70', [data]);
+  const isExcavator = ['挖掘机', '三一挖掘机'].includes(device?.name);
+  const reportTime = data.reportTime || '2026-07-24 12:00:23';
+  const fuelLevel = useMemo(() => data.realtime.find(([label]) => ['当前油位', '油位'].includes(label))?.[1] || '70', [data]);
 
   const showHint = (label) => {
     window.clearTimeout(timerRef.current);
@@ -237,8 +274,13 @@ const WorkConditionDetail = ({ device, onBack, onNavigate, backLabel = '返回�
               )}
             </div>
           </div>
-          <div className={`mt-4 grid gap-2 ${data.electric ? 'grid-cols-3' : 'grid-cols-4'}`}>
-            {(data.electric ? [
+          <div className={`mt-4 grid gap-2 ${isExcavator ? 'grid-cols-4' : data.electric ? 'grid-cols-3' : 'grid-cols-4'}`}>
+            {(isExcavator ? [
+              ["report", "数据报表", () => onNavigate?.('dataReport')],
+              ["behavior", "数据分析", () => onNavigate?.('dataAnalysis')],
+              ["nav", "动态曲线", () => showHint('动态曲线')],
+              ["grid", "更多操作", () => showHint('更多操作')],
+            ] : data.electric ? [
               ["report", "数据报表", () => onNavigate?.('dataReport')],
               ["parts", "零部件图册", () => showHint('零部件图册')],
               ["service", "自助服务", () => showHint('自助服务')],
@@ -278,13 +320,37 @@ const WorkConditionDetail = ({ device, onBack, onNavigate, backLabel = '返回�
           <div className="flex items-center gap-1.5"><h2 className="text-[16px] font-semibold">今日数据</h2><span className="h-4 w-4 rounded-full bg-[#303640] text-center text-[10px] leading-4 text-white">?</span></div>
           <div className={`mt-7 grid gap-6 ${data.today.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>{data.today.map((item) => <Metric key={item[0]} item={item} />)}</div>
           <WorkStatusTimeline segments={data.workDist} />
-          {!data.electric && <FuelLevelChart level={fuelLevel} />}
+          {!data.electric && !isExcavator && <FuelLevelChart level={fuelLevel} />}
         </section>
+
+        {isExcavator && (
+          <>
+            <section className="rounded-[14px] bg-white px-4 py-5 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
+              <h2 className="text-[16px] font-semibold">油耗数据</h2>
+              <div className="mt-7 grid grid-cols-2 gap-x-5 gap-y-7">
+                <Metric item={['当日油耗', '-', 'L']} />
+                <Metric item={['当日无动作油耗', '-', 'L']} />
+              </div>
+            </section>
+            <section className="rounded-[14px] bg-white px-4 py-5 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
+              <h2 className="text-[16px] font-semibold">油位曲线</h2>
+              <FuelLevelChart level="26" excavator />
+            </section>
+            <section className="rounded-[14px] bg-white px-4 py-5 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
+              <h2 className="text-[16px] font-semibold">设备动态</h2>
+              <div className="mt-5 space-y-4 text-[12px] text-[#5f6772]">
+                <div className="flex items-center justify-between"><span>设备开机</span><span>16:55:25 (UTC+5.5)</span></div>
+                <div className="flex items-center justify-between"><span>设备关机</span><span>15:36:29 (UTC+5.5)</span></div>
+              </div>
+            </section>
+          </>
+        )}
 
         <section className="rounded-[14px] bg-white px-4 py-5 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
           <h2 className="text-[16px] font-semibold">累计数据</h2>
           <div className="mt-7 grid grid-cols-2 gap-x-5 gap-y-7">{data.cumulative.map((item) => <Metric key={item[0]} item={item} />)}</div>
         </section>
+
       </main>
 
       {hint && <div role="status" className="absolute left-1/2 top-[45%] z-50 -translate-x-1/2 rounded-lg bg-black/75 px-4 py-2 text-[12px] text-white">{hint}</div>}

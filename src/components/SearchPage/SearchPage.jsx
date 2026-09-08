@@ -1,13 +1,35 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ScannerPage from '../ScannerPage/ScannerPage';
 
-const filterSearchItems = (items, keyword) => {
+const filterSearchItems = (items, keyword, keys) => {
   const normalizedKeyword = keyword.trim().toLowerCase();
   if (!normalizedKeyword) return items;
-  return items.filter((item) => Object.values(item).some((value) => (
+  return items.filter((item) => (keys ? keys.map((key) => item[key]) : Object.values(item)).some((value) => (
     typeof value === 'string' && value.toLowerCase().includes(normalizedKeyword)
   )));
 };
+
+// 与资产列表中当前已绑定设备保持一致，仅按设备类型名称参与搜索。
+const boundDeviceTypes = [
+  { id: 1, name: '平地机', deviceCount: 1, image: 'images/asset-models/sany_grader.jpg' },
+  { id: 2, name: '压路机', deviceCount: 1, image: 'images/asset-models/sany_roller.jpg' },
+  { id: 3, name: '摊铺机', deviceCount: 1, image: 'images/asset-models/sany_paver.jpg' },
+  { id: 4, name: '泵车', deviceCount: 3, image: 'images/asset-models/sany_pump.jpg' },
+  { id: 5, name: '拖泵', deviceCount: 1, image: 'images/asset-models/sany_trailer_pump.jpg' },
+  { id: 6, name: '车载泵', deviceCount: 1, image: 'images/asset-models/sany_truck_pump.jpg' },
+  { id: 7, name: '铣刨机', deviceCount: 1, image: 'images/asset-models/sany_milling.jpg' },
+  { id: 8, name: '搅拌车', deviceCount: 1, image: 'images/审核/搅拌车.jpg' },
+  { id: 9, name: '挖掘机', deviceCount: 3, image: 'images/审核/挖掘机.jpg' },
+  { id: 10, name: '起重机', deviceCount: 3, image: 'images/审核/起重机.jpg' },
+];
+
+const searchKeysByTab = {
+  '资产': ['code', 'name', 'brand'],
+  '品牌': ['name'],
+  '设备类型': ['name'],
+};
+
+const HISTORY_PAGE_SIZE = 10;
 
 const SearchPage = ({
   onClose,
@@ -21,9 +43,7 @@ const SearchPage = ({
   const [activeTab, setActiveTab] = useState(initialState?.activeTab || '资产');
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState({});
-  const [showCameraModal, setShowCameraModal] = useState(false);
-  const [cameraPermission, setCameraPermission] = useState('prompt'); // 'prompt', 'granted', 'denied'
-  const [language, setLanguage] = useState('zh'); // 'zh', 'en', 'ja', 'ko'
+  const [historyPage, setHistoryPage] = useState(1);
   const [showScanner, setShowScanner] = useState(initialScannerOpen);
   const scannerOpenedDirectlyRef = useRef(initialScannerOpen);
 
@@ -32,7 +52,7 @@ const SearchPage = ({
     if (scannerOpenedDirectlyRef.current) onClose?.();
   };
 
-  const tabs = ['资产', '品牌', '设备类型', '配件', '设备分组'];
+  const tabs = ['资产', '品牌', '设备类型', '产品中心', '配件', '设备分组'];
   const inputRef = useRef(null);
   const debounceTimer = useRef(null);
 
@@ -41,110 +61,22 @@ const SearchPage = ({
   }, [activeTab, onStateChange, searchText]);
 
   useEffect(() => {
+    setHistoryPage(1);
+  }, [activeTab, searchText]);
+
+  useEffect(() => {
     if (!showScanner) inputRef.current?.focus();
   }, [showScanner]);
-
-  // ====== 多语言权限提示语 ======
-  const permissionTexts = {
-    zh: {
-      title: '需要相机权限',
-      message: '扫码功能需要访问您的相机，请允许访问。',
-      allow: '允许',
-      deny: '拒绝',
-      settings: '前往设置',
-      cancel: '取消',
-      enableNow: '立即开启',
-      featureList: '此功能需要使用相机以提供：',
-      features: ['扫描二维码', '识别设备条码', '快速搜索设备'],
-    },
-    en: {
-      title: 'Camera Permission Required',
-      message: 'Scan feature needs access to your camera. Please allow access.',
-      allow: 'Allow',
-      deny: 'Deny',
-      settings: 'Go to Settings',
-      cancel: 'Cancel',
-      enableNow: 'Enable Now',
-      featureList: 'This feature uses your camera for:',
-      features: ['Scan QR codes', 'Recognize device barcodes', 'Quick device search'],
-    },
-    ja: {
-      title: 'カメラの権限が必要です',
-      message: 'スキャン機能はカメラへのアクセスが必要です。アクセスを許可してください。',
-      allow: '許可',
-      deny: '拒否',
-      settings: '設定を開く',
-      cancel: 'キャンセル',
-      enableNow: '今すぐ有効にする',
-      featureList: 'この機能はカメラを使用します：',
-      features: ['QRコードのスキャン', 'デバイスバーコードの認識', 'デバイスのクイック検索'],
-    },
-    ko: {
-      title: '카메라 권한이 필요합니다',
-      message: '스캔 기능은 카메라 접근이 필요합니다. 접근을 허용해 주세요.',
-      allow: '허용',
-      deny: '거부',
-      settings: '설정으로 이동',
-      cancel: '취소',
-      enableNow: '지금 활성화',
-      featureList: '이 기능은 카메라를 사용합니다:',
-      features: ['QR코드 스캔', '장비 바코드 인식', '장비 빠른 검색'],
-    },
-  };
-
-  const texts = permissionTexts[language];
-
-  // ====== 请求相机权限 ======
-  const requestCameraPermission = async () => {
-    try {
-      // 检查浏览器是否支持权限API
-      if (navigator.permissions && navigator.permissions.query) {
-        const result = await navigator.permissions.query({ name: 'camera' });
-        setCameraPermission(result.state);
-
-        if (result.state === 'granted') {
-          // 已有权限，直接打开扫码
-          openScanner();
-        } else if (result.state === 'prompt') {
-          // 需要请求权限
-          setShowCameraModal(true);
-        } else {
-          // 权限被拒绝，引导用户去设置
-          setShowCameraModal(true);
-        }
-      } else {
-        // 不支持权限API，直接请求
-        setShowCameraModal(true);
-      }
-    } catch (error) {
-      console.error('权限查询失败:', error);
-      setShowCameraModal(true);
-    }
-  };
-
-  // ====== 打开扫码器 ======
-  const openScanner = () => {
-    setShowCameraModal(false);
-    scannerOpenedDirectlyRef.current = false;
-    setShowScanner(true);
-  };
-
-  // ====== 处理权限请求 ======
-  const handlePermissionRequest = async () => {
-    // 原型中直接进入扫描器；生产环境由原生相机权限结果驱动。
-    setCameraPermission('granted');
-    openScanner();
-  };
 
   // ====== 各 Tab 的默认数据（进入搜索页时展示） ======
   const defaultData = {
     '资产': [
-      { id: 1, code: 'EX-2024-001', name: 'SANY SY365', hours: '12,580 小时', time: '04/13/2026; 10:30', location: '上海市浦东新区', image: 'images/机手社区/挖掘机/挖掘机_01.jpg' },
-      { id: 2, code: 'EX-2025-002', name: 'SANY 起重机', hours: '8,200 小时', time: '04/12/2026; 14:20', location: '南京市建邺区', image: 'images/机手社区/三一起重机/三一起重机_01.jpg' },
-      { id: 3, code: 'EX-2024-003', name: 'CAT 挖掘机', hours: '3,065 小时', time: '04/11/2026; 09:15', location: '广州市天河区', image: 'images/机手社区/挖掘机/挖掘机_02.jpg' },
-      { id: 4, code: 'EX-2024-004', name: 'SANY 泵车', hours: '5,430 小时', time: '04/10/2026; 08:00', location: '深圳市南山区', image: 'images/机手社区/泵车/泵车_04.jpg' },
-      { id: 5, code: 'EX-2024-005', name: 'XCMG 起重机', hours: '1,890 小时', time: '04/09/2026; 16:45', location: '杭州市西湖区', image: 'images/机手社区/三一起重机/三一起重机_03.jpg' },
-      { id: 6, code: 'EX-2024-006', name: 'SANY 挖掘机', hours: '6,780 小时', time: '04/08/2026; 11:00', location: '成都市武侯区', image: 'images/机手社区/挖掘机/挖掘机_03.jpg' },
+      { id: 1, code: 'EX-2024-001', name: 'SANY SY365挖掘机', brand: 'SANY', deviceType: '挖掘机', onlineStatus: '在线', image: 'images/机手社区/挖掘机/挖掘机_01.jpg' },
+      { id: 2, code: 'EX-2025-002', name: 'SANY 起重机', brand: 'SANY', deviceType: '起重机', onlineStatus: '离线', image: 'images/机手社区/三一起重机/三一起重机_01.jpg' },
+      { id: 3, code: 'EX-2024-003', name: 'CAT 挖掘机', brand: 'CAT', deviceType: '挖掘机', onlineStatus: '在线', image: 'images/机手社区/挖掘机/挖掘机_02.jpg' },
+      { id: 4, code: 'EX-2024-004', name: 'SANY 泵车', brand: 'SANY', deviceType: '泵车', onlineStatus: '在线', image: 'images/机手社区/泵车/泵车_04.jpg' },
+      { id: 5, code: 'EX-2024-005', name: 'XCMG 起重机', brand: 'XCMG', deviceType: '起重机', onlineStatus: '离线', image: 'images/机手社区/三一起重机/三一起重机_03.jpg' },
+      { id: 6, code: 'EX-2024-006', name: 'SANY 挖掘机', brand: 'SANY', deviceType: '挖掘机', onlineStatus: '在线', image: 'images/机手社区/挖掘机/挖掘机_03.jpg' },
     ],
     '品牌': [
       { id: 1, name: 'SANY', code: '三一重工', deviceCount: 45 },
@@ -154,41 +86,42 @@ const SearchPage = ({
       { id: 5, name: 'DEERE', code: 'JOHN DEERE', deviceCount: 12 },
       { id: 6, name: 'KOMATSU', code: '小松集团', deviceCount: 15 },
     ],
-    '设备类型': [
-      { id: 1, name: '挖掘机', code: 'Excavator', deviceCount: 35, image: 'images/机手社区/挖掘机/挖掘机_01.jpg' },
-      { id: 2, name: '起重机', code: 'Crane', deviceCount: 22, image: 'images/机手社区/三一起重机/三一起重机_01.jpg' },
-      { id: 3, name: '泵车', code: 'Pump Truck', deviceCount: 15, image: 'images/机手社区/泵车/泵车_04.jpg' },
-      { id: 4, name: '压路机', code: 'Roller', deviceCount: 10, image: 'images/机手社区/压路机/压路机_01.jpg' },
-      { id: 5, name: '铣刨机', code: 'Milling Machine', deviceCount: 8, image: 'images/机手社区/铣刨机/铣刨机_01.jpg' },
-      { id: 6, name: '搅拌车', code: 'Mixer Truck', deviceCount: 12, image: 'images/机手社区/搅拌车/搅拌车_01.jpg' },
+    '设备类型': boundDeviceTypes,
+    '产品中心': [
+      { id: 1, name: '车载混凝土泵', code: 'SYM5180THBES 30C-8', image: 'images/asset-models/sany_pump.jpg' },
+      { id: 2, name: '纯电搅拌车', code: 'SYM5310BEV-8001', image: 'images/审核/搅拌车.jpg' },
+      { id: 3, name: '三一挖掘机', code: 'KT10SESE50393', image: 'images/审核/挖掘机.jpg' },
+      { id: 4, name: '三一起重机', code: 'KT10SESE50394', image: 'images/审核/起重机.jpg' },
+      { id: 5, name: '三一压路机', code: 'SSR260-6012', image: 'images/asset-models/sany_roller.jpg' },
+      { id: 6, name: '三一摊铺机', code: 'SMP130-8015', image: 'images/asset-models/sany_paver.jpg' },
     ],
     '配件': [
-      { id: 1, name: '液压油滤芯', code: 'HX-2024-001', price: '¥280', stock: '有货', image: 'images/配件/OIP.webp' },
-      { id: 2, name: '空气滤芯', code: 'KQ-2024-002', price: '¥150', stock: '有货', image: 'images/配件/OIP (1).webp' },
-      { id: 3, name: '机油滤芯', code: 'JY-2024-003', price: '¥120', stock: '缺货', image: 'images/配件/OIP (2).webp' },
-      { id: 4, name: '柴油滤芯', code: 'CY-2024-004', price: '¥95', stock: '有货', image: 'images/配件/OIP (3).webp' },
-      { id: 5, name: '履带板', code: 'LD-2024-005', price: '¥1,200', stock: '有货', image: 'images/配件/OIP (4).webp' },
-      { id: 6, name: '铲斗齿', code: 'CD-2024-006', price: '¥350', stock: '有货', image: 'images/配件/OIP (5).webp' },
+      { id: 1, name: '液压油滤芯', code: '10000001', price: '280', stock: '有货', image: 'images/配件/OIP.webp' },
+      { id: 2, name: '空气滤芯', code: '10000002', price: '150', stock: '有货', image: 'images/配件/OIP (1).webp' },
+      { id: 3, name: '机油滤芯', code: '10000003', price: '120', stock: '缺货', image: 'images/配件/OIP (2).webp' },
+      { id: 4, name: '柴油滤芯', code: '10000004', price: '95', stock: '有货', image: 'images/配件/OIP (3).webp' },
+      { id: 5, name: '履带板', code: '10000005', price: '1,200', stock: '有货', image: 'images/配件/OIP (4).webp' },
+      { id: 6, name: '铲斗齿', code: '10000006', price: '350', stock: '有货', image: 'images/配件/OIP (5).webp' },
     ],
     '设备分组': [
-      { id: 1, name: '华东组', code: '华东地区 - 上海、江苏、浙江', deviceCount: 12 },
-      { id: 2, name: '华南组', code: '华南地区 - 广东、广西、福建', deviceCount: 8 },
-      { id: 3, name: '华北组', code: '华北地区 - 北京、天津、河北', deviceCount: 15 },
-      { id: 4, name: '西南组', code: '西南地区 - 四川、重庆、云南', deviceCount: 6 },
-      { id: 5, name: '华中组', code: '华中地区 - 湖北、湖南、河南', deviceCount: 10 },
-      { id: 6, name: '西北组', code: '西北地区 - 陕西、甘肃、宁夏', deviceCount: 5 },
+      { id: 1, name: '华东组', deviceCount: 3 },
+      { id: 2, name: '华南组', deviceCount: 3 },
+      { id: 3, name: '华北组', deviceCount: 3 },
+      { id: 4, name: '西南组', deviceCount: 3 },
+      { id: 5, name: '华中组', deviceCount: 2 },
+      { id: 6, name: '西北组', deviceCount: 2 },
     ],
   };
 
   // ====== 各 Tab 的搜索结果数据 ======
   const mockSearchResults = {
     '资产': [
-      { id: 1, code: 'C0000138', name: 'KDD PC360 LC-11', hours: '7,841 小时', time: '09/30/2025; 20:00', location: '未报告位置', image: 'images/机手社区/挖掘机/挖掘机_05.jpg' },
-      { id: 2, code: 'C0000166', name: 'SNA SY215', hours: '未报告小时数', time: '', location: '未报告位置', image: 'images/机手社区/港机/港机_01.jpg' },
-      { id: 3, code: '662367', name: 'DEE 624K_DEERE', hours: '8,507 小时', time: '01/07/2026; 19:00', location: '北京市朝阳区', image: 'images/机手社区/自卸车/自卸车_01.jpg' },
-      { id: 4, code: 'C0000199', name: 'SANY SY365C', hours: '12,300 小时', time: '03/15/2026; 10:00', location: '上海市浦东新区', image: 'images/机手社区/挖掘机/挖掘机_06.jpg' },
-      { id: 5, code: 'C0000266', name: 'CAT 320GC', hours: '4,560 小时', time: '02/28/2026; 14:30', location: '广州市天河区', image: 'images/机手社区/挖掘机/挖掘机_07.jpg' },
-      { id: 6, code: 'BK02766', name: 'XCMG QY50K', hours: '2,100 小时', time: '04/01/2026; 09:00', location: '南京市建邺区', image: 'images/机手社区/三一起重机/三一起重机_05.jpg' },
+      { id: 1, code: 'C0000138', name: 'KOMATSU PC360 LC-11', brand: 'KOMATSU', deviceType: '挖掘机', onlineStatus: '在线', image: 'images/机手社区/挖掘机/挖掘机_05.jpg' },
+      { id: 2, code: 'C0000166', name: 'SANY SY215港口机械', brand: 'SANY', deviceType: '港口机械', onlineStatus: '离线', image: 'images/机手社区/港机/港机_01.jpg' },
+      { id: 3, code: '662367', name: 'DEERE 624K装载机', brand: 'DEERE', deviceType: '装载机', onlineStatus: '在线', image: 'images/机手社区/自卸车/自卸车_01.jpg' },
+      { id: 4, code: 'C0000199', name: 'SANY SY365C挖掘机', brand: 'SANY', deviceType: '挖掘机', onlineStatus: '在线', image: 'images/机手社区/挖掘机/挖掘机_06.jpg' },
+      { id: 5, code: 'C0000266', name: 'CAT 320GC挖掘机', brand: 'CAT', deviceType: '挖掘机', onlineStatus: '离线', image: 'images/机手社区/挖掘机/挖掘机_07.jpg' },
+      { id: 6, code: 'BK02766', name: 'XCMG QY50K起重机', brand: 'XCMG', deviceType: '起重机', onlineStatus: '在线', image: 'images/机手社区/三一起重机/三一起重机_05.jpg' },
     ],
     '品牌': [
       { id: 1, name: 'SANY', code: '三一重工', deviceCount: 45 },
@@ -198,29 +131,30 @@ const SearchPage = ({
       { id: 5, name: 'DEERE', code: 'JOHN DEERE', deviceCount: 12 },
       { id: 6, name: 'KOMATSU', code: '小松集团', deviceCount: 15 },
     ],
-    '设备类型': [
-      { id: 1, name: '挖掘机', code: 'Excavator', deviceCount: 35, image: 'images/机手社区/挖掘机/挖掘机_01.jpg' },
-      { id: 2, name: '起重机', code: 'Crane', deviceCount: 22, image: 'images/机手社区/三一起重机/三一起重机_01.jpg' },
-      { id: 3, name: '泵车', code: 'Pump Truck', deviceCount: 15, image: 'images/机手社区/泵车/泵车_04.jpg' },
-      { id: 4, name: '压路机', code: 'Roller', deviceCount: 10, image: 'images/机手社区/压路机/压路机_01.jpg' },
-      { id: 5, name: '铣刨机', code: 'Milling Machine', deviceCount: 8, image: 'images/机手社区/铣刨机/铣刨机_01.jpg' },
-      { id: 6, name: '搅拌车', code: 'Mixer Truck', deviceCount: 12, image: 'images/机手社区/搅拌车/搅拌车_01.jpg' },
+    '设备类型': boundDeviceTypes,
+    '产品中心': [
+      { id: 1, name: '车载混凝土泵', code: 'SYM5180THBES 30C-8', image: 'images/asset-models/sany_pump.jpg' },
+      { id: 2, name: '纯电搅拌车', code: 'SYM5310BEV-8001', image: 'images/审核/搅拌车.jpg' },
+      { id: 3, name: '三一挖掘机', code: 'KT10SESE50393', image: 'images/审核/挖掘机.jpg' },
+      { id: 4, name: '三一起重机', code: 'KT10SESE50394', image: 'images/审核/起重机.jpg' },
+      { id: 5, name: '三一压路机', code: 'SSR260-6012', image: 'images/asset-models/sany_roller.jpg' },
+      { id: 6, name: '三一摊铺机', code: 'SMP130-8015', image: 'images/asset-models/sany_paver.jpg' },
     ],
     '配件': [
-      { id: 1, name: '液压油滤芯', code: 'HX-2024-001', price: '¥280', stock: '有货', image: 'images/配件/OIP.webp' },
-      { id: 2, name: '空气滤芯', code: 'KQ-2024-002', price: '¥150', stock: '有货', image: 'images/配件/OIP (1).webp' },
-      { id: 3, name: '机油滤芯', code: 'JY-2024-003', price: '¥120', stock: '缺货', image: 'images/配件/OIP (2).webp' },
-      { id: 4, name: '柴油滤芯', code: 'CY-2024-004', price: '¥95', stock: '有货', image: 'images/配件/OIP (3).webp' },
-      { id: 5, name: '履带板', code: 'LD-2024-005', price: '¥1,200', stock: '有货', image: 'images/配件/OIP (4).webp' },
-      { id: 6, name: '铲斗齿', code: 'CD-2024-006', price: '¥350', stock: '有货', image: 'images/配件/OIP (5).webp' },
+      { id: 1, name: '液压油滤芯', code: '10000001', price: '280', stock: '有货', image: 'images/配件/OIP.webp' },
+      { id: 2, name: '空气滤芯', code: '10000002', price: '150', stock: '有货', image: 'images/配件/OIP (1).webp' },
+      { id: 3, name: '机油滤芯', code: '10000003', price: '120', stock: '缺货', image: 'images/配件/OIP (2).webp' },
+      { id: 4, name: '柴油滤芯', code: '10000004', price: '95', stock: '有货', image: 'images/配件/OIP (3).webp' },
+      { id: 5, name: '履带板', code: '10000005', price: '1,200', stock: '有货', image: 'images/配件/OIP (4).webp' },
+      { id: 6, name: '铲斗齿', code: '10000006', price: '350', stock: '有货', image: 'images/配件/OIP (5).webp' },
     ],
     '设备分组': [
-      { id: 1, name: '华东组', code: '华东地区 - 上海、江苏、浙江', deviceCount: 12 },
-      { id: 2, name: '华南组', code: '华南地区 - 广东、广西、福建', deviceCount: 8 },
-      { id: 3, name: '华北组', code: '华北地区 - 北京、天津、河北', deviceCount: 15 },
-      { id: 4, name: '西南组', code: '西南地区 - 四川、重庆、云南', deviceCount: 6 },
-      { id: 5, name: '华中组', code: '华中地区 - 湖北、湖南、河南', deviceCount: 10 },
-      { id: 6, name: '西北组', code: '西北地区 - 陕西、甘肃、宁夏', deviceCount: 5 },
+      { id: 1, name: '华东组', deviceCount: 3 },
+      { id: 2, name: '华南组', deviceCount: 3 },
+      { id: 3, name: '华北组', deviceCount: 3 },
+      { id: 4, name: '西南组', deviceCount: 3 },
+      { id: 5, name: '华中组', deviceCount: 2 },
+      { id: 6, name: '西北组', deviceCount: 2 },
     ],
   };
 
@@ -243,7 +177,7 @@ const SearchPage = ({
     debounceTimer.current = setTimeout(() => {
       const nextResults = Object.fromEntries(
         Object.entries(searchDataRef.current).map(([tab, items]) => (
-          [tab, filterSearchItems(items, searchText)]
+          [tab, filterSearchItems(items, searchText, searchKeysByTab[tab])]
         )),
       );
       setSearchResults(nextResults);
@@ -276,12 +210,13 @@ const SearchPage = ({
   };
 
   // 图片组件
-  const DeviceImage = ({ src, name, size = 'normal' }) => {
-    const sizeClass = size === 'small' ? 'w-[50px] h-[50px]' : 'w-[70px] h-[56px]';
+  const DeviceImage = ({ src, name, size = 'normal', appearance = 'photo' }) => {
+    const sizeClass = size === 'small' ? 'w-[50px] h-[50px]' : 'w-[80px] h-[64px]';
+    const imageClass = appearance === 'icon' ? 'object-contain p-1.5' : 'object-cover';
     return (
       <div className={`${sizeClass} rounded-lg overflow-hidden flex-shrink-0 bg-gray-100`}>
         {src ? (
-          <img src={src} alt={name} className="w-full h-full object-cover" />
+          <img src={src} alt={name} className={`h-full w-full ${imageClass}`} />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-300 text-[12px]">暂无图片</div>
         )}
@@ -320,128 +255,151 @@ const SearchPage = ({
   // ====== 各 Tab 的卡片组件 ======
 
   // 资产 Tab
-  const AssetCard = ({ item }) => (
-    <button type="button" onClick={() => onNavigate?.({ target: 'assetDetail', item })} className="flex w-full items-center gap-3 border-b border-gray-100 py-4 text-left active:bg-gray-50">
-      <DeviceImage src={item.image} name={item.name} />
-      <div className="flex-1 min-w-0">
-        <div className="text-[16px] font-bold text-gray-800">
-          {searchText ? highlightText(item.code, searchText) : item.code}
-          <span className="font-normal text-gray-600 text-[14px] ml-2">{item.name}</span>
-        </div>
-        <div className="text-[13px] text-gray-400 mt-1">
-          {item.hours}{item.time ? `, ${item.time}` : ''}
-        </div>
-        <div className="text-[13px] text-gray-400">{item.location}</div>
-      </div>
-      <svg className="h-4 w-4 flex-shrink-0 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
-    </button>
-  );
+  const AssetCard = ({ item }) => {
+    const name = item.name || '--';
+    const brand = item.brand || name.split(/\s+/)[0] || '--';
+    const deviceType = item.deviceType || '--';
+    const code = item.code || '--';
+    const status = item.onlineStatus || '--';
+    const isOnline = status === '在线';
+
+    return (
+      <button
+        type="button"
+        aria-label={`${brand} ${deviceType}，序列号 ${code}，${status}`}
+        onClick={() => onNavigate?.({ target: 'assetDetail', item: { ...item, name: item.deviceType || item.name } })}
+        className="mb-3 flex w-full items-center gap-3 rounded-[14px] border border-gray-100 bg-white p-3 text-left shadow-[0_3px_12px_rgba(31,41,55,0.06)] transition active:scale-[0.99] active:bg-gray-50"
+      >
+        <DeviceImage src={item.image} name={name} />
+        <span className="min-w-0 flex-1 space-y-1">
+          <span className="flex min-w-0 items-center gap-1 text-[16px] font-semibold leading-6 text-gray-900">
+            <span className="truncate" title={brand}>{searchText ? highlightText(brand, searchText) : brand}</span>
+            <span className="flex-shrink-0 text-gray-300" aria-hidden="true">·</span>
+            <span className="truncate" title={deviceType}>{searchText ? highlightText(deviceType, searchText) : deviceType}</span>
+          </span>
+          <span className="flex min-w-0 items-center gap-3 text-[14px] leading-5">
+            <span className="min-w-0 truncate tabular-nums text-gray-400" title={code}>{searchText ? highlightText(code, searchText) : code}</span>
+            <span className={`flex flex-shrink-0 items-center leading-5 ${isOnline ? 'text-[#18c75a]' : 'text-gray-400'}`}>
+              <span className={`mr-1.5 h-2 w-2 rounded-full ${isOnline ? 'bg-[#18c75a]' : 'bg-gray-400'}`} aria-hidden="true" />
+              {status}
+            </span>
+          </span>
+        </span>
+      </button>
+    );
+  };
 
   // 品牌 Tab
-  const BrandCard = ({ item }) => (
-    <div className="border-b border-gray-100 py-4">
-      <button type="button" onClick={() => onNavigate?.({ target: 'assetList', context: { kind: 'brand', value: item.name, item, label: `${item.name} · ${item.deviceCount} 台资产` } })} className="mb-3 flex w-full items-center gap-3 text-left active:opacity-70">
-        <div className="w-[50px] h-[50px] bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-          <span className="text-[18px] font-bold text-gray-600">{item.name.charAt(0)}</span>
-        </div>
-        <div className="flex-1">
-          <div className="text-[16px] font-bold text-gray-800">
-            {searchText ? highlightText(item.name, searchText) : item.name}
-          </div>
-          <div className="text-[13px] text-gray-400">{item.code}</div>
-          <div className="text-[12px] text-gray-400 mt-1">{item.deviceCount} 台设备</div>
-        </div>
+  const BrandCard = ({ item }) => {
+    const name = item.name || '--';
+    const deviceCount = item.deviceCount ?? 0;
+
+    return (
+      <button
+        type="button"
+        aria-label={`${name}，${deviceCount} 台设备`}
+        onClick={() => onNavigate?.({ target: 'assetList', context: { kind: 'brand', value: name, item, label: `${name} · ${deviceCount} 台设备` } })}
+        className="flex w-full items-center gap-3 border-b border-gray-100 py-4 text-left transition-colors active:bg-gray-50"
+      >
+        <span className="flex h-[50px] w-[50px] flex-shrink-0 items-center justify-center rounded-full bg-gray-100 text-[18px] font-bold text-gray-600">
+          {name.charAt(0)}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[16px] font-semibold leading-6 text-gray-800" title={name}>
+            {searchText ? highlightText(name, searchText) : name}
+          </span>
+          <span className="mt-0.5 block text-[13px] leading-5 text-gray-400">{deviceCount} 台设备</span>
+        </span>
         <svg className="h-4 w-4 flex-shrink-0 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </button>
-      <div className="flex gap-4 ml-[62px]">
-        <button type="button" onClick={() => onNavigate?.({ target: 'assetList', context: { kind: 'brand', value: item.name, item, label: `${item.name} 品牌资产` } })} className="flex flex-col items-center active:opacity-60">
-          <div className="w-[44px] h-[44px] bg-gray-100 rounded-full flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <rect x="3" y="8" width="18" height="12" rx="2" stroke="#666" strokeWidth="1.5"/>
-              <circle cx="8" cy="20" r="2" stroke="#666" strokeWidth="1.5"/>
-              <circle cx="16" cy="20" r="2" stroke="#666" strokeWidth="1.5"/>
-            </svg>
-          </div>
-          <span className="text-[11px] text-blue-500 mt-1">资产</span>
-        </button>
-        <button type="button" onClick={() => onNavigate?.({ target: 'auditList', context: { kind: 'brand', value: item.name, item, initialTab: '设备异常', label: `${item.name} 品牌审核` } })} className="flex flex-col items-center active:opacity-60">
-          <div className="w-[44px] h-[44px] bg-gray-100 rounded-full flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <rect x="5" y="3" width="14" height="18" rx="2" stroke="#666" strokeWidth="1.5"/>
-              <path d="M9 8H15M9 12H15M9 16H12" stroke="#666" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-          </div>
-          <span className="text-[11px] text-blue-500 mt-1">审核</span>
-        </button>
-        <button type="button" onClick={() => onNavigate?.({ target: 'usageReport', item: { ...item, reportScope: `${item.name} 品牌机群`, code: `${item.name} · ${item.deviceCount} 台设备` } })} className="flex flex-col items-center active:opacity-60">
-          <div className="w-[44px] h-[44px] bg-gray-100 rounded-full flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="9" stroke="#666" strokeWidth="1.5"/>
-              <path d="M12 7V12L15 15" stroke="#666" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-          </div>
-          <span className="text-[11px] text-blue-500 mt-1">使用情况</span>
-        </button>
-      </div>
-    </div>
-  );
+    );
+  };
 
   // 设备类型 Tab
-  const DeviceTypeCard = ({ item }) => (
-    <button type="button" onClick={() => onNavigate?.({ target: 'assetList', context: { kind: 'type', value: item.name, item, label: `${item.name} · ${item.deviceCount} 台资产` } })} className="flex w-full items-center gap-3 border-b border-gray-100 py-4 text-left active:bg-gray-50">
-      <DeviceImage src={item.image} name={item.name} size="small" />
-      <div className="flex-1">
-        <div className="text-[16px] font-bold text-gray-800">
-          {searchText ? highlightText(item.name, searchText) : item.name}
-        </div>
-        <div className="text-[13px] text-gray-400">{item.code}</div>
-        <div className="text-[12px] text-gray-400 mt-1">{item.deviceCount} 台设备</div>
-      </div>
-      <svg className="h-4 w-4 flex-shrink-0 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
-    </button>
-  );
+  const DeviceTypeCard = ({ item }) => {
+    const name = item.name || '--';
+    const deviceCount = item.deviceCount ?? 0;
+
+    return (
+      <button
+        type="button"
+        aria-label={`${name}，${deviceCount} 台设备`}
+        onClick={() => onNavigate?.({ target: 'assetList', context: { kind: 'type', value: name, item, label: `${name} · ${deviceCount} 台设备` } })}
+        className="flex w-full items-center gap-3 border-b border-gray-100 py-4 text-left transition-colors active:bg-gray-50"
+      >
+        <DeviceImage src={item.image} name={name} size="small" appearance="icon" />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[16px] font-semibold leading-6 text-gray-800" title={name}>
+            {searchText ? highlightText(name, searchText) : name}
+          </span>
+          <span className="mt-0.5 block text-[13px] leading-5 text-gray-400">{deviceCount} 台设备</span>
+        </span>
+        <svg className="h-4 w-4 flex-shrink-0 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </button>
+    );
+  };
+
+  // 产品中心 Tab：沿用通用搜索逻辑，展示车型名称和三一设备编码。
+  const ProductCenterCard = ({ item }) => {
+    const name = item.name || '--';
+    const code = item.code || '--';
+
+    return (
+      <button type="button" onClick={() => onNavigate?.({ target: 'productCenter', context: { query: name, item } })} className="flex w-full items-center gap-3 border-b border-gray-100 py-4 text-left transition-colors active:bg-gray-50">
+        <DeviceImage src={item.image} name={name} size="small" />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[16px] font-semibold leading-6 text-gray-800" title={name}>
+            {searchText ? highlightText(name, searchText) : name}
+          </span>
+          <span className="mt-0.5 block truncate text-[13px] leading-5 tabular-nums text-gray-400" title={code}>
+            {searchText ? highlightText(code, searchText) : code}
+          </span>
+        </span>
+        <svg className="h-4 w-4 flex-shrink-0 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </button>
+    );
+  };
 
   // 配件 Tab
-  const AccessoryCard = ({ item }) => (
-    <button type="button" onClick={() => onNavigate?.({ target: 'parts', context: { query: item.name, item } })} className="flex w-full items-center gap-3 border-b border-gray-100 py-4 text-left active:bg-gray-50">
-      <DeviceImage src={item.image} name={item.name} size="small" />
-      <div className="flex-1">
-        <div className="text-[16px] font-bold text-gray-800">
-          {searchText ? highlightText(item.name, searchText) : item.name}
-        </div>
-        <div className="text-[13px] text-gray-400">{item.code}</div>
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-[13px] text-red-500 font-medium">{item.price}</span>
-          <span className={`text-[12px] px-2 py-0.5 rounded ${item.stock === '有货' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
-            {item.stock}
+  const AccessoryCard = ({ item }) => {
+    const name = item.name || '--';
+    const code = item.code || '--';
+    const price = item.price ? `USD ${item.price} / PC` : '--';
+
+    return (
+      <button type="button" onClick={() => onNavigate?.({ target: 'parts', context: { query: item.name, item } })} className="flex w-full items-center gap-3 border-b border-gray-100 py-4 text-left transition-colors active:bg-gray-50">
+        <DeviceImage src={item.image} name={name} size="small" />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[16px] font-semibold leading-6 text-gray-800" title={name}>
+            {searchText ? highlightText(name, searchText) : name}
           </span>
-        </div>
-      </div>
-      <svg className="h-4 w-4 flex-shrink-0 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
-    </button>
-  );
+          <span className="mt-0.5 block truncate text-[13px] leading-5 tabular-nums text-gray-400" title={code}>
+            {searchText ? highlightText(code, searchText) : code}
+          </span>
+          <span className="mt-0.5 block text-[13px] font-medium leading-5 tabular-nums text-red-500">{price}</span>
+        </span>
+        <svg className="h-4 w-4 flex-shrink-0 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </button>
+    );
+  };
 
   // 设备分组 Tab
-  const DeviceGroupCard = ({ item }) => (
-    <button type="button" onClick={() => onNavigate?.({ target: 'assetList', context: { kind: 'group', value: item.name, item, label: `${item.name} · ${item.deviceCount} 台资产` } })} className="flex w-full items-center gap-3 border-b border-gray-100 py-4 text-left active:bg-gray-50">
-      <div className="w-[50px] h-[50px] bg-purple-50 rounded-lg flex items-center justify-center flex-shrink-0">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <circle cx="8" cy="8" r="3" stroke="#8B5CF6" strokeWidth="1.5"/>
-          <circle cx="16" cy="8" r="3" stroke="#8B5CF6" strokeWidth="1.5"/>
-          <circle cx="8" cy="16" r="3" stroke="#8B5CF6" strokeWidth="1.5"/>
-          <circle cx="16" cy="16" r="3" stroke="#8B5CF6" strokeWidth="1.5"/>
-        </svg>
-      </div>
-      <div className="flex-1">
-        <div className="text-[16px] font-bold text-gray-800">
-          {searchText ? highlightText(item.name, searchText) : item.name}
-        </div>
-        <div className="text-[13px] text-gray-400">{item.code}</div>
-        <div className="text-[12px] text-gray-400 mt-1">{item.deviceCount} 台设备</div>
-      </div>
-      <svg className="h-4 w-4 flex-shrink-0 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
-    </button>
-  );
+  const DeviceGroupCard = ({ item }) => {
+    const name = item.name || '--';
+    const deviceCount = item.deviceCount ?? 0;
+
+    return (
+      <button type="button" aria-label={`${name}，${deviceCount} 台设备`} onClick={() => onNavigate?.({ target: 'assetList', context: { kind: 'group', value: name, item, label: `${name} · ${deviceCount} 台设备` } })} className="flex w-full items-center border-b border-gray-100 py-4 text-left transition-colors active:bg-gray-50">
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[16px] font-semibold leading-6 text-gray-800" title={name}>
+            {searchText ? highlightText(name, searchText) : name}
+          </span>
+          <span className="mt-0.5 block text-[13px] leading-5 text-gray-400">{deviceCount} 台设备</span>
+        </span>
+        <svg className="h-4 w-4 flex-shrink-0 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </button>
+    );
+  };
 
   // 根据 Tab 渲染卡片
   const renderCard = (item) => {
@@ -449,6 +407,7 @@ const SearchPage = ({
       case '资产': return <AssetCard item={item} />;
       case '品牌': return <BrandCard item={item} />;
       case '设备类型': return <DeviceTypeCard item={item} />;
+      case '产品中心': return <ProductCenterCard item={item} />;
       case '配件': return <AccessoryCard item={item} />;
       case '设备分组': return <DeviceGroupCard item={item} />;
       default: return <AssetCard item={item} />;
@@ -460,6 +419,10 @@ const SearchPage = ({
   const currentData = hasSearchText
     ? (searchResults[activeTab] || [])
     : (defaultData[activeTab] || []);
+  const historyPageCount = Math.ceil(currentData.length / HISTORY_PAGE_SIZE);
+  const visibleData = hasSearchText
+    ? currentData
+    : currentData.slice((historyPage - 1) * HISTORY_PAGE_SIZE, historyPage * HISTORY_PAGE_SIZE);
 
   if (showScanner) {
     return (
@@ -493,8 +456,8 @@ const SearchPage = ({
           <input
             ref={inputRef}
             type="text"
-            aria-label="搜索资产、品牌、设备类型、配件或设备分组"
-            placeholder="搜索资产、品牌、设备类型或配件"
+            aria-label="搜索资产、品牌、设备类型、产品、配件或设备分组"
+            placeholder="搜索资产、产品或配件…"
             className="flex-1 bg-transparent outline-none text-[16px] text-gray-800"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
@@ -509,38 +472,6 @@ const SearchPage = ({
             </button>
           )}
         </div>
-        {/* 扫码按钮 */}
-        <button
-          type="button"
-          aria-label="扫一扫"
-          className="ml-3 w-[40px] h-[40px] bg-gray-100 rounded-full flex items-center justify-center"
-          onClick={requestCameraPermission}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M3 7V5C3 3.89543 3.89543 3 5 3H7" stroke="#333" strokeWidth="2" strokeLinecap="round"/>
-            <path d="M17 3H19C20.1046 3 21 3.89543 21 5V7" stroke="#333" strokeWidth="2" strokeLinecap="round"/>
-            <path d="M21 17V19C21 20.1046 20.1046 21 19 21H17" stroke="#333" strokeWidth="2" strokeLinecap="round"/>
-            <path d="M7 21H5C3.89543 21 3 20.1046 3 19V17" stroke="#333" strokeWidth="2" strokeLinecap="round"/>
-            <rect x="7" y="7" width="10" height="10" rx="1" stroke="#333" strokeWidth="2"/>
-            <path d="M10 7V17" stroke="#333" strokeWidth="1.5"/>
-            <path d="M14 7V17" stroke="#333" strokeWidth="1.5"/>
-            <path d="M7 10H17" stroke="#333" strokeWidth="1.5"/>
-            <path d="M7 14H17" stroke="#333" strokeWidth="1.5"/>
-          </svg>
-        </button>
-        {/* 语言切换按钮 */}
-        <button
-          type="button"
-          aria-label="切换搜索语言"
-          className="ml-2 px-2 py-1 bg-gray-100 rounded text-[12px] text-gray-600"
-          onClick={() => {
-            const languages = ['zh', 'en', 'ja', 'ko'];
-            const currentIndex = languages.indexOf(language);
-            setLanguage(languages[(currentIndex + 1) % languages.length]);
-          }}
-        >
-          {language.toUpperCase()}
-        </button>
       </div>
 
       {/* 分类 Tab */}
@@ -575,9 +506,9 @@ const SearchPage = ({
 
       {/* 内容区域 */}
       <div className="flex-1 overflow-y-auto bg-white px-4 py-3">
-        {/* 无搜索词时显示"最近查看"标题 */}
+        {/* 无搜索词时显示历史搜索 */}
         {!hasSearchText && (
-          <div className="text-[16px] font-bold text-gray-800 mb-4">最近查看</div>
+          <div className="text-[16px] font-bold text-gray-800 mb-4">历史搜索</div>
         )}
         {isLoading ? (
           <div>
@@ -586,33 +517,25 @@ const SearchPage = ({
             ))}
           </div>
         ) : currentData.length > 0 ? (
-          currentData.map((item) => (
-            <React.Fragment key={item.id}>
-              {renderCard(item)}
-            </React.Fragment>
-          ))
+          <>
+            {visibleData.map((item) => (
+              <React.Fragment key={item.id}>
+                {renderCard(item)}
+              </React.Fragment>
+            ))}
+            {!hasSearchText && historyPageCount > 1 && (
+              <nav className="mt-4 flex items-center justify-center gap-3" aria-label="历史搜索分页">
+                <button type="button" disabled={historyPage === 1} onClick={() => setHistoryPage((page) => Math.max(1, page - 1))} className="rounded-lg border border-gray-200 px-3 py-1.5 text-[13px] text-gray-600 disabled:cursor-not-allowed disabled:opacity-35">上一页</button>
+                <span className="text-[13px] tabular-nums text-gray-500">{historyPage} / {historyPageCount}</span>
+                <button type="button" disabled={historyPage === historyPageCount} onClick={() => setHistoryPage((page) => Math.min(historyPageCount, page + 1))} className="rounded-lg border border-gray-200 px-3 py-1.5 text-[13px] text-gray-600 disabled:cursor-not-allowed disabled:opacity-35">下一页</button>
+              </nav>
+            )}
+          </>
         ) : (
           <EmptyState />
         )}
       </div>
 
-      {showCameraModal && (
-        <div className="absolute inset-0 z-[80] bg-black/45 flex items-end" onClick={() => setShowCameraModal(false)}>
-          <div className="w-full bg-white rounded-t-3xl px-5 pt-5 pb-8" onClick={(e) => e.stopPropagation()}>
-            <div className="w-12 h-12 rounded-2xl bg-[#fff0f4] flex items-center justify-center text-[24px]">▣</div>
-            <h2 className="text-[18px] font-bold text-gray-800 mt-4">{texts.title}</h2>
-            <p className="text-[13px] text-gray-500 mt-2 leading-5">{texts.message}</p>
-            <div className="mt-4 p-3 rounded-xl bg-gray-50">
-              <div className="text-[12px] text-gray-500">{texts.featureList}</div>
-              <div className="mt-2 space-y-1.5">
-                {texts.features.map((feature) => <div key={feature} className="text-[12px] text-gray-700">✓ {feature}</div>)}
-              </div>
-            </div>
-            <button type="button" className="w-full h-12 rounded-full bg-[#252b33] text-white text-[14px] font-medium mt-5" onClick={handlePermissionRequest}>{cameraPermission === 'denied' ? texts.settings : texts.enableNow}</button>
-            <button type="button" className="w-full h-10 text-[13px] text-gray-500 mt-2" onClick={() => setShowCameraModal(false)}>{texts.cancel}</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -116,6 +116,7 @@ const MessageCenter = ({ onBack, onNavigate, onUnreadChange }) => {
         <div className="space-y-2.5">
           {visibleMessages.map((message) => {
             const unread = !readIds.includes(message.id);
+            const isEsc = message.payload?.escEvent;
             return (
               <button
                 type="button"
@@ -132,7 +133,7 @@ const MessageCenter = ({ onBack, onNavigate, onUnreadChange }) => {
                     <span className="flex-shrink-0 pt-0.5 text-[10px] text-gray-400">{message.time}</span>
                   </span>
                   <span className="mt-1 block text-[11px] leading-[18px] text-gray-500">{message.summary}</span>
-                  <span className="mt-2 inline-flex items-center text-[11px] font-medium text-[#bd1523]">查看业务详情 <span className="ml-1">→</span></span>
+                  {!isEsc && <span className="mt-2 inline-flex items-center text-[11px] font-medium text-[#bd1523]">查看设备工况 <span className="ml-1">→</span></span>}
                 </span>
                 {unread && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#e60012]" />}
               </button>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const Asset = ({ onDeviceClick, navigationContext, demoMode = false }) => {
+const Asset = ({ onDeviceClick, onUnavailable, navigationContext, demoMode = false }) => {
   const [activeTab, setActiveTab] = useState(
     navigationContext?.kind === 'status' && ['online', 'offline'].includes(navigationContext.value)
       ? navigationContext.value
@@ -179,14 +179,30 @@ const Asset = ({ onDeviceClick, navigationContext, demoMode = false }) => {
 
   const keyword = searchQuery.trim().toLowerCase();
   const demoDevices = [
-    { id: 17, name: '挖掘机演示设备', code: 'EXC-DEMO-001', image: 'images/审核/挖掘机.jpg', status: 'online', statusText: '工作', statusColor: 'text-green-500' },
-    { id: 18, name: '汽车起重机演示设备', code: 'CRN-DEMO-002', image: 'images/审核/起重机.jpg', status: 'online', statusText: '作业', statusColor: 'text-green-500' },
-    { id: 19, name: '自装卸车演示设备', code: 'SLF-DEMO-003', image: 'images/asset-models/sany_truck_pump.jpg', status: 'offline', statusText: '离线', statusColor: 'text-gray-400' },
-    { id: 20, name: '装载机演示设备', code: 'LDR-DEMO-004', image: 'images/asset-models/sany_grader.jpg', status: 'online', statusText: '行驶', statusColor: 'text-green-500' },
-    { id: 16, name: '纯电搅拌车演示设备', code: 'MIX-DEMO-005', image: 'images/审核/搅拌车.jpg', status: 'online', statusText: '行驶', statusColor: 'text-green-500' },
-    { id: 21, name: '宽体车演示设备', code: 'WBT-DEMO-006', image: 'images/审核/搅拌车.jpg', status: 'online', statusText: '装载', statusColor: 'text-green-500' },
+    { id: 16, name: '纯电搅拌车', displayName: '纯电搅拌车演示设备', code: 'MIX-DEMO-005', image: 'images/审核/搅拌车.jpg', status: 'online', statusText: '行驶', statusColor: 'text-green-500', detailAvailable: true },
+    { id: 17, name: '挖掘机', displayName: '挖掘机演示设备', code: 'SY014CF0113D8', image: 'images/审核/挖掘机.jpg', status: 'online', statusText: '工作', statusColor: 'text-green-500', detailAvailable: true },
+    { id: 18, name: '汽车起重机', displayName: '汽车起重机演示设备', code: 'CRN-DEMO-002', image: 'images/审核/起重机.jpg', status: 'online', statusText: '作业', statusColor: 'text-green-500', detailAvailable: false },
+    { id: 19, name: '自装卸车', displayName: '自装卸车演示设备', code: 'SLF-DEMO-003', image: 'images/asset-models/sany_truck_pump.jpg', status: 'offline', statusText: '离线', statusColor: 'text-gray-400', detailAvailable: false },
+    { id: 20, name: '装载机', displayName: '装载机演示设备', code: 'LDR-DEMO-004', image: 'images/asset-models/sany_grader.jpg', status: 'online', statusText: '行驶', statusColor: 'text-green-500', detailAvailable: false },
+    { id: 21, name: '宽体车', displayName: '宽体车演示设备', code: 'WBT-DEMO-006', image: 'images/审核/搅拌车.jpg', status: 'online', statusText: '装载', statusColor: 'text-green-500', detailAvailable: false },
   ];
   const listedDevices = demoMode ? demoDevices : baseDevices;
+  const tabCounts = demoMode
+    ? {
+        all: listedDevices.length,
+        online: listedDevices.filter((device) => device.status === 'online').length,
+        offline: listedDevices.filter((device) => device.status === 'offline').length,
+        unaudited: listedDevices.filter((device) => device.auditStatus === 'unaudited').length,
+      }
+    : Object.fromEntries(tabs.map((tab) => [tab.id, tab.count]));
+  const deviceIdsByGroup = {
+    '华东组': [9, 10, 11],
+    '华南组': [12, 13, 14],
+    '华北组': [15, 16, 1],
+    '西南组': [2, 3, 4],
+    '华中组': [5, 6],
+    '西北组': [7, 8],
+  };
   const devices = [...contextualDevices, ...listedDevices].filter((device) => {
     const matchesSearch = !keyword || `${device.name}${device.code}`.toLowerCase().includes(keyword);
     if (!matchesSearch) return false;
@@ -197,6 +213,7 @@ const Asset = ({ onDeviceClick, navigationContext, demoMode = false }) => {
         : device.brand === navigationContext.value || device.name.includes(navigationContext.value);
     }
     if (navigationContext.kind === 'type') return device.name.includes(navigationContext.value);
+    if (navigationContext.kind === 'group') return deviceIdsByGroup[navigationContext.value]?.includes(device.id) ?? false;
     if (navigationContext.kind === 'status') return device.status === navigationContext.value;
     return true;
   }).filter((device) => {
@@ -222,9 +239,9 @@ const Asset = ({ onDeviceClick, navigationContext, demoMode = false }) => {
               }`}
             >
               {tab.name}
-              {tab.count > 0 && (
+              {tabCounts[tab.id] > 0 && (
                 <span className={`ml-1 ${activeTab === tab.id ? 'text-white' : 'text-gray-500'}`}>
-                  ({tab.count})
+                  ({tabCounts[tab.id]})
                 </span>
               )}
             </button>
@@ -255,19 +272,28 @@ const Asset = ({ onDeviceClick, navigationContext, demoMode = false }) => {
 
       {/* 设备列表 - 可滑动区域 */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-        {demoMode && <div className="rounded-lg bg-red-50 px-3 py-2 text-[11px] text-brand-red">演示资产 · 固定示例数据，仅用于体验</div>}
         {devices.map((device) => {
-          const cardClass = 'bg-white rounded-xl p-3 flex items-center shadow-sm cursor-pointer active:scale-[0.99] transition-transform';
+          const cardClass = `bg-white rounded-xl p-3 flex items-center shadow-sm transition-transform ${device.detailAvailable === false ? 'opacity-90' : 'cursor-pointer active:scale-[0.99]'}`;
           return (
             <div
               key={device.id}
               role="button"
               tabIndex={0}
-              onClick={() => onDeviceClick?.(device)}
+              onClick={() => {
+                if (device.detailAvailable === false) {
+                  onUnavailable?.(device);
+                  return;
+                }
+                onDeviceClick?.(device);
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  onDeviceClick?.(device);
+                  if (device.detailAvailable === false) {
+                    onUnavailable?.(device);
+                  } else {
+                    onDeviceClick?.(device);
+                  }
                 }
               }}
               className={cardClass}
@@ -294,13 +320,14 @@ const Asset = ({ onDeviceClick, navigationContext, demoMode = false }) => {
 
               {/* 设备信息 */}
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-gray-900 mb-0.5 truncate">{device.name}</div>
+                <div className="text-sm font-medium text-gray-900 mb-0.5 truncate">{device.displayName || device.name}</div>
                 <div className="text-xs text-gray-500 mb-1">{device.code}</div>
                 <div className="flex items-center">
                   <div className={`w-2 h-2 rounded-full mr-1 ${
                     device.status === 'online' ? 'bg-green-500' : 'bg-gray-400'
                   }`}></div>
                   <span className={`text-xs ${device.statusColor}`}>{device.statusText}</span>
+                  {device.detailAvailable === false && <span className="ml-2 text-[10px] text-gray-400">详情待补充</span>}
                 </div>
               </div>
 

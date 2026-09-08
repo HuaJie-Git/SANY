@@ -401,16 +401,14 @@ const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, tar
                       <span className="text-[11px] text-gray-400 flex-shrink-0 ml-2">{c.time}</span>
                     </div>
                     <div className="relative text-[13px] text-gray-700 leading-[1.5]">
-                      <div style={isLongComment(c) && !expandedComments.has(c.id) ? { display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 3, overflow: 'hidden', paddingRight: '38px' } : undefined}>
-                        {c.content}
-                      </div>
-                      {isLongComment(c) && (
-                        <button type="button" className="absolute bottom-0 right-0 bg-white pl-1 text-brand-red" onClick={() => toggleCommentExpanded(c.id)}>
-                          {expandedComments.has(c.id) ? '收起' : '...展开'}
-                        </button>
-                      )}
+                      {c.status === 'deleted' ? (
+                        <div className="rounded-md border border-gray-200 bg-gray-50 px-2.5 py-2 text-[12px] text-gray-500">该评论已被删除，涉嫌违规：{c.deleteReason || '违规内容'}</div>
+                      ) : <>
+                        <div style={isLongComment(c) && !expandedComments.has(c.id) ? { display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 3, overflow: 'hidden', paddingRight: '38px' } : undefined}>{c.content}</div>
+                        {isLongComment(c) && <button type="button" className="absolute bottom-0 right-0 bg-white pl-1 text-brand-red" onClick={() => toggleCommentExpanded(c.id)}>{expandedComments.has(c.id) ? '收起' : '...展开'}</button>}
+                      </>}
                     </div>
-                    <div className="flex items-center gap-4 mt-2 text-[11px] text-gray-400">
+                    {c.status !== 'deleted' && <div className="flex items-center gap-4 mt-2 text-[11px] text-gray-400">
                       <button type="button" className="hover:text-brand-red" onClick={() => handleReply(c)}>回复</button>
                       <button
                         type="button"
@@ -426,7 +424,7 @@ const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, tar
                       {c.userId === currentUser.id && (
                         <button type="button" className="hover:text-brand-red" onClick={() => requestDeleteComment(c)}>删除</button>
                       )}
-                    </div>
+                    </div>}
                   </div>
                 </div>
                 {replies.length > 0 && (
@@ -448,9 +446,9 @@ const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, tar
                                 </div>
                                 <div
                                   className="relative mt-0.5 text-[12px] text-gray-600 leading-[1.5] cursor-pointer"
-                                  onClick={() => handleReply(reply)}
+                                  onClick={() => reply.status !== 'deleted' && handleReply(reply)}
                                 >
-                                  <div style={isLongComment(reply) && !expandedComments.has(reply.id) ? { display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 3, overflow: 'hidden', paddingRight: '38px' } : undefined}>
+                                  {reply.status === 'deleted' ? <div className="rounded-md border border-gray-200 bg-gray-50 px-2 py-1.5 text-[11px] text-gray-500">该评论已被删除，涉嫌违规：{reply.deleteReason || '违规内容'}</div> : <div style={isLongComment(reply) && !expandedComments.has(reply.id) ? { display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 3, overflow: 'hidden', paddingRight: '38px' } : undefined}>
                                   {reply.replyToUserId && (
                                     <span
                                       className="text-brand-red mr-1 cursor-pointer"
@@ -459,15 +457,14 @@ const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, tar
                                       回复 @{getUserById(reply.replyToUserId)?.name || '用户'}
                                     </span>
                                   )}
-                                  {reply.content}
-                                  </div>
-                                  {isLongComment(reply) && (
+                                  {reply.content}</div>}
+                                  {reply.status !== 'deleted' && isLongComment(reply) && (
                                     <button type="button" className="absolute bottom-0 right-0 bg-white pl-1 text-brand-red" onClick={(event) => { event.stopPropagation(); toggleCommentExpanded(reply.id); }}>
                                       {expandedComments.has(reply.id) ? '收起' : '...展开'}
                                     </button>
                                   )}
                                 </div>
-                                <div className="flex items-center gap-4 mt-1.5 text-[11px] text-gray-400">
+                                {reply.status !== 'deleted' && <div className="flex items-center gap-4 mt-1.5 text-[11px] text-gray-400">
                                   <button type="button" className="hover:text-brand-red" onClick={() => handleReply(reply)}>回复</button>
                                   <button
                                     type="button"
@@ -483,7 +480,7 @@ const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, tar
                                   {reply.userId === currentUser.id && (
                                     <button type="button" className="hover:text-brand-red" onClick={() => requestDeleteComment(reply)}>删除</button>
                                   )}
-                                </div>
+                                </div>}
                               </div>
                             </div>
                           ))}

@@ -20,6 +20,38 @@ const buildMonthlyAmountTrend = (pattern) =>
   Array.from({ length: 31 }, (_, i) => ([5, 6].includes(i % 7) ? null : pattern[i % pattern.length]));
 
 const DEVICE_DATA = {
+  挖掘机: {
+    supportsTrajectory: false,
+    daily: {
+      fuelLevel: '26',
+      summary: [
+        ['发动机运行时长', '0.01', 'h'],
+        ['无动作时长', '0.01', 'h'],
+        ['当日油耗', '0.15', 'L'],
+        ['平均油耗', '15.16', 'L/h'],
+      ],
+      workDist: [0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    },
+    weekly: {
+      summary: [['发动机运行时长', '11.04', 'h', 5], ['燃油消耗', '-', 'L'], ['开机天数', '3', 'd', 0]],
+      calDays: [
+        { d: 1, amount: null, fuel: 27.47 },
+        { d: 2, amount: null, fuel: 12.29 },
+        { d: 3 },
+        { d: 4, amount: null, fuel: 0.15 },
+        { d: 5 }, { d: 6 }, { d: 7 },
+      ],
+      fuelTrend: [27.47, 12.29, 0, 0.15, 0, 0, 0],
+      workH: [4.94, 3.77, 2.32, 0.01, 0, 0, 0],
+      idleH: [0, 0, 0, 0.01, 0, 0, 0],
+    },
+    monthly: {
+      summary: [['发动机运行时长', '6.1', 'h', 5], ['燃油消耗', '-', 'L'], ['开机天数', '2', 'd', 0]],
+      fuelTrend: [12.29, 0, 0.15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      workH: [3.77, 2.32, 0.01, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      idleH: [0, 0, 0.01, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    },
+  },
   '三一平地机': {
     supportsTrajectory: false,
     daily: {
@@ -558,7 +590,7 @@ const SummaryCard = ({ data, isDaily, period, title = '今日数据' }) => {
   return (
     <div className="rounded-2xl bg-white p-4 shadow-sm">
       <div className="flex justify-between items-center mb-4">
-        <span className="text-[15px] font-semibold text-[#252b33]">运营数据</span>
+        <span className="text-[15px] font-semibold text-[#252b33]">{title || '运营数据'}</span>
         <span className="text-[12px] text-[#999]">{cmp}</span>
       </div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-5">
@@ -588,10 +620,11 @@ const DailyView = ({ deviceName }) => {
   if (!d) return null;
   const isPaver = deviceName === '三一摊铺机';
   const isElectric = deviceData?.electric;
+  const isExcavator = deviceName === '挖掘机';
   return (
     <div className="space-y-3">
       <div className="px-1 text-[11px] text-[#999]">以下数据为设备所在地当日数据实时统计</div>
-      <SummaryCard data={d.summary} isDaily title={isElectric ? '今日能耗' : '今日数据'} />
+      <SummaryCard data={d.summary} isDaily title={isExcavator ? '工时数据' : (isElectric ? '今日能耗' : '今日数据')} />
       <div className="rounded-2xl bg-white p-4 shadow-sm">
         <div className="text-[15px] font-semibold mb-1">{isPaver ? '当日怠速工时分布' : (isElectric ? '每日工作分布' : '当日工时分布')}</div>
         <WorkStatusTimeline segments={d.workDist} />
@@ -611,7 +644,7 @@ const DailyView = ({ deviceName }) => {
       ) : (
         <div className="rounded-2xl bg-white p-4 shadow-sm">
           <div className="text-[15px] font-semibold">油位曲线</div>
-          <FuelLevelChart level={d.fuelLevel} />
+          <FuelLevelChart level={d.fuelLevel} excavator={isExcavator} />
         </div>
       )}
     </div>
@@ -628,22 +661,25 @@ const WeeklyView = ({ deviceName, baseDate }) => {
   const tooltipLabels = d.fuelTrend.map((_, index) => formatFullDate(shiftDate(baseDate, index)));
   return (
     <div className="space-y-3">
-      <SummaryCard data={d.summary} period="weekly" />
+      <SummaryCard data={d.summary} period="weekly" title={deviceName === '挖掘机' ? '汇总' : '运营数据'} />
       <div className="rounded-2xl bg-white p-4 shadow-sm">
         <div className="text-[15px] font-semibold mb-3">设备运行日历</div>
         <WeekCalendar days={d.calDays} amountUnit={dev.amountUnit} resourceUnit={isElectric ? 'kWh' : 'L'} />
       </div>
-      {!isPaver && <div className="rounded-2xl bg-white p-4 shadow-sm">
-        <div className="text-[15px] font-semibold mb-1">{isElectric ? '平均每小时能耗趋势' : '平均每小时油耗趋势'}</div>
+      <div className="rounded-2xl bg-white p-4 shadow-sm">
+        <div className="text-[15px] font-semibold mb-1">{deviceName === '挖掘机' ? '开机时段分析' : (isPaver ? '燃油消耗' : (isElectric ? '平均每小时能耗趋势' : '平均每小时油耗趋势'))}</div>
         <LineChart
           series={[
-            { key: 'hourlyFuel', label: isElectric ? '平均每小时能耗' : '平均每小时油耗', unit: isElectric ? ' kWh/h' : ' L/h', data: d.fuelTrend.map((fuel, i) => Number((fuel / (d.workH[i] || 1)).toFixed(2))), color: '#ff862d' },
+            isPaver
+              ? { key: 'fuel', label: '燃油消耗', unit: ' L', data: d.fuelTrend, color: '#ed8b24' }
+              : { key: 'hourlyFuel', label: isElectric ? '平均每小时能耗' : '平均每小时油耗', unit: isElectric ? ' kWh/h' : ' L/h', data: d.fuelTrend.map((fuel, i) => Number((fuel / (d.workH[i] || 1)).toFixed(2))), color: '#ff862d' },
           ]}
           labels={['周一','周二','周三','周四','周五','周六','周日']}
           tooltipLabels={tooltipLabels}
-          yUnit={isElectric ? 'kWh/h' : 'L/h'}
+          yUnit={isPaver ? 'L' : (isElectric ? 'kWh/h' : 'L/h')}
         />
-      </div>}
+        {isPaver && <div className="mt-2 flex items-center justify-center gap-1 text-[10px] text-[#666]"><span className="inline-block h-2 w-2 rounded-sm bg-[#ed8b24]" />燃油消耗(L)</div>}
+      </div>
       <div className="rounded-2xl bg-white p-4 shadow-sm">
         <div className="text-[15px] font-semibold mb-1">{isPaver ? '怠速工时分布' : '工时分布'}</div>
         <LineChart
@@ -674,22 +710,25 @@ const MonthlyView = ({ deviceName, baseDate }) => {
   const dailyData = d.fuelTrend.map((fuel, index) => ({ amount: hasDailyAmount ? d.amountTrend[index] : null, fuel }));
   return (
     <div className="space-y-3">
-      <SummaryCard data={d.summary} period="monthly" />
+      <SummaryCard data={d.summary} period="monthly" title={deviceName === '挖掘机' ? '汇总' : '运营数据'} />
       <div className="rounded-2xl bg-white p-4 shadow-sm">
         <div className="text-[15px] font-semibold mb-3">设备运行日历</div>
         <MonthCalendar dailyData={dailyData} amountUnit={dev.amountUnit} resourceUnit={isElectric ? 'kWh' : 'L'} highlight />
       </div>
-      {!isPaver && <div className="rounded-2xl bg-white p-4 shadow-sm">
-        <div className="text-[15px] font-semibold mb-1">{isElectric ? '平均每小时能耗趋势' : '平均每小时油耗趋势'}</div>
+      <div className="rounded-2xl bg-white p-4 shadow-sm">
+        <div className="text-[15px] font-semibold mb-1">{deviceName === '挖掘机' ? '开机时段分析' : (isPaver ? '燃油消耗' : (isElectric ? '平均每小时能耗趋势' : '平均每小时油耗趋势'))}</div>
         <LineChart
           series={[
-            { key: 'mHourlyFuel', label: isElectric ? '平均每小时能耗' : '平均每小时油耗', unit: isElectric ? ' kWh/h' : ' L/h', data: d.fuelTrend.map((fuel, i) => Number((fuel / (d.workH[i] || 1)).toFixed(2))), color: '#ff862d' },
+            isPaver
+              ? { key: 'mFuel', label: '燃油消耗', unit: ' L', data: d.fuelTrend, color: '#ed8b24' }
+              : { key: 'mHourlyFuel', label: isElectric ? '平均每小时能耗' : '平均每小时油耗', unit: isElectric ? ' kWh/h' : ' L/h', data: d.fuelTrend.map((fuel, i) => Number((fuel / (d.workH[i] || 1)).toFixed(2))), color: '#ff862d' },
           ]}
           labels={monthLabels}
           tooltipLabels={tooltipLabels}
-          yUnit={isElectric ? 'kWh/h' : 'L/h'}
+          yUnit={isPaver ? 'L' : (isElectric ? 'kWh/h' : 'L/h')}
         />
-      </div>}
+        {isPaver && <div className="mt-2 flex items-center justify-center gap-1 text-[10px] text-[#666]"><span className="inline-block h-2 w-2 rounded-sm bg-[#ed8b24]" />燃油消耗(L)</div>}
+      </div>
       <div className="rounded-2xl bg-white p-4 shadow-sm">
         <div className="text-[15px] font-semibold mb-1">{isPaver ? '怠速工时分布' : '工时分布'}</div>
         <LineChart
@@ -711,16 +750,28 @@ const MonthlyView = ({ deviceName, baseDate }) => {
 const DataReport = ({ device, onBack }) => {
   const [tab, setTab] = useState('daily');
   const [dateOffset, setDateOffset] = useState(0);
-  const dataDeviceName = DEVICE_DATA[device?.name] ? device.name : '三一平地机';
-  const reportScope = device?.reportScope || (!DEVICE_DATA[device?.name] ? device?.name : '');
+  const normalizedName = device?.name === '三一挖掘机' ? '挖掘机' : device?.name;
+  const dataDeviceName = DEVICE_DATA[normalizedName] ? normalizedName : '三一平地机';
+  const reportScope = device?.reportScope || (!DEVICE_DATA[normalizedName] ? device?.name : '');
 
   const reportBaseDate = useMemo(() => {
+    if (dataDeviceName === '挖掘机') {
+      if (tab === 'weekly') return new Date(2026, 7, 31 + (dateOffset * 7));
+      if (tab === 'monthly') return new Date(2026, 8 + dateOffset, 1);
+      return new Date(2026, 8, 3 + dateOffset);
+    }
     if (tab === 'weekly') return new Date(2026, 6, 13 + (dateOffset * 7));
     if (tab === 'monthly') return new Date(2026, 6 + dateOffset, 1);
     return new Date(2026, 6, 24 + dateOffset);
-  }, [tab, dateOffset]);
+  }, [tab, dateOffset, dataDeviceName]);
 
   const dateLabel = useMemo(() => {
+    if (dataDeviceName === '挖掘机') {
+      if (tab === 'weekly') return '2026-08 第五周';
+      if (tab === 'monthly') return `2026-${String(9 + dateOffset).padStart(2, '0')}`;
+      const d = new Date(2026, 8, 3 + dateOffset);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
     const now = new Date(2026, 6, 24);
     if (tab === 'daily') {
       const d = new Date(now);
@@ -735,7 +786,7 @@ const DataReport = ({ device, onBack }) => {
     const y = 2026 + Math.floor((baseMonth) / 12);
     const m = ((baseMonth % 12) + 12) % 12;
     return `${y}年${m + 1}月`;
-  }, [tab, dateOffset]);
+  }, [tab, dateOffset, dataDeviceName]);
 
   const tabs = [
     { key: 'daily', label: '日报' },

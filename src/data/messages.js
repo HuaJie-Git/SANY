@@ -1,7 +1,15 @@
+import { DEFAULT_ESC_EVENT } from './escEvent';
+
 export const MESSAGE_READ_STORAGE_KEY = 'sanvist_message_read_ids_v1';
 export const MESSAGE_SETTINGS_STORAGE_KEY = 'sanvist_message_settings_v1';
 
 export const MESSAGE_ITEMS = [
+  {
+    id: DEFAULT_ESC_EVENT.id, category: 'alert', title: DEFAULT_ESC_EVENT.title,
+    summary: `${DEFAULT_ESC_EVENT.deviceName}（${DEFAULT_ESC_EVENT.serialNumber}）触发 ESC 事件，请立即查看设备工况。`,
+    time: '刚刚', icon: 'ESC', color: '#c9192e', target: 'assetDetail',
+    payload: { name: DEFAULT_ESC_EVENT.deviceName, code: DEFAULT_ESC_EVENT.serialNumber, image: 'images/审核/搅拌车.jpg', escEvent: true },
+  },
   {
     id: 'fault-001', category: 'alert', title: '冷却水温持续偏高',
     summary: 'EX-2024-003 当前水温 92℃，已超过告警阈值，请及时检查冷却系统。',

@@ -16,16 +16,6 @@ const ServiceIcon = ({ type }) => {
   return <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 4h4a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2V4h4" /><path d="M9 2h6v4H9zM8 11h8M8 15h5" /></svg>;
 };
 
-export const ExperienceBanner = ({ onLogin }) => (
-  <div className="absolute bottom-[104px] left-3 right-3 z-30 flex items-center justify-between gap-3 rounded-xl bg-[#252b33]/95 px-4 py-3 text-white shadow-lg">
-    <div className="min-w-0 pr-7">
-      <div className="text-[13px] font-semibold">当前为体验模式</div>
-      <div className="mt-0.5 truncate text-[11px] text-white/75">浏览演示数据，登录后使用完整服务</div>
-    </div>
-    <button type="button" onClick={onLogin} className="flex-shrink-0 rounded-full bg-brand-red px-5 py-2 text-[13px] font-medium text-white active:opacity-80">登录</button>
-  </div>
-);
-
 export const FeedbackFloatingButton = ({ onClick, hidden = false }) => {
   if (hidden) return null;
   return (
