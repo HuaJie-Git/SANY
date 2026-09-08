@@ -151,6 +151,7 @@ function App() {
         </main>
       </div>
       {notificationOpen && <NotificationPopover
+        escEvent={escEvent}
         onClose={() => setNotificationOpen(false)}
         onOpenEsc={() => { setNotificationOpen(false); navigate('esc-event-detail', { eventId: 'esc-1' }) }}
         onOpenMore={() => { setNotificationOpen(false); setMessageCategory('all'); setMessageCenterOpen(true) }}
@@ -161,7 +162,6 @@ function App() {
         key={messageCategory}
         initialCategory={messageCategory}
         escEvent={escEvent}
-        onAcknowledge={() => setEscEvent(acknowledgeEscEvent())}
         onClose={() => setMessageCenterOpen(false)}
         onOpenEsc={() => { setMessageCenterOpen(false); navigate('esc-event-detail', { eventId: 'esc-1' }) }}
       />}

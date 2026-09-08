@@ -14,7 +14,7 @@ function Bell() {
   return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6.5 16.5h11l-1.25-2.2V10a4.25 4.25 0 0 0-8.5 0v4.3zM9.5 19a2.7 2.7 0 0 0 5 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }
 
-export default function MessageCenter({ escEvent, initialCategory = 'all', onAcknowledge, onOpenEsc, onClose }) {
+export default function MessageCenter({ escEvent, initialCategory = 'all', onOpenEsc, onClose }) {
   const [category, setCategory] = useState(initialCategory);
   const [onlyUnread, setOnlyUnread] = useState(false);
   const [date, setDate] = useState('');
@@ -22,16 +22,11 @@ export default function MessageCenter({ escEvent, initialCategory = 'all', onAck
   const acknowledged = Boolean(escEvent.acknowledgedAt) || allRead;
   const allUnreadCount = (acknowledged ? 0 : 1) + (allRead ? 0 : MAINTENANCE_MESSAGES.length);
   const messages = useMemo(() => {
-    const esc = { id: 'esc', type: 'esc', title: `ESC 事件：${escEvent.deviceName}`, time: escEvent.occurredAt.slice(11), copy: `${escEvent.occurredAt} 触发，序列号：${escEvent.serialNumber}，当前${acknowledged ? '已确认' : '待确认'}。`, unread: !acknowledged };
+    const esc = { id: 'esc', type: 'esc', title: `ESC 事件：${escEvent.deviceName}`, time: escEvent.occurredAt.slice(11), copy: `${escEvent.deviceName}（${escEvent.serialNumber}）触发 ESC 事件，请立即查看设备工况。`, unread: !acknowledged };
     const care = MAINTENANCE_MESSAGES.map((item) => ({ ...item, type: 'care', unread: !allRead }));
     const selected = category === 'care' ? care : [esc, ...care];
     return onlyUnread ? selected.filter((item) => item.unread) : selected;
   }, [acknowledged, allRead, category, escEvent, onlyUnread]);
-
-  const acknowledge = (event) => {
-    event.stopPropagation();
-    onAcknowledge?.();
-  };
 
   return <div className="pc-message-modal-layer" role="presentation">
     <button className="pc-message-scrim" type="button" aria-label="关闭消息中心" onClick={onClose}/>
@@ -52,8 +47,7 @@ export default function MessageCenter({ escEvent, initialCategory = 'all', onAck
           <div className="pc-message-list" aria-label="消息列表">
             {messages.map((message) => message.type === 'esc' ? (
               <article className={`pc-stream-message pc-stream-esc${message.unread ? ' is-unread' : ''}`} key={message.id}>
-                <button type="button" className="pc-stream-message-main" onClick={onOpenEsc}><span className="pc-stream-dot"/><span className="pc-stream-copy"><strong>{message.title}</strong><small>{message.copy}</small><em>查看设备 ESC 详情 →</em></span><time>{message.time}</time></button>
-                {!acknowledged && <button type="button" className="pc-stream-ack" onClick={acknowledge}>确认已知晓</button>}
+                <button type="button" className="pc-stream-message-main" onClick={onOpenEsc}><span className="pc-stream-dot"/><span className="pc-stream-copy"><strong>{message.title}</strong><small>{message.copy}</small></span><time>{message.time}</time></button>
               </article>
             ) : (
               <article className={`pc-stream-message${message.unread ? ' is-unread' : ''}`} key={message.id}><button type="button" className="pc-stream-message-main"><span className="pc-stream-dot"/><span className="pc-stream-copy"><strong>{message.title}</strong><small>{message.copy}</small></span><time>{message.time}</time></button></article>

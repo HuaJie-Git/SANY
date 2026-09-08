@@ -66,7 +66,12 @@ const FEATURES = [
 const SEARCH_CATEGORIES = ['设备', '品牌', '设备类型', '运行状态', '项目', '审核'];
 const DEVICE_DETAIL_SHORTCUTS = ['实时状态', '统计报表', '设备档案', '历史轨迹', '保养管理', '预警记录', '报停记录', '参与项目'];
 const isSearchRecent = (item) => ['asset', 'project', 'audit'].includes(item?.kind) || (item?.kind === 'facet' && SEARCH_CATEGORIES.includes(item.category));
-const recentDisplayTitle = (item) => item?.kind === 'asset' ? `设备序列号：${item.title}` : item?.title;
+const recentDisplayTitle = (item) => {
+  if (item?.kind !== 'asset') return item?.title;
+  const device = DEVICES.find((candidate) => candidate.id === item.refId || candidate.code === item.title);
+  const modelName = device?.type || item.modelName || item.title;
+  return `机型名称：${modelName}`;
+};
 
 function getTimeGreeting(date) {
   const hour = date.getHours();
@@ -556,13 +561,13 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
   };
 
   const openAsset = (device, remember = false) => {
-    if (remember) rememberRecent({ id: `asset-${device.id}`, kind: 'asset', refId: device.id, title: device.code, meta: `设备 · 概览 · ${device.type}`, icon: 'asset' });
+    if (remember) rememberRecent({ id: `asset-${device.id}`, kind: 'asset', refId: device.id, title: device.type, modelName: device.type, meta: `设备 · 概览 · ${device.type}`, icon: 'asset' });
     setSearchOpen(false);
     onOpenDevice?.(DEVICES.indexOf(device));
   };
 
   const openAssetTab = (device, tab) => {
-    rememberRecent({ id: `asset-${device.id}-${tab}`, kind: 'asset', refId: device.id, title: device.code, meta: `设备 · ${tab} · ${device.type}`, icon: 'asset' });
+    rememberRecent({ id: `asset-${device.id}-${tab}`, kind: 'asset', refId: device.id, title: device.type, modelName: device.type, meta: `设备 · ${tab} · ${device.type}`, icon: 'asset' });
     setSearchOpen(false);
     onOpenDevice?.(DEVICES.indexOf(device), tab);
   };
