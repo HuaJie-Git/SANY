@@ -1,4 +1,5 @@
 import React from 'react';
+import { CURRENT_USER } from '../../data/session';
 
 const Chevron = () => (
   <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
@@ -18,7 +19,7 @@ export default function Header({ onOpenNotifications }) {
         <button type="button" className="topbar-message" aria-label="消息通知，5 条未读" onClick={onOpenNotifications}><span className="topbar-notice-icon"><MessageIcon/><b>5</b></span><span>消息中心</span></button>
         <button type="button" className="topbar-language" aria-label="语言：简体中文" title="简体中文"><span className="globe-mark">◎</span> 简体中文</button>
         <button type="button" className="topbar-select" title="三一测试租户">三一测试租户 <Chevron /></button>
-        <button type="button" className="topbar-user" title="一包，。"><span className="topbar-avatar">S</span><span>一包，。</span><Chevron /></button>
+        <button type="button" className="topbar-user" title={CURRENT_USER.name}><span className="topbar-avatar">{CURRENT_USER.avatar}</span><span>{CURRENT_USER.name}</span><Chevron /></button>
       </div>
     </header>
   );

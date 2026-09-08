@@ -73,7 +73,10 @@ export default function DeviceArchive({ device }) {
   const archive = device?.archive || {};
   const ledgerFields = archive['台账信息'] || [];
   const manufacturerFields = archive['主机厂信息'] || [];
-  const bindingFields = archive['绑定信息'] || [];
+  const bindingFields = [
+    { label: '设备品牌', value: device?.brand || '--' },
+    ...(archive['绑定信息'] || []).filter((field) => field.label !== '设备品牌'),
+  ];
 
   return (
     <div className="flex flex-col" style={{ gap: 16 }}>
