@@ -4,6 +4,7 @@ import AdminLayout from './pages/Admin/AdminLayout';
 import ContentAudit from './pages/Admin/ContentAudit';
 import ContentManagement from './pages/Admin/ContentManagement';
 import TopicManagement from './pages/Admin/TopicManagement';
+import CommentManagement from './pages/Admin/CommentManagement';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="topic" element={<TopicManagement />} />
           <Route path="content" element={<ContentManagement />} />
           <Route path="audit" element={<ContentAudit />} />
+          <Route path="comments" element={<CommentManagement />} />
         </Route>
       </Routes>
     </HashRouter>

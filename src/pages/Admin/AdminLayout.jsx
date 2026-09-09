@@ -1,22 +1,31 @@
-import React, { useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 const menuItems = [
-  { key: 'circle', label: '社区管理', children: ['话题管理', '内容管理', '内容审核'] },
+  { key: 'circle', label: '社区管理', children: ['话题管理', '内容管理', '内容审核', '评论管理'] },
 ];
 
 const tabs = [
   { key: 'topic', label: '话题管理' },
   { key: 'content', label: '内容管理' },
   { key: 'audit', label: '内容审核' },
+  { key: 'comments', label: '评论管理' },
 ];
 
 const AdminLayout = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeMenu, setActiveMenu] = useState('circle');
   const [activeSubMenu, setActiveSubMenu] = useState('话题管理');
   const [activeTab, setActiveTab] = useState('topic');
+
+  useEffect(() => {
+    const route = tabs.find((tab) => location.pathname === `/${tab.key}`);
+    if (!route) return;
+    setActiveTab(route.key);
+    setActiveSubMenu(route.label);
+  }, [location.pathname]);
 
   const handleMenuClick = (key, sub) => {
     setActiveMenu(key);
@@ -31,6 +40,9 @@ const AdminLayout = () => {
       } else if (sub === '内容审核') {
         setActiveTab('audit');
         navigate('/audit');
+      } else if (sub === '评论管理') {
+        setActiveTab('comments');
+        navigate('/comments');
       }
     }
   };
@@ -40,6 +52,7 @@ const AdminLayout = () => {
     if (key === 'topic') navigate('/topic');
     if (key === 'content') navigate('/content');
     if (key === 'audit') navigate('/audit');
+    if (key === 'comments') navigate('/comments');
   };
 
   return (
