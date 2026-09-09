@@ -353,6 +353,7 @@ export const deleteComment = (commentId) => {
 
 // 社区内部互动演示数据。interactionType 与服务端字段保持一致，真实接入时由接口替换。
 let _communityInteractions = [
+  { id: 'interaction-008', interactionType: 'comment_admin_deleted', actorId: 'audit-system', actorName: '内容审核', postId: 1, commentId: 2, summary: '你的评论已被管理员删除', sourceTitle: '三一E6电动正面吊投入使用,助力绿色智慧升级', time: '刚刚', createdAt: 8, unread: true, targetStatus: 'comment_deleted', deleteReason: '违规内容：包含未经证实的操作建议' },
   { id: 'interaction-006', interactionType: 'post_comment', actorId: 'user-002', actorName: '机手小赵', postId: 101, commentId: 26, summary: '该内容已删除', sourceTitle: '分享下我的操作经验，新手们必看', time: '刚刚', createdAt: 7, unread: true, targetStatus: 'comment_deleted' },
   { id: 'interaction-007', interactionType: 'post_comment', actorId: 'user-007', actorName: '工地老张', postId: 104, commentId: 99, summary: '该内容已删除', sourceTitle: '吊装作业全过程记录', time: '2分钟前', createdAt: 6, unread: true, targetStatus: 'post_deleted' },
   { id: 'interaction-001', interactionType: 'post_comment', actorId: 'user-002', actorName: '机手小赵', postId: 101, commentId: 17, summary: '这个检查流程很实用，收藏了！', sourceTitle: '分享下我的操作经验，新手们必看', time: '刚刚', createdAt: 5, unread: true },

@@ -30,13 +30,14 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
   // 二级Tab
   const tabs = ['占位话题1', '占位话题2', '全部话题', '关注', '我的'];
 
-  const supportedInteractionTypes = new Set(['post_comment', 'post_audit_pass', 'post_audit_reject']);
+  const supportedInteractionTypes = new Set(['post_comment', 'post_audit_pass', 'post_audit_reject', 'comment_admin_deleted']);
   const unreadInteractions = communityInteractions.filter((item) => item.unread && supportedInteractionTypes.has(item.interactionType));
 
   const interactionMeta = {
     post_comment: { label: '评论', badge: '评论' },
     post_audit_pass: { label: '', badge: '已通过' },
     post_audit_reject: { label: '', badge: '审核未通过' },
+    comment_admin_deleted: { label: '', badge: '评论已删除' },
   };
 
   const getInteractionTimestamp = (item) => {
@@ -213,35 +214,42 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
         const isDeletedPost = item.targetStatus === 'post_deleted' || item.targetStatus === 'inaccessible';
         const isDeletedComment = item.targetStatus === 'comment_deleted';
         const isAudit = item.interactionType === 'post_audit_pass' || item.interactionType === 'post_audit_reject';
+        const isAdminDelete = item.interactionType === 'comment_admin_deleted';
+        const isSystemNotice = isAudit || isAdminDelete;
         const meta = interactionMeta[item.interactionType] || { label: '新的社区互动', badge: '社区' };
-        const summaryText = (isDeletedComment || isDeletedPost)
+        const summaryText = isAdminDelete
+          ? item.summary
+          : (isDeletedComment || isDeletedPost)
           ? '该内容已删除'
           : (meta.label ? `${meta.label}：${item.summary}` : item.summary);
         const card = <span className={`mt-1 h-2 w-2 flex-shrink-0 rounded-full ${item.unread ? 'bg-brand-red' : 'bg-transparent'}`} />;
-        const auditContent = isAudit ? (
+        const systemNoticeContent = isSystemNotice ? (
           <>
             {card}
             <span className="min-w-0 flex-1">
               <span className="flex min-w-0 items-center justify-between gap-2 text-[13px] text-gray-900">
                 <strong className="min-w-0 truncate">{item.actorName}</strong>
-                <span className={`flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] ${item.interactionType === 'post_audit_reject' ? 'bg-red-50 text-brand-red' : 'bg-green-50 text-green-600'}`}>{meta.badge}</span>
+                <span className={`flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] ${item.interactionType === 'post_audit_pass' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-brand-red'}`}>{meta.badge}</span>
               </span>
-              <span className="mt-1 block truncate text-[12px] text-gray-600">{summaryText}</span>
+                <span dir="auto" className="mt-1 block break-words text-[12px] text-gray-600">{summaryText}</span>
               {item.interactionType === 'post_audit_reject' && item.auditReason && (
                 <span className="mt-1 block text-[11px] leading-[1.5] text-gray-400">未通过原因：{item.auditReason}</span>
               )}
+              {isAdminDelete && item.deleteReason && (
+                <span dir="auto" className="mt-1 block whitespace-pre-wrap break-words text-[11px] leading-[1.5] text-gray-500">删除原因：{item.deleteReason}</span>
+              )}
               <span className="mt-1 flex min-w-0 items-center justify-between gap-2 text-[11px] text-gray-400">
-                <span className="min-w-0 truncate">来自：{post?.title || '社区帖子'}</span>
+                <span className="min-w-0 truncate">来自：{item.sourceTitle || post?.title || '社区帖子'}</span>
                 <time className="flex-shrink-0 whitespace-nowrap" dateTime={item.createdAt ? String(item.createdAt) : undefined}>{item.time}</time>
               </span>
             </span>
           </>
         ) : null;
 
-        if (isAudit) {
+        if (isSystemNotice) {
           return (
             <div key={item.id} className="flex w-full items-start gap-3 rounded-xl bg-white px-3 py-3 text-left shadow-sm">
-              {auditContent}
+              {systemNoticeContent}
             </div>
           );
         }
@@ -257,7 +265,7 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
                 </span>
                 <span className="mt-1 block text-[12px] text-gray-500">该内容已删除</span>
                 <span className="mt-1 flex min-w-0 items-center justify-between gap-2 text-[11px] text-gray-400">
-                  <span className="min-w-0 truncate">来自：{post?.title || item.sourceTitle || '社区帖子'}</span>
+                  <span className="min-w-0 truncate">来自：{item.sourceTitle || post?.title || '社区帖子'}</span>
                   <time className="flex-shrink-0 whitespace-nowrap" dateTime={item.createdAt ? String(item.createdAt) : undefined}>{item.time}</time>
                 </span>
               </span>
@@ -275,7 +283,7 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
               </span>
               <span className={`mt-1 block truncate text-[12px] ${isDeletedComment ? 'text-gray-400' : 'text-gray-500'}`}>{summaryText}</span>
               <span className="mt-1 flex min-w-0 items-center justify-between gap-2 text-[11px] text-gray-400">
-                <span className="min-w-0 truncate">来自：{post?.title || '社区帖子'}</span>
+                <span className="min-w-0 truncate">来自：{item.sourceTitle || post?.title || '社区帖子'}</span>
                 <time className="flex-shrink-0 whitespace-nowrap" dateTime={item.createdAt ? String(item.createdAt) : undefined}>{item.time}</time>
               </span>
             </span>
