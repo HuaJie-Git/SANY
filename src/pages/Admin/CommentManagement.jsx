@@ -2,10 +2,13 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   COMMENT_DELETE_REASONS,
   COMMENT_DELETE_REASON_MAX_LENGTH,
+  COMMENT_REJECTION_REASON_MAX_LENGTH,
   approveCommentByAdmin,
   deleteCommentByAdmin,
   getCommentItems,
   normalizeDeleteReason,
+  normalizeRejectionReason,
+  rejectCommentByAdmin,
   splitVisibleCharacters,
 } from '../../admin/adminComments';
 
@@ -14,12 +17,14 @@ const CommentManagement = () => {
   const [keyword, setKeyword] = useState('');
   const [status, setStatus] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [rejectTarget, setRejectTarget] = useState(null);
   const [detailTarget, setDetailTarget] = useState(null);
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const noticeTimerRef = useRef(null);
   const reasonLength = splitVisibleCharacters(reason).length;
+  const reasonMaxLength = rejectTarget ? COMMENT_REJECTION_REASON_MAX_LENGTH : COMMENT_DELETE_REASON_MAX_LENGTH;
 
   const filtered = useMemo(() => items.filter((item) => {
     const query = keyword.trim().toLowerCase();
@@ -37,6 +42,7 @@ const CommentManagement = () => {
 
   const reset = () => { setKeyword(''); setStatus(''); };
   const closeDialog = () => { setDeleteTarget(null); setReason(''); setError(''); };
+  const closeRejectDialog = () => { setRejectTarget(null); setReason(''); setError(''); };
   const closeDetail = () => setDetailTarget(null);
   const handleDelete = () => {
     const normalizedReason = normalizeDeleteReason(reason);
@@ -52,6 +58,7 @@ const CommentManagement = () => {
     if (!saved) { setError('该评论已被处理，请刷新列表后重试'); return; }
     setItems([...getCommentItems()]);
     closeDetail();
+    showNotice('评论审核通过');
   };
   const openDelete = (item) => {
     setDetailTarget(null);
@@ -60,8 +67,25 @@ const CommentManagement = () => {
     setError('');
   };
 
+  const openReject = (item) => {
+    setDetailTarget(null);
+    setRejectTarget(item);
+    setReason('');
+    setError('');
+  };
+
+  const handleReject = () => {
+    const normalizedReason = normalizeRejectionReason(reason);
+    if (!normalizedReason) { setError('请输入审核未通过的原因'); return; }
+    const saved = rejectCommentByAdmin(rejectTarget.id, '管理员', normalizedReason);
+    if (!saved) { setError('该评论已被处理，请刷新列表后重试'); return; }
+    setItems([...getCommentItems()]);
+    closeRejectDialog();
+    showNotice('评论已标记为审核未通过，仅评论作者本人可见');
+  };
+
   const handleReasonChange = (value) => {
-    setReason(splitVisibleCharacters(value).slice(0, COMMENT_DELETE_REASON_MAX_LENGTH).join(''));
+    setReason(splitVisibleCharacters(value).slice(0, reasonMaxLength).join(''));
     setError('');
   };
 
@@ -91,7 +115,7 @@ const CommentManagement = () => {
         <input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="评论、评论人或所属帖子" className="h-8 w-[245px] px-3 border border-gray-300 rounded text-[13px] focus:outline-none focus:border-[#1890ff]" />
         <label className="text-[13px] text-gray-600 ml-2">状态</label>
           <select value={status} onChange={(event) => setStatus(event.target.value)} className="h-8 w-[110px] px-2 border border-gray-300 rounded text-[13px] focus:outline-none focus:border-[#1890ff]">
-          <option value="">全部</option><option value="待审核">待审核</option><option value="正常">正常</option><option value="已删除">已删除</option>
+          <option value="">全部</option><option value="待审核">待审核</option><option value="审核未通过">审核未通过</option><option value="正常">正常</option><option value="已删除">已删除</option>
         </select>
         <button type="button" onClick={reset} className="h-8 px-4 border border-gray-300 rounded text-[13px] text-gray-600 hover:bg-gray-50 ml-auto">重置</button>
       </div>
@@ -106,7 +130,7 @@ const CommentManagement = () => {
               <th className="px-4 py-3 text-left font-medium text-gray-600">所属帖子</th>
               <th className="px-4 py-3 text-left font-medium text-gray-600">评论时间</th>
               <th className="px-4 py-3 text-left font-medium text-gray-600">状态</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-600">删除原因</th>
+              <th className="px-4 py-3 text-left font-medium text-gray-600">审核未通过/删除原因</th>
               <th className="px-4 py-3 text-left font-medium text-gray-600 w-[150px]">操作</th>
             </tr></thead>
             <tbody>
@@ -119,8 +143,8 @@ const CommentManagement = () => {
                   <td className="px-4 py-3 text-gray-700">{item.userName}<div className="text-[11px] text-gray-400">{item.userId}</div></td>
                   <td className="px-4 py-3 text-gray-600 max-w-[220px]"><div className="truncate" title={item.postTitle}>{item.postTitle}</div><div className="text-[11px] text-gray-400">{item.topicName}</div></td>
                   <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{item.createdAt}</td>
-                  <td className="px-4 py-3"><span className={`text-[11px] px-1.5 py-0.5 rounded ${item.status === '已删除' ? 'bg-red-100 text-red-600' : item.status === '待审核' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'}`}>{item.status}</span></td>
-                  <td className="px-4 py-3 text-gray-500 max-w-[170px]"><div className="truncate" title={item.deleteReason || '—'}>{item.deleteReason || '—'}</div></td>
+                  <td className="px-4 py-3"><span className={`text-[11px] px-1.5 py-0.5 rounded ${item.status === '已删除' ? 'bg-red-100 text-red-600' : item.status === '审核未通过' ? 'bg-pink-100 text-pink-600' : item.status === '待审核' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'}`}>{item.status}</span></td>
+                  <td className="px-4 py-3 text-gray-500 max-w-[190px]"><div className="truncate" title={item.rejectionReason || undefined}>{item.rejectionReason || ''}</div></td>
                   <td className="px-4 py-3 whitespace-nowrap"><button type="button" className="text-[#1890ff] hover:underline mr-3" onClick={() => { setDetailTarget(item); setError(''); }}>查看详情</button>{item.status === '待审核' ? <button type="button" className="text-orange-600 hover:underline" onClick={() => { setDetailTarget(item); setError(''); }}>审核</button> : item.status === '正常' ? <button type="button" className="text-red-500 hover:underline" onClick={() => openDelete(item)}>删除</button> : <span className="text-gray-400">已处理</span>}</td>
                 </tr>
               ))}
@@ -135,10 +159,10 @@ const CommentManagement = () => {
           <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between"><h2 className="text-[16px] font-semibold text-gray-900">评论详情</h2><button type="button" onClick={closeDetail} className="text-gray-400 hover:text-gray-700 text-xl leading-none" aria-label="关闭">×</button></div>
           <div className="px-6 py-5 space-y-3 text-[13px]">
             <div dir="auto" className="bg-gray-50 rounded px-3 py-3 text-gray-800 leading-6 break-words">{detailTarget.content}</div>
-            <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-y-2"><span className="text-gray-500">评论人</span><span>{detailTarget.userName}（{detailTarget.userId}）</span><span className="text-gray-500">所属帖子</span><span dir="auto" className="break-words">{detailTarget.postTitle}</span><span className="text-gray-500">话题</span><span>{detailTarget.topicName}</span><span className="text-gray-500">评论时间</span><span>{detailTarget.createdAt}</span><span className="text-gray-500">状态</span><span>{detailTarget.status}</span><span className="text-gray-500">审核时间</span><span>{detailTarget.auditTime || '—'}</span><span className="text-gray-500">审核人</span><span>{detailTarget.auditor || '—'}</span><span className="text-gray-500">删除原因</span><span dir="auto" className="whitespace-pre-wrap break-words">{detailTarget.deleteReason || '—'}</span><span className="text-gray-500">删除时间</span><span>{detailTarget.deleteTime || '—'}</span><span className="text-gray-500">删除人</span><span>{detailTarget.deleter || '—'}</span><span className="text-gray-500">APP 通知</span><span>{detailTarget.notificationStatus || '—'}{detailTarget.notificationTime ? `（${detailTarget.notificationTime}）` : ''}</span></div>
+            <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-y-2"><span className="text-gray-500">评论人</span><span>{detailTarget.userName}（{detailTarget.userId}）</span><span className="text-gray-500">所属帖子</span><span dir="auto" className="break-words">{detailTarget.postTitle}</span><span className="text-gray-500">话题</span><span>{detailTarget.topicName}</span><span className="text-gray-500">评论时间</span><span>{detailTarget.createdAt}</span><span className="text-gray-500">状态</span><span>{detailTarget.status}</span><span className="text-gray-500">审核时间</span><span>{detailTarget.auditTime || '—'}</span><span className="text-gray-500">审核人</span><span>{detailTarget.auditor || '—'}</span><span className="text-gray-500">审核未通过原因</span><span dir="auto" className="whitespace-pre-wrap break-words">{detailTarget.rejectionReason || ''}</span>{detailTarget.status === '已删除' && <><span className="text-gray-500">删除原因</span><span dir="auto" className="whitespace-pre-wrap break-words">{detailTarget.deleteReason || ''}</span><span className="text-gray-500">删除时间</span><span>{detailTarget.deleteTime || '—'}</span><span className="text-gray-500">删除人</span><span>{detailTarget.deleter || '—'}</span><span className="text-gray-500">APP 通知</span><span>{detailTarget.notificationStatus || '—'}{detailTarget.notificationTime ? `（${detailTarget.notificationTime}）` : ''}</span></>}</div>
             {error && <p className="text-[12px] text-red-500">{error}</p>}
           </div>
-          <div className="px-6 py-3 border-t border-gray-100 flex justify-end gap-3"><button type="button" onClick={closeDetail} className="h-9 px-5 border border-gray-300 rounded text-[13px] text-gray-600">关闭</button>{detailTarget.status === '待审核' && <><button type="button" onClick={() => openDelete(detailTarget)} className="h-9 px-5 border border-red-300 text-red-500 rounded text-[13px]">删除</button><button type="button" onClick={handleApprove} className="h-9 px-5 bg-[#1890ff] text-white rounded text-[13px] font-medium">审核通过</button></>}</div>
+          {detailTarget.status === '待审核' && <div className="px-6 py-3 border-t border-gray-100 flex justify-end gap-3"><button type="button" onClick={() => openReject(detailTarget)} className="h-9 px-5 border border-orange-300 text-orange-600 rounded text-[13px]">审核未通过</button><button type="button" onClick={handleApprove} className="h-9 px-5 bg-[#1890ff] text-white rounded text-[13px] font-medium">审核通过</button></div>}
         </div>
       </div>}
 
@@ -158,6 +182,21 @@ const CommentManagement = () => {
             <div className="rounded border border-orange-100 bg-orange-50 px-3 py-2.5 text-[12px] leading-5 text-orange-700">确认后，APP 社区互动将向评论作者发送“评论已删除”通知，并展示本次填写的原因；后台保留完整审计记录。</div>
           </div>
           <div className="px-6 py-3 border-t border-gray-100 flex justify-end gap-3"><button type="button" onClick={closeDialog} className="h-9 px-5 border border-gray-300 rounded text-[13px] text-gray-600">取消</button><button type="button" disabled={!reason.trim()} onClick={handleDelete} className="h-9 px-5 rounded bg-red-500 text-[13px] font-medium text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-red-200">确认删除并通知</button></div>
+        </div>
+      </div>}
+
+      {rejectTarget && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45" onClick={closeRejectDialog}>
+        <div className="w-[520px] max-w-[calc(100vw-32px)] overflow-hidden rounded-lg bg-white shadow-2xl" onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="comment-reject-title">
+          <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4"><h2 id="comment-reject-title" className="text-[18px] font-medium text-gray-900">审核未通过</h2><button type="button" onClick={closeRejectDialog} className="flex h-8 w-8 items-center justify-center text-xl leading-none text-gray-400 hover:text-gray-700" aria-label="关闭">×</button></div>
+          <div className="space-y-4 px-6 py-5">
+            <div>
+              <div className="mb-2 flex items-center justify-between gap-3"><label htmlFor="comment-rejection-reason" className="text-[13px] text-gray-700"><span className="text-red-500">*</span> 审核原因</label><span className={`text-[11px] ${reasonLength >= COMMENT_REJECTION_REASON_MAX_LENGTH ? 'text-orange-600' : 'text-gray-400'}`}>{reasonLength}/{COMMENT_REJECTION_REASON_MAX_LENGTH}</span></div>
+              <textarea id="comment-rejection-reason" dir="auto" autoFocus value={reason} rows={4} onChange={(event) => handleReasonChange(event.target.value)} placeholder="请输入审核未通过的原因" aria-invalid={Boolean(error)} aria-describedby={error ? 'comment-rejection-reason-error' : 'comment-rejection-help'} className={`w-full resize-none rounded border px-3 py-2 text-[13px] leading-5 outline-none transition-colors focus:border-[#43c7d4] ${error ? 'border-red-400' : 'border-cyan-300'}`} />
+              {error && <p id="comment-rejection-reason-error" className="mt-1 text-[12px] text-red-500">{error}</p>}
+            </div>
+            <div id="comment-rejection-help" className="rounded border border-amber-200 bg-amber-50 px-3 py-2.5 text-[12px] leading-5 text-amber-600">确认后，评论状态将变为「审核未通过」，仅评论作者本人可见。</div>
+          </div>
+          <div className="flex justify-end gap-3 border-t border-gray-100 px-6 py-3"><button type="button" onClick={closeRejectDialog} className="h-9 px-5 border border-gray-300 rounded text-[13px] text-gray-600">取消</button><button type="button" disabled={!reason.trim()} onClick={handleReject} className="h-9 px-5 rounded bg-[#43c7d4] text-[13px] font-medium text-white hover:bg-[#36b7c5] disabled:cursor-not-allowed disabled:bg-cyan-200">确认</button></div>
         </div>
       </div>}
     </div>

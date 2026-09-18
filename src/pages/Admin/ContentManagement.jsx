@@ -230,9 +230,6 @@ const ContentManagement = () => {
                 <div className="text-[13px] text-gray-400">未删除</div>
               )}
             </div>
-            <div className="px-6 py-3 border-t border-gray-100 flex justify-end">
-              <button className="h-9 px-6 bg-[#1890ff] text-white rounded text-[14px] hover:bg-[#40a9ff]" onClick={() => setDetailItem(null)}>关闭</button>
-            </div>
           </div>
         </div>
       )}

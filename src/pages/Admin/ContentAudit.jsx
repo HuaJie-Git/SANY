@@ -180,11 +180,7 @@ const ContentAudit = () => {
                   <button className="h-9 px-6 bg-green-500 text-white rounded text-[14px] font-medium hover:bg-green-600" onClick={handleApprove}>通过</button>
                   <button className="h-9 px-6 bg-orange-500 text-white rounded text-[14px] font-medium hover:bg-orange-600" onClick={handleReject} disabled={!rejectReason.trim()}>不通过</button>
                 </div>
-              ) : (
-                <div className="px-6 py-3 border-t border-gray-100 flex justify-end">
-                  <button className="h-9 px-6 bg-[#1890ff] text-white rounded text-[14px] hover:bg-[#40a9ff]" onClick={() => setAuditItem(null)}>关闭</button>
-                </div>
-              )}
+              ) : null}
             </div>
           </div>
         );
