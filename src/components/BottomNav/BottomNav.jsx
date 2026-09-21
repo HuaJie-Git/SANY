@@ -1,7 +1,12 @@
 import React from 'react';
 
-const BottomNav = ({ activeTab, onTabChange, isScrolled, onScrollToTop, showProfileDot = true }) => {
-  const tabs = [
+const BottomNav = ({ activeTab, onTabChange, isScrolled, onScrollToTop, showProfileDot = true, demoMode = false }) => {
+  const tabs = demoMode ? [
+    { id: 'home', name: '首页', icon: 'home' },
+    { id: 'asset', name: '资产', icon: 'asset' },
+    { id: 'audit', name: '审核', icon: 'audit' },
+    { id: 'profile', name: '我', icon: 'profile', hasDot: showProfileDot },
+  ] : [
     { id: 'home', name: '首页', icon: 'home' },
     { id: 'asset', name: '资产', icon: 'asset' },
     { id: 'ai', name: 'AI助手', icon: 'ai', isSpecial: true },

@@ -45,7 +45,7 @@ const ContentDetail = ({ item, onClose, contentType, onLike, onCollect }) => {
   return (
     <div className="absolute inset-0 bg-white z-50 flex flex-col">
       {/* 状态栏 */}
-      <div className="h-[44px] flex items-center justify-between px-4 bg-white">
+      <div className="h-[44px] flex items-center justify-between px-7 pt-1 bg-white">
         <span className="text-black text-[14px] font-medium">9:41</span>
         <div className="flex items-center gap-1">
           <svg width="16" height="12" viewBox="0 0 16 12" fill="none" xmlns="http://www.w3.org/2000/svg">

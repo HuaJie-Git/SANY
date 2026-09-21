@@ -1,18 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import RoleGuideModal from '../../components/RoleGuideModal/RoleGuideModal';
 
-const Profile = ({ userRole, onRoleConfirm, onFeedback }) => {
+const Profile = ({ userRole, onRoleConfirm, onFeedback, demoMode = false, onRequireLogin, onNavigate }) => {
   const [showModal, setShowModal] = useState(false);
 
   // 进入页面自动弹出角色引导弹窗（未填写角色时）
   useEffect(() => {
-    if (!userRole) {
+    if (!userRole && !demoMode) {
       const timer = setTimeout(() => {
         setShowModal(true);
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [userRole]);
+  }, [demoMode, userRole]);
+
+  const handleFeatureClick = (name) => {
+    if (name === '设备预警') return onNavigate?.('auditList');
+    if (name === '机群报表') return onNavigate?.('usageReport');
+    if (name === '自助服务') return onNavigate?.('selfService');
+    if (name === '收藏中心') return onNavigate?.('content');
+    if (name === 'APP反馈') return onFeedback?.();
+    if (demoMode) return onRequireLogin?.();
+    return undefined;
+  };
 
   // 关闭弹窗 - 仅关闭弹窗，保留提示条
   const handleModalClose = () => {
@@ -154,7 +164,7 @@ const Profile = ({ userRole, onRoleConfirm, onFeedback }) => {
     <div className="h-full bg-gray-100 overflow-y-auto">
       {/* 角色引导弹窗 */}
       <RoleGuideModal
-        visible={showModal}
+        visible={!demoMode && showModal}
         onClose={handleModalClose}
         onConfirm={handleRoleConfirm}
       />
@@ -165,7 +175,7 @@ const Profile = ({ userRole, onRoleConfirm, onFeedback }) => {
           <div className="text-base text-gray-900">
             我的星星 <span className="text-orange-500 font-bold text-lg">172</span> ≈ Rp <span className="text-orange-500 font-bold text-lg">31.132,-</span>
           </div>
-          <button className="text-xs text-orange-500 border border-orange-500 rounded-full px-3 py-1.5 hover:bg-orange-50">
+          <button type="button" onClick={() => demoMode && onRequireLogin?.()} className="text-xs text-orange-500 border border-orange-500 rounded-full px-3 py-1.5 hover:bg-orange-50">
             立即查看 &gt;
           </button>
         </div>
@@ -190,7 +200,7 @@ const Profile = ({ userRole, onRoleConfirm, onFeedback }) => {
         </div>
 
         {/* 领取按钮 */}
-        <button className="w-full py-3.5 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-xl text-sm font-medium shadow-sm hover:shadow-md transition-shadow">
+        <button type="button" onClick={() => demoMode && onRequireLogin?.()} className="w-full py-3.5 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-xl text-sm font-medium shadow-sm hover:shadow-md transition-shadow">
           一键领取 10 颗星星
         </button>
       </div>
@@ -199,7 +209,7 @@ const Profile = ({ userRole, onRoleConfirm, onFeedback }) => {
       <div className="bg-white mx-4 mt-3 rounded-xl p-5 shadow-sm">
         <div className="flex justify-around">
           {quickActions.map((item) => (
-            <button key={item.id} className="flex flex-col items-center group">
+            <button type="button" key={item.id} onClick={() => handleFeatureClick(item.name)} className="flex flex-col items-center group">
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-2 group-hover:scale-105 transition-transform" style={{ backgroundColor: item.color }}>
                 {renderQuickActionIcon(item)}
               </div>
@@ -213,15 +223,15 @@ const Profile = ({ userRole, onRoleConfirm, onFeedback }) => {
       <div className="bg-white mx-4 mt-3 rounded-xl p-5 shadow-sm">
         <div className="text-sm font-semibold text-gray-900 mb-4">设备管理</div>
         <div className="flex justify-around">
-          <div className="flex flex-col items-center cursor-pointer">
+          <button type="button" onClick={() => demoMode && onRequireLogin?.()} className="flex flex-col items-center cursor-pointer">
             <div className="text-3xl font-bold text-gray-900 mb-1">0</div>
             <div className="text-xs text-gray-500">待保养</div>
-          </div>
+          </button>
           <div className="w-px bg-gray-100"></div>
-          <div className="flex flex-col items-center cursor-pointer">
+          <button type="button" onClick={() => demoMode && onRequireLogin?.()} className="flex flex-col items-center cursor-pointer">
             <div className="text-3xl font-bold text-gray-900 mb-1">0</div>
             <div className="text-xs text-gray-500">服务工单</div>
-          </div>
+          </button>
         </div>
       </div>
 
@@ -230,7 +240,7 @@ const Profile = ({ userRole, onRoleConfirm, onFeedback }) => {
         {menuItems.map((item, index) => (
           <button
             key={item.id}
-            onClick={() => item.name === 'APP反馈' && onFeedback?.()}
+            onClick={() => handleFeatureClick(item.name)}
             className={`w-full flex items-center px-4 py-4 hover:bg-gray-50 transition-colors ${
               index !== menuItems.length - 1 ? 'border-b border-gray-50' : ''
             }`}

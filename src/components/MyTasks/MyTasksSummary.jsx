@@ -116,10 +116,10 @@ const MyTasksSummary = ({ tenantType = 'enterprise', onTaskListClick, onTaskClic
       <div className="flex items-center justify-between mb-3">
         <div className="text-[16px] font-medium text-text-primary">我的任务</div>
         <div
-          className="text-[12px] text-text辅助 cursor-pointer flex items-center"
+          className="text-[12px] text-text辅助 cursor-pointer flex items-center gap-0.5"
           onClick={onTaskListClick}
         >
-          更多
+          查看全部
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M9 18l6-6-6-6" />
           </svg>
@@ -176,15 +176,16 @@ const MyTasksSummary = ({ tenantType = 'enterprise', onTaskListClick, onTaskClic
             </div>
           ))}
 
-          {/* 超过3条时显示剩余数量 */}
-          {total > 3 && (
-            <div className="text-center text-sm text-red-500 cursor-pointer py-2" onClick={onTaskListClick}>
-              还有 {total - 3} 个任务，查看全部
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="inline-block ml-1">
-                <path d="M9 18l6-6-6-6" />
-              </svg>
-            </div>
-          )}
+          {/* 任务查看全部 */}
+          <div
+            className="flex items-center justify-center gap-1 border-t border-gray-50 py-2.5 text-center text-sm font-medium text-red-500 hover:text-red-600 cursor-pointer active:bg-gray-50"
+            onClick={onTaskListClick}
+          >
+            <span>{total > 3 ? `还有 ${total - 3} 个任务，查看全部` : '查看全部任务'}</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="inline-block">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </div>
         </div>
       )}
       </div>

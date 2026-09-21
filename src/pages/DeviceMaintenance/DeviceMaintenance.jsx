@@ -97,34 +97,9 @@ const DeviceMaintenance = ({ onBack }) => {
   };
 
   return (
-    <div className="absolute inset-0 bg-white z-50 flex flex-col">
-      {/* 状态栏 - 与内容信息流详情页一致 */}
-      <div className="flex-shrink-0">
-        <div className="h-[44px] flex items-center justify-between px-4 bg-white">
-          <span className="text-black text-[14px] font-medium">9:41</span>
-          <div className="flex items-center gap-1">
-            <svg width="16" height="12" viewBox="0 0 16 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M1 8H3V12H1V8Z" fill="#333"/>
-              <path d="M5 5H7V12H5V5Z" fill="#333"/>
-              <path d="M9 3H11V12H9V3Z" fill="#333"/>
-              <path d="M13 0H15V12H13V0Z" fill="#333"/>
-            </svg>
-            <svg width="16" height="12" viewBox="0 0 16 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M8 2C10.76 2 13.07 3.61 14.1 6L15.5 4.5C14.14 2.58 11.23 1 8 1C4.77 1 1.86 2.58 0.5 4.5L1.9 6C2.93 3.61 5.24 2 8 2Z" fill="#333"/>
-              <path d="M8 5C9.66 5 11.14 5.69 12.11 6.88L13.5 5.5C12.2 3.98 10.21 3 8 3C5.79 3 3.8 3.98 2.5 5.5L3.89 6.88C4.86 5.69 6.34 5 8 5Z" fill="#333"/>
-              <path d="M8 8C8.83 8 9.58 8.34 10.12 8.9L11.5 7.5C10.6 6.6 9.37 6 8 6C6.63 6 5.4 6.6 4.5 7.5L5.88 8.9C6.42 8.34 7.17 8 8 8Z" fill="#333"/>
-              <circle cx="8" cy="11" r="1.5" fill="#333"/>
-            </svg>
-            <svg width="24" height="12" viewBox="0 0 24 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="0.5" y="0.5" width="21" height="11" rx="2" stroke="#333" strokeOpacity="0.35"/>
-              <rect x="2" y="2" width="18" height="8" rx="1" fill="#333"/>
-              <path d="M23 4V8C23.5523 8 24 7.5523 24 7V5C24 4.4477 23.5523 4 23 4Z" fill="#333" fillOpacity="0.4"/>
-            </svg>
-          </div>
-        </div>
-
-        {/* 顶部导航栏 */}
-        <div className="flex items-center px-4 py-3 border-b border-gray-100 bg-white">
+    <div className="relative flex h-full w-full flex-col bg-white">
+      {/* 顶部导航栏 */}
+      <div className="flex items-center px-4 py-3 border-b border-gray-100 bg-white">
           <button
             onClick={onBack}
             className="w-8 h-8 flex items-center justify-center"
@@ -140,7 +115,6 @@ const DeviceMaintenance = ({ onBack }) => {
             </svg>
           </button>
         </div>
-      </div>
 
       {/* 搜索框 */}
       <div className="px-4 py-3">

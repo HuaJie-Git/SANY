@@ -13,7 +13,7 @@ import ViewCountBadge from './ViewCountBadge';
 
 const COMMENT_MAX_LENGTH = 500;
 
-const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, targetStatus }) => {
+const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, targetStatus, demoMode = false, onRequireLogin }) => {
   const [liked, setLiked] = useState(post.isLiked || false);
   const [likeCount, setLikeCount] = useState(post.likes);
   const [commentText, setCommentText] = useState('');
@@ -38,22 +38,38 @@ const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, tar
   const isOwnPost = post.authorId === currentUser.id;
 
   const handleLike = () => {
+    if (demoMode) {
+      onRequireLogin?.();
+      return;
+    }
     setLiked(!liked);
     setLikeCount((c) => liked ? c - 1 : c + 1);
   };
 
   const handleFollow = () => {
+    if (demoMode) {
+      onRequireLogin?.();
+      return;
+    }
     const nowFollowing = toggleFollow(post.authorId);
     setFollowing(nowFollowing);
   };
 
   // 点击评论按钮 → 滚动到评论区并聚焦输入框
   const handleCommentClick = () => {
+    if (demoMode) {
+      onRequireLogin?.();
+      return;
+    }
     commentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     window.setTimeout(() => commentInputRef.current?.focus(), 350);
   };
 
   const handleSubmitComment = () => {
+    if (demoMode) {
+      onRequireLogin?.();
+      return;
+    }
     const trimmed = commentText.trim();
     if (!trimmed) return;
     const newComment = addComment(post.id, trimmed, replyTarget ? {
@@ -70,6 +86,10 @@ const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, tar
   };
 
   const handleReply = (comment) => {
+    if (demoMode) {
+      onRequireLogin?.();
+      return;
+    }
     const rootCommentId = comment.rootCommentId || comment.id;
     setReplyTarget({ ...comment, rootCommentId });
     setExpandedRoots((prev) => new Set(prev).add(rootCommentId));
@@ -77,6 +97,10 @@ const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, tar
   };
 
   const handleCommentLike = (commentId) => {
+    if (demoMode) {
+      onRequireLogin?.();
+      return;
+    }
     setComments((prev) => prev.map((comment) => {
       if (comment.id !== commentId) return comment;
       const isLiked = !comment.isLiked;
@@ -147,6 +171,10 @@ const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, tar
   const handleCommentKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
+      if (demoMode) {
+        onRequireLogin?.();
+        return;
+      }
       handleSubmitComment();
     }
   };
@@ -511,14 +539,32 @@ const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, tar
             value={commentText}
             maxLength={COMMENT_MAX_LENGTH}
             aria-label={replyTarget ? `回复 ${replyTarget.userName}` : '写评论'}
-            onChange={(e) => setCommentText(e.target.value)}
+            onFocus={() => {
+              if (demoMode) {
+                commentInputRef.current?.blur();
+                onRequireLogin?.();
+              }
+            }}
+            onChange={(e) => {
+              if (demoMode) {
+                onRequireLogin?.();
+                return;
+              }
+              setCommentText(e.target.value);
+            }}
             onKeyDown={handleCommentKeyDown}
           />
           <div
             className={`px-4 h-[36px] flex items-center rounded-full cursor-pointer transition-colors ${
               commentText.trim() ? 'bg-brand-red text-white' : 'bg-gray-200 text-gray-400'
             }`}
-            onClick={handleSubmitComment}
+            onClick={() => {
+              if (demoMode) {
+                onRequireLogin?.();
+                return;
+              }
+              handleSubmitComment();
+            }}
           >
             <span className="text-[13px]">发送</span>
           </div>

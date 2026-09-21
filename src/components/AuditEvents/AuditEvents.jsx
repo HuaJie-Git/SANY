@@ -1,83 +1,99 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const AuditEvents = ({ onCategoryClick }) => {
-  const events = [
+  const [period, setPeriod] = useState('过去 30天');
+
+  // 严格按原图 1 还原 5 个审核事件
+  const auditItems = [
     {
-      id: 1,
+      id: 'exception',
       name: '设备异常',
-      unreadCount: 10,
-      totalCount: 20,
-      color: 'text-brand-red',
+      unreadText: '5 未读',
+      count: 6,
     },
     {
-      id: 2,
+      id: 'maintenance',
       name: '维保事项',
-      unreadCount: 3,
-      totalCount: 4,
-      overtimeCount: 2,
-      nearExpireCount: 2,
+      overtime: 0,
+      nearExpire: 0,
     },
     {
-      id: 3,
+      id: 'fuel',
       name: '燃油异常',
-      unreadCount: 2,
-      totalCount: 3,
     },
     {
-      id: 4,
+      id: 'location',
       name: '位置预警',
-      unreadCount: 1,
-      totalCount: 1,
+    },
+    {
+      id: 'check',
+      name: '检查异常',
+      unreadText: '2 未读',
+      count: 2,
     },
   ];
 
   return (
     <div className="px-4 py-3">
+      {/* 标题栏 */}
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[16px] font-medium text-text-primary">审核事件</h3>
-        <div className="flex items-center gap-1 text-[12px] text-text辅助 cursor-pointer">
-          <span>过去30天</span>
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M3 4.5L6 7.5L9 4.5" stroke="#999" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <h3 className="text-[16px] font-bold text-gray-900">审核事件</h3>
+        <button
+          type="button"
+          onClick={() => setPeriod((v) => (v === '过去 30天' ? '过去 7天' : '过去 30天'))}
+          className="flex items-center gap-1 text-[13px] text-gray-600 hover:text-gray-900 cursor-pointer"
+        >
+          <span>{period}</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-        </div>
+        </button>
       </div>
 
-      <div className="bg-white rounded-[11px] overflow-hidden shadow-sm">
-        {events.map((event, index) => (
+      {/* 审核事件卡片容器 */}
+      <div className="bg-white rounded-2xl divide-y divide-gray-100 shadow-sm border border-gray-100/80 overflow-hidden">
+        {auditItems.map((item) => (
           <div
-            key={event.id}
-            className={`p-4 ${index !== events.length - 1 ? 'border-b border-gray-100' : ''} cursor-pointer`}
-            onClick={() => onCategoryClick && onCategoryClick(event.name)}
+            key={item.id}
+            onClick={() => onCategoryClick && onCategoryClick(item.name)}
+            className="flex items-center justify-between px-4 py-3.5 cursor-pointer active:bg-gray-50 transition-colors"
           >
-            <div className="flex items-center justify-between">
+            {/* 左侧区域 */}
+            <div>
               <div className="flex items-center gap-2">
-                <span className="text-[16px] font-medium text-text-primary">{event.name}</span>
-                <span className="text-[12px] text-success bg-green-50 px-2 py-0.5 rounded-full">
-                  {event.unreadCount} 未读
-                </span>
+                <span className="text-[15px] font-medium text-gray-900">{item.name}</span>
+                {item.unreadText && (
+                  <span className="rounded-full bg-[#DCFCE7] px-2 py-0.5 text-[11px] font-medium text-[#15803D]">
+                    {item.unreadText}
+                  </span>
+                )}
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[16px] font-bold text-brand-red">{event.totalCount}</span>
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4.5 3L7.5 6L4.5 9" stroke="#999" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
+              {/* 维保事项专属状态行 */}
+              {item.id === 'maintenance' && (
+                <div className="flex items-center gap-3 mt-1 text-[12px] text-gray-500">
+                  <div className="flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full bg-[#DC2626]" />
+                    <span>已超时: {item.overtime}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full bg-[#F59E0B]" />
+                    <span>临期: {item.nearExpire}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* 维保事项特殊字段 */}
-            {event.name === '维保事项' && (
-              <div className="flex items-center gap-4 mt-2">
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 bg-brand-red rounded-full"></div>
-                  <span className="text-[12px] text-text-secondary">已超时：{event.overtimeCount}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 bg-warning rounded-full"></div>
-                  <span className="text-[12px] text-text-secondary">临期：{event.nearExpireCount}</span>
-                </div>
-              </div>
-            )}
+            {/* 右侧区域 */}
+            <div className="flex items-center gap-1.5">
+              {item.count !== undefined && (
+                <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#FEE2E2] px-1.5 text-[11px] font-bold text-[#DC2626]">
+                  {item.count}
+                </span>
+              )}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-300">
+                <path d="m9 18 6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
           </div>
         ))}
       </div>

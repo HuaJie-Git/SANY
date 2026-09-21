@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getAllTasks } from '../../data/tasks';
 
-const TaskList = ({ onBack, onTaskClick }) => {
+const TaskList = ({ onBack, onTaskClick, onRequireLogin, demoMode = false }) => {
   const [activeTab, setActiveTab] = useState('my'); // my: 我的任务, all: 全部任务
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,6 +13,18 @@ const TaskList = ({ onBack, onTaskClick }) => {
   const [selectedTaskType, setSelectedTaskType] = useState([]);
   const [sortBy, setSortBy] = useState('deadline_asc');
   const [timeFilter, setTimeFilter] = useState({ start: '', end: '' });
+
+  const handleTaskClick = (task) => {
+    if (demoMode || onRequireLogin) {
+      if (onRequireLogin) {
+        onRequireLogin();
+        return;
+      }
+    }
+    if (onTaskClick) {
+      onTaskClick(task);
+    }
+  };
 
   // 模拟加载任务数据
   useEffect(() => {
@@ -142,25 +154,7 @@ const TaskList = ({ onBack, onTaskClick }) => {
   // 渲染加载状态
   if (loading) {
     return (
-      <div className="absolute inset-0 bg-gray-100 z-50 flex flex-col">
-        {/* 状态栏 */}
-        <div className="h-[44px] flex items-center justify-between px-4 bg-white">
-          <span className="text-black text-[14px] font-medium">9:41</span>
-          <div className="flex items-center gap-1">
-            <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
-              <path d="M1 8H3V12H1V8Z" fill="#333"/>
-              <path d="M5 5H7V12H5V5Z" fill="#333"/>
-              <path d="M9 3H11V12H9V3Z" fill="#333"/>
-              <path d="M13 0H15V12H13V0Z" fill="#333"/>
-            </svg>
-            <svg width="24" height="12" viewBox="0 0 24 12" fill="none">
-              <rect x="0.5" y="0.5" width="21" height="11" rx="2" stroke="#333" strokeOpacity="0.35"/>
-              <rect x="2" y="2" width="18" height="8" rx="1" fill="#333"/>
-              <path d="M23 4V8C23.5523 8 24 7.5523 24 7V5C24 4.4477 23.5523 4 23 4Z" fill="#333" fillOpacity="0.4"/>
-            </svg>
-          </div>
-        </div>
-
+      <div className="relative flex h-full w-full flex-col bg-gray-100">
         {/* 顶部导航栏 */}
         <div className="flex items-center px-4 py-3 bg-white border-b border-gray-100">
           <button onClick={onBack} className="w-8 h-8 flex items-center justify-center">
@@ -189,25 +183,7 @@ const TaskList = ({ onBack, onTaskClick }) => {
   }
 
   return (
-    <div className="absolute inset-0 bg-gray-100 z-50 flex flex-col">
-      {/* 状态栏 */}
-      <div className="h-[44px] flex items-center justify-between px-4 bg-white">
-        <span className="text-black text-[14px] font-medium">9:41</span>
-        <div className="flex items-center gap-1">
-          <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
-            <path d="M1 8H3V12H1V8Z" fill="#333"/>
-            <path d="M5 5H7V12H5V5Z" fill="#333"/>
-            <path d="M9 3H11V12H9V3Z" fill="#333"/>
-            <path d="M13 0H15V12H13V0Z" fill="#333"/>
-          </svg>
-          <svg width="24" height="12" viewBox="0 0 24 12" fill="none">
-            <rect x="0.5" y="0.5" width="21" height="11" rx="2" stroke="#333" strokeOpacity="0.35"/>
-            <rect x="2" y="2" width="18" height="8" rx="1" fill="#333"/>
-            <path d="M23 4V8C23.5523 8 24 7.5523 24 7V5C24 4.4477 23.5523 4 23 4Z" fill="#333" fillOpacity="0.4"/>
-          </svg>
-        </div>
-      </div>
-
+    <div className="relative flex h-full w-full flex-col bg-gray-100">
       {/* 顶部导航栏 */}
       <div className="flex items-center px-4 py-3 bg-white border-b border-gray-100">
         <button onClick={onBack} className="w-8 h-8 flex items-center justify-center">
@@ -328,7 +304,7 @@ const TaskList = ({ onBack, onTaskClick }) => {
               <div
                 key={task.taskId}
                 className="bg-white rounded-xl p-4 cursor-pointer hover:bg-gray-50 transition-colors shadow-sm"
-                onClick={() => onTaskClick && onTaskClick(task)}
+                onClick={() => handleTaskClick(task)}
               >
                 {/* 第一行：优先级 + 标题 + 状态 */}
                 <div className="flex items-center justify-between mb-2">
@@ -565,6 +541,22 @@ const TaskList = ({ onBack, onTaskClick }) => {
           </div>
         </div>
       )}
+      {/* 悬浮创建任务按钮 */}
+      <button
+        type="button"
+        onClick={() => {
+          if (onRequireLogin) {
+            onRequireLogin();
+          }
+        }}
+        className="absolute right-4 bottom-6 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[#E01923] text-white shadow-lg active:scale-95 transition-transform cursor-pointer"
+        aria-label="创建任务"
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      </button>
     </div>
   );
 };

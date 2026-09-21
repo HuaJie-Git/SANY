@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { GUEST_DEMO_DEVICES } from '../../data/guestDemoData';
 
 const INITIAL_ITEMS = [
   {
@@ -46,8 +47,10 @@ const INITIAL_ITEMS = [
 
 const MAX_CARDS = 4;
 
-const RecentView = ({ onNavigate }) => {
-  const items = INITIAL_ITEMS;
+const RecentView = ({ onNavigate, demoMode = false }) => {
+  const items = demoMode
+    ? GUEST_DEMO_DEVICES.slice(0, 2).map((device) => ({ ...device, type: 'asset', name: device.displayName }))
+    : INITIAL_ITEMS;
   const hasEnteredListRef = useRef(false);
 
   // 点击卡片 → 跳转卡片详情

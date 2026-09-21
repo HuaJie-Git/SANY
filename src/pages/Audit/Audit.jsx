@@ -1,348 +1,307 @@
 import React, { useState } from 'react';
 
-const Audit = ({ onDeviceClick, initialTab, navigationContext }) => {
-  // Tab名称到ID的映射
-  const tabNameToId = {
-    '设备异常': 'exception',
-    '维保事项': 'maintenance',
-    '燃油异常': 'fuel',
-    '位置预警': 'location',
-  };
+const AUDIT_TABS = [
+  { id: 'exception', name: '设备异常', count: 6 },
+  { id: 'location', name: '位置预警', count: 0 },
+  { id: 'maintenance', name: '维保事项', count: 0 },
+  { id: 'fuel', name: '燃油异常', count: 0 },
+  { id: 'check', name: '检查异常', count: 2 },
+];
 
+const TAB_NAME_MAP = {
+  '设备异常': 'exception',
+  '位置预警': 'location',
+  '维保事项': 'maintenance',
+  '燃油异常': 'fuel',
+  '检查异常': 'check',
+  'exception': 'exception',
+  'location': 'location',
+  'maintenance': 'maintenance',
+  'fuel': 'fuel',
+  'check': 'check',
+};
+
+const TAB_DEVICES = {
+  exception: [
+    {
+      id: 'HT683',
+      code: 'HRZX2331008983',
+      name: 'HT683',
+      displayName: 'HT683',
+      title: 'HT683',
+      subtitle: 'Sany · 半挂牵引车',
+      type: 'Sany · 半挂牵引车',
+      image: 'images/img_dumptruck.jpg',
+      newBadge: '5新',
+      countBadge: 6,
+      activeCategory: 'exception',
+      categoryName: '设备异常',
+    },
+  ],
+  check: [
+    {
+      id: 'AC0250CF0056',
+      code: 'AC0250CF0056',
+      name: 'AC0250CF0056',
+      displayName: 'AC0250CF0056',
+      title: 'AC0250CF0056',
+      subtitle: 'Sany · 汽车起重机',
+      type: 'Sany · 汽车起重机',
+      image: 'images/审核/起重机.jpg',
+      newBadge: '1新',
+      countBadge: 1,
+      activeCategory: 'check',
+      categoryName: '检查异常',
+    },
+    {
+      id: 'SW970EACG0278',
+      code: 'SW970EACG0278',
+      name: 'SW956E9CF7528',
+      displayName: 'SW956E9CF7528',
+      title: 'SW956E9CF7528',
+      subtitle: 'Sany · 挖掘装载机（印度）',
+      type: 'Sany · 挖掘装载机（印度）',
+      image: 'images/img_earthwork.jpg',
+      newBadge: '1新',
+      countBadge: 1,
+      activeCategory: 'check',
+      categoryName: '检查异常',
+    },
+  ],
+  location: [],
+  maintenance: [],
+  fuel: [],
+};
+
+const Audit = ({ onDeviceClick, initialTab, navigationContext, searchQuery = '', demoMode = false, onRequireLogin }) => {
   const getInitialTab = () => {
-    if (initialTab && tabNameToId[initialTab]) {
-      return tabNameToId[initialTab];
+    if (initialTab && TAB_NAME_MAP[initialTab]) {
+      return TAB_NAME_MAP[initialTab];
     }
     return 'exception';
   };
 
-  const [activeTab, setActiveTab] = useState(getInitialTab());
-  const [dateRange] = useState('12/10 - 12/20');
+  const [activeTab, setActiveTab] = useState(getInitialTab);
   const [groupByDevice, setGroupByDevice] = useState(true);
+  const [filterHint, setFilterHint] = useState('');
 
-  // Tab数据
-  const tabs = [
-    { id: 'exception', name: '设备异常', count: 5 },
-    { id: 'maintenance', name: '维保事项', count: 99, isOver99: true },
-    { id: 'fuel', name: '燃油异常', count: 0 },
-    { id: 'location', name: '位置预警', count: 1 },
-  ];
-
-  // 维保事项数据 - 与截图完全一致，命名方式统一
-  const maintenanceDevices = [
-    {
-      id: 1,
-      name: 'LFXAH95W7P...',
-      type: '挖掘机',
-      image: 'images/审核/挖掘机.jpg',
-      newCount: 99,
-      newCountText: '99+ 新',
-      newCountColor: 'bg-green-100 text-green-600',
-      extraNewCount: 99,
-      extraNewCountText: '99+',
-      extraNewCountColor: 'bg-red-100 text-red-600',
-      status: [
-        { type: 'overdue', text: '逾期：1', color: 'text-red-500' }
-      ]
-    },
-    {
-      id: 2,
-      name: 'BTXAH95WP9...',
-      type: '起重机',
-      image: 'images/审核/起重机.jpg',
-      newCount: 7,
-      newCountText: '7 新',
-      newCountColor: 'bg-green-100 text-green-600',
-      extraNewCount: null,
-      extraNewCountText: null,
-      extraNewCountColor: null,
-      status: [
-        { type: 'near', text: '临近：1,230', color: 'text-orange-500' }
-      ]
-    },
-    {
-      id: 3,
-      name: 'CFXAH95W8P...',
-      type: '搅拌车',
-      image: 'images/审核/搅拌车.jpg',
-      newCount: 10,
-      newCountText: '10 新',
-      newCountColor: 'bg-green-100 text-green-600',
-      extraNewCount: 10,
-      extraNewCountText: '10',
-      extraNewCountColor: 'bg-red-100 text-red-600',
-      status: [
-        { type: 'overdue', text: '逾期：10', color: 'text-red-500' }
-      ]
-    },
-    {
-      id: 4,
-      name: 'DFXAH95W9P...',
-      type: '搅拌车',
-      image: 'images/审核/搅拌车.jpg',
-      newCount: 99,
-      newCountText: '99+ 新',
-      newCountColor: 'bg-green-100 text-green-600',
-      extraNewCount: 99,
-      extraNewCountText: '99+',
-      extraNewCountColor: 'bg-red-100 text-red-600',
-      status: [
-        { type: 'overdue', text: '逾期：2', color: 'text-red-500' },
-        { type: 'near', text: '临期：24...', color: 'text-orange-500' }
-      ]
-    },
-    {
-      id: 5,
-      name: 'EFXAH95W10P...',
-      type: '挖掘机',
-      image: 'images/审核/挖掘机.jpg',
-      newCount: 9,
-      newCountText: '9 新',
-      newCountColor: 'bg-green-100 text-green-600',
-      extraNewCount: 2,
-      extraNewCountText: '2',
-      extraNewCountColor: 'bg-red-100 text-red-600',
-      status: [
-        { type: 'overdue', text: '逾期：1', color: 'text-red-500' }
-      ]
-    }
-  ];
-
-  // 设备异常数据 - 命名方式统一，没有逾期状态
-  const exceptionDevices = [
-    {
-      id: 1,
-      name: 'LFXAH95W7P...',
-      type: '挖掘机',
-      image: 'images/审核/挖掘机.jpg',
-      newCount: 99,
-      newCountText: '99+ 新',
-      newCountColor: 'bg-green-100 text-green-600',
-      extraNewCount: 99,
-      extraNewCountText: '99+',
-      extraNewCountColor: 'bg-red-100 text-red-600',
-      status: []
-    },
-    {
-      id: 2,
-      name: 'BTXAH95WP9...',
-      type: '起重机',
-      image: 'images/审核/起重机.jpg',
-      newCount: 16,
-      newCountText: '16',
-      newCountColor: 'bg-red-100 text-red-600',
-      extraNewCount: null,
-      extraNewCountText: null,
-      extraNewCountColor: null,
-      status: []
-    },
-    {
-      id: 3,
-      name: 'CFXAH95W8P...',
-      type: '搅拌车',
-      image: 'images/审核/搅拌车.jpg',
-      newCount: 10,
-      newCountText: '10 新',
-      newCountColor: 'bg-green-100 text-green-600',
-      extraNewCount: 10,
-      extraNewCountText: '10',
-      extraNewCountColor: 'bg-red-100 text-red-600',
-      status: []
-    },
-    {
-      id: 4,
-      name: 'DFXAH95W9P...',
-      type: '搅拌车',
-      image: 'images/审核/搅拌车.jpg',
-      newCount: 99,
-      newCountText: '99+ 新',
-      newCountColor: 'bg-green-100 text-green-600',
-      extraNewCount: 4,
-      extraNewCountText: '4',
-      extraNewCountColor: 'bg-red-100 text-red-600',
-      status: []
-    },
-    {
-      id: 5,
-      name: 'EFXAH95W10P...',
-      type: '挖掘机',
-      image: 'images/审核/挖掘机.jpg',
-      newCount: 9,
-      newCountText: '9 新',
-      newCountColor: 'bg-green-100 text-green-600',
-      extraNewCount: 2,
-      extraNewCountText: '2',
-      extraNewCountColor: 'bg-red-100 text-red-600',
-      status: []
-    }
-  ];
-
-  // 燃油异常数据
-  const fuelDevices = [];
-
-  // 位置预警数据
-  const locationDevices = [];
-
-  // 根据Tab获取设备数据
-  const getDevices = () => {
-    switch (activeTab) {
-      case 'exception':
-        return exceptionDevices;
-      case 'maintenance':
-        return maintenanceDevices;
-      case 'fuel':
-        return fuelDevices;
-      case 'location':
-        return locationDevices;
-      default:
-        return exceptionDevices;
-    }
+  const showFilterHint = (message) => {
+    setFilterHint(message);
+    window.setTimeout(() => setFilterHint(''), 1600);
   };
 
-  const contextualAuditDevice = navigationContext?.kind === 'audit' && navigationContext.item
-    ? {
-        id: `context-${navigationContext.item.id}`,
-        name: navigationContext.item.code,
-        type: navigationContext.item.name,
-        image: navigationContext.item.image,
-        newCountText: navigationContext.item.status || '待处理',
-        newCountColor: navigationContext.item.status === '已处理' ? 'bg-gray-100 text-gray-500' : 'bg-red-100 text-red-600',
-        extraNewCountText: null,
-        status: [],
-        isContextTarget: true,
-      }
-    : null;
-  const devices = contextualAuditDevice ? [contextualAuditDevice, ...getDevices()] : getDevices();
+  // 支持从消息中心或跳转上下文带入的目标条目
+  const contextualAuditDevice =
+    navigationContext?.kind === 'audit' && navigationContext.item
+      ? {
+          id: `context-${navigationContext.item.id}`,
+          code: navigationContext.item.code,
+          name: navigationContext.item.code,
+          displayName: navigationContext.item.code,
+          title: navigationContext.item.code,
+          subtitle: navigationContext.item.name || 'Sany 设备',
+          type: navigationContext.item.name || 'Sany 设备',
+          image: navigationContext.item.image || 'images/img_dumptruck.jpg',
+          newBadge: navigationContext.item.status || '待处理',
+          countBadge: 1,
+          activeCategory: activeTab,
+          categoryName: AUDIT_TABS.find((t) => t.id === activeTab)?.name || '设备异常',
+          isContextTarget: true,
+        }
+      : null;
+
+  const currentCategoryDevices = TAB_DEVICES[activeTab] || [];
+  const sourceDevices = contextualAuditDevice
+    ? [contextualAuditDevice, ...currentCategoryDevices]
+    : currentCategoryDevices;
+
+  const keyword = searchQuery.trim().toLowerCase();
+  const filteredDevices = sourceDevices.filter((device) => {
+    if (!keyword) return true;
+    const searchTarget = `${device.title || ''} ${device.code || ''} ${device.subtitle || ''} ${device.name || ''}`.toLowerCase();
+    return searchTarget.includes(keyword);
+  });
 
   return (
-    <div className="h-full bg-gray-50 overflow-y-auto">
-      {/* Tab切换 - 顶上去 */}
-      <div className="bg-white px-4 py-3 relative">
-        <div className="flex items-center gap-2 overflow-x-auto pr-8" style={{ WebkitOverflowScrolling: 'touch' }}>
-          {tabs.map((tab) => (
+    <div className="h-full bg-[#F5F6F8] flex flex-col overflow-hidden">
+      {/* 顶部固定区域：Tab 标签栏 + 过滤选项 */}
+      <div className="bg-white flex-shrink-0 border-b border-gray-100">
+        {/* Tab 栏 */}
+        <div className="px-4 py-2 flex items-center justify-between">
+          <div
+            className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
+            {AUDIT_TABS.map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-3 py-1.5 rounded-full text-[13px] font-medium whitespace-nowrap flex-shrink-0 transition-all ${
+                    isActive
+                      ? 'bg-[#222831] text-white shadow-xs'
+                      : 'bg-[#F5F6F8] text-gray-700 hover:bg-gray-200/70'
+                  }`}
+                >
+                  <span>{tab.name}</span>
+                  {tab.count > 0 && (
+                    <span
+                      className={`ml-1 font-semibold ${
+                        isActive ? 'text-white' : 'text-[#EA3D4B]'
+                      }`}
+                    >
+                      ({tab.count})
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 右侧汉堡菜单按钮 */}
+          <button
+            type="button"
+            onClick={() => showFilterHint('分类管理')}
+            className="w-8 h-8 rounded-full bg-[#F5F6F8] flex items-center justify-center flex-shrink-0 text-gray-700 ml-1.5 active:bg-gray-200"
+            aria-label="更多分类"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
+
+        {/* 日期选择与分组开关 */}
+        <div className="px-4 py-2.5 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => showFilterHint('日期范围：8-22 至 9-21')}
+            className="flex items-center gap-1 text-[12px] text-gray-700 bg-white border border-gray-200 rounded-full px-3 py-1 shadow-2xs hover:bg-gray-50 active:bg-gray-100"
+          >
+            <span>8-22 至 9-21</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
+          <div className="flex items-center gap-2">
+            <span className="text-[12px] font-medium text-gray-700">按设备分组</span>
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 ${
-                activeTab === tab.id
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-gray-100 text-gray-600'
+              type="button"
+              onClick={() => setGroupByDevice(!groupByDevice)}
+              className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 ease-in-out cursor-pointer ${
+                groupByDevice ? 'bg-[#E60012]' : 'bg-gray-300'
+              }`}
+              aria-label="按设备分组开关"
+            >
+              <div
+                className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
+                  groupByDevice ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 列表内容区域 */}
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+        {/* 空状态：图 4、5、6 对应的吊装箱子插图 */}
+        {filteredDevices.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24">
+            <div className="w-40 h-32 relative flex items-center justify-center">
+              <svg width="150" height="120" viewBox="0 0 160 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* 顶部起重横梁 */}
+                <line x1="20" y1="12" x2="140" y2="12" stroke="#262626" strokeWidth="2.5" strokeLinecap="round" />
+                {/* 吊绳下放 */}
+                <line x1="80" y1="12" x2="80" y2="28" stroke="#737373" strokeWidth="1.5" />
+                {/* 吊钩滑轮与钩体 */}
+                <rect x="73" y="28" width="14" height="14" rx="2" fill="#E5E7EB" stroke="#737373" strokeWidth="1.5" />
+                <path d="M80 42 C80 50 72 52 72 58 C72 63 77 65 82 64 C86 63 87 59 87 56" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" />
+                {/* 四角吊索 */}
+                <line x1="80" y1="56" x2="38" y2="76" stroke="#737373" strokeWidth="1.5" />
+                <line x1="80" y1="56" x2="122" y2="76" stroke="#737373" strokeWidth="1.5" />
+                <line x1="80" y1="56" x2="52" y2="72" stroke="#9CA3AF" strokeWidth="1" strokeDasharray="2 2" />
+                <line x1="80" y1="56" x2="108" y2="72" stroke="#9CA3AF" strokeWidth="1" strokeDasharray="2 2" />
+                {/* 气流/装饰点 */}
+                <circle cx="60" cy="58" r="2" stroke="#404040" strokeWidth="1.2" />
+                <circle cx="118" cy="48" r="1.5" stroke="#737373" strokeWidth="1" />
+                <path d="M112 59 Q120 57 126 62" stroke="#262626" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+                {/* 纸箱底部与侧面立体感 */}
+                <path d="M52 72 L80 62 L108 72 L80 82 Z" fill="#94A3B8" opacity="0.5" />
+                <path d="M38 76 L80 88 L80 112 L38 98 Z" fill="#1E293B" />
+                <path d="M80 88 L122 76 L122 98 L80 112 Z" fill="#94A3B8" />
+                <path d="M38 76 L80 88 L122 76" stroke="#CBD5E1" strokeWidth="1.5" fill="none" />
+                {/* 开箱向外展开的箱盖折角 */}
+                <path d="M38 76 L48 68 L78 78 L68 85 Z" fill="#64748B" />
+                <path d="M122 76 L112 68 L82 78 L92 85 Z" fill="#CBD5E1" />
+              </svg>
+            </div>
+            <p className="text-[13px] text-gray-400 mt-2 font-normal">
+              {keyword ? '未找到匹配的设备' : '暂无数据'}
+            </p>
+          </div>
+        ) : (
+          filteredDevices.map((device) => (
+            <div
+              key={device.id}
+              onClick={() => {
+                if (demoMode && onRequireLogin) {
+                  onRequireLogin();
+                }
+                onDeviceClick?.({ ...device, activeCategory: activeTab, categoryName: AUDIT_TABS.find((t) => t.id === activeTab)?.name || '设备异常' });
+              }}
+              className={`bg-white rounded-2xl p-4 flex items-center justify-between shadow-2xs border border-gray-100/80 cursor-pointer active:bg-gray-50 transition-colors ${
+                device.isContextTarget ? 'ring-1 ring-[#f4c8cd] bg-[#fff3f4]' : ''
               }`}
             >
-              {tab.name}
-              {tab.count > 0 && (
-                <span className={`ml-1 ${activeTab === tab.id ? 'text-white' : tab.isOver99 ? 'text-red-500' : 'text-gray-500'}`}>
-                  {tab.isOver99 ? '(99+)' : `(${tab.count})`}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-        {/* 筛选按钮 - 固定在右侧，覆盖在Tab上方 */}
-        <button className="absolute right-4 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center bg-white z-10">
-          <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/>
-          </svg>
-        </button>
-      </div>
-
-      {/* 日期选择和分组开关 - 与截图样式一致 */}
-      <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-100">
-        <div className="flex items-center">
-          <button className="flex items-center text-sm text-gray-700 border border-gray-200 rounded-lg px-3 py-1.5">
-            {dateRange}
-            <svg className="w-4 h-4 ml-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
-            </svg>
-          </button>
-        </div>
-        <div className="flex items-center">
-          <span className="text-sm text-gray-700 mr-2">按设备分组</span>
-          <button
-            onClick={() => setGroupByDevice(!groupByDevice)}
-            className={`w-12 h-6 rounded-full relative transition-colors ${
-              groupByDevice ? 'bg-red-500' : 'bg-gray-300'
-            }`}
-          >
-            <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform shadow-sm ${
-              groupByDevice ? 'translate-x-6' : 'translate-x-0.5'
-            }`}></div>
-          </button>
-        </div>
-      </div>
-
-      {/* 设备列表 */}
-      <div className="px-4 py-3 space-y-3">
-        {devices.map((device) => (
-          <div
-            key={device.id}
-            className={`rounded-xl p-3 flex items-center shadow-sm cursor-pointer ${device.isContextTarget ? 'bg-[#fff3f4] ring-1 ring-[#f4c8cd]' : 'bg-white'}`}
-            onClick={() => onDeviceClick && onDeviceClick(device)}
-          >
-            {/* 设备图片 */}
-            <div className="w-16 h-12 bg-gray-50 rounded-lg flex items-center justify-center mr-3 overflow-hidden flex-shrink-0">
-              <img
-                src={device.image}
-                alt={device.name}
-                className="w-full h-full object-contain"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'flex';
-                }}
-              />
-              <div className="hidden items-center justify-center w-full h-full">
-                <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                  </svg>
+              {/* 设备图片与基本信息 */}
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="w-14 h-12 rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden flex-shrink-0">
+                  <img
+                    src={device.image}
+                    alt={device.title}
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[15px] font-bold text-gray-900 truncate">{device.title}</div>
+                  <div className="text-[12px] text-gray-500 mt-0.5 truncate">{device.subtitle}</div>
                 </div>
               </div>
-            </div>
 
-            {/* 设备信息 */}
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-gray-900 mb-0.5 truncate">{device.name}</div>
-              <div className="text-xs text-gray-500 mb-1">{device.type}</div>
-              {/* 状态信息 */}
-              {device.status && device.status.length > 0 && (
-                <div className="flex items-center gap-1 flex-wrap">
-                  {device.status.map((status, index) => (
-                    <div key={index} className="flex items-center">
-                      <div className={`w-1.5 h-1.5 rounded-full mr-1 flex-shrink-0 ${
-                        status.type === 'overdue' ? 'bg-red-500' : 'bg-orange-500'
-                      }`}></div>
-                      <span className={`text-[10px] ${status.color} whitespace-nowrap`}>{status.text}</span>
-                      {index < device.status.length - 1 && (
-                        <span className="text-gray-300 mx-1">|</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+              {/* 徽标与箭头 */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {device.newBadge && (
+                  <span className="bg-[#E8F8EE] text-[#00B050] text-[11px] font-semibold px-2 py-0.5 rounded-full">
+                    {device.newBadge}
+                  </span>
+                )}
+                {device.countBadge !== undefined && (
+                  <span className="bg-[#FEECEE] text-[#EA3D4B] text-[11px] font-semibold px-2 py-0.5 rounded-full">
+                    {device.countBadge}
+                  </span>
+                )}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-300">
+                  <path d="m9 18 6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
             </div>
-
-            {/* 新消息标签 */}
-            <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${device.newCountColor}`}>
-                {device.newCountText}
-              </span>
-              {device.extraNewCountText && (
-                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${device.extraNewCountColor}`}>
-                  {device.extraNewCountText}
-                </span>
-              )}
-            </div>
-
-            {/* 箭头 */}
-            <svg className="w-4 h-4 text-gray-400 ml-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
-            </svg>
-          </div>
-        ))}
-        {devices.length === 0 && (
-          <div className="rounded-xl bg-white py-12 text-center text-[13px] text-gray-400">当前分类暂无审核事件</div>
+          ))
         )}
       </div>
+
+      {/* 提示气泡 */}
+      {filterHint && (
+        <div role="status" className="absolute bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-full bg-black/75 px-4 py-2 text-[12px] text-white shadow-lg pointer-events-none">
+          {filterHint}
+        </div>
+      )}
     </div>
   );
 };

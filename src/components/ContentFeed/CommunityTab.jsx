@@ -13,8 +13,8 @@ import MyPublishPage from './MyPublishPage';
 import FollowTab from './FollowTab';
 import WaterfallCard from './WaterfallCard';
 
-const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewportActive }) => {
-  const [activeTab, setActiveTab] = useState('我的');
+const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewportActive, demoMode = false, onRequireLogin }) => {
+  const [activeTab, setActiveTab] = useState('故障求助');
   const [drillDown, setDrillDown] = useState(null);
   const [showInteractions, setShowInteractions] = useState(false);
   const [interactionHint, setInteractionHint] = useState('');
@@ -27,8 +27,8 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
   // 标记组件已完成首次挂载
   const mountedRef = useRef(false);
 
-  // 二级Tab
-  const tabs = ['占位话题1', '占位话题2', '全部话题', '关注', '我的'];
+  // 二级Tab：对齐截图实景
+  const tabs = ['故障求助', '经验分享', '话题', '关注', '我的'];
 
   const supportedInteractionTypes = new Set(['post_comment', 'post_audit_pass', 'post_audit_reject', 'comment_admin_deleted']);
   const unreadInteractions = communityInteractions.filter((item) => item.unread && supportedInteractionTypes.has(item.interactionType));
@@ -79,6 +79,10 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
 
   // Tab点击
   const handleTabClick = (tab) => {
+    if (demoMode && ['关注', '我的'].includes(tab)) {
+      onRequireLogin?.();
+      return;
+    }
     setActiveTab(tab);
     setDrillDown(null);
     if (tabContainerRef.current) {
@@ -292,7 +296,7 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
         );
       })}
       {interactionHint && (
-        <div className="pointer-events-none fixed bottom-24 left-1/2 z-[70] -translate-x-1/2 rounded-full bg-gray-900/85 px-4 py-2 text-[12px] text-white shadow-lg" role="status">
+        <div className="pointer-events-none absolute bottom-24 left-1/2 z-[70] -translate-x-1/2 rounded-full bg-gray-900/85 px-4 py-2 text-[12px] text-white shadow-lg" role="status">
           {interactionHint}
         </div>
       )}
@@ -301,7 +305,7 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
 
   // 渲染首页 - "关注"Tab
   const renderFollowTabHome = () => (
-    <FollowTab onPostClick={onPostClick} />
+    <FollowTab onPostClick={onPostClick} demoMode={demoMode} onRequireLogin={onRequireLogin} />
   );
 
   // 渲染首页 - "全部话题"Tab（话题分类目录）
@@ -367,6 +371,8 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
               <WaterfallCard
                 key={post.id}
                 post={post}
+                demoMode={demoMode}
+                onRequireLogin={onRequireLogin}
                 onClick={() => onPostClick?.(post)}
               />
             ))}
@@ -392,26 +398,34 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
 
   return (
     <div className="w-full">
-      {/* 二级Tab */}
-      <div className="mb-3 border-b border-gray-100">
-        <div ref={tabContainerRef} className="flex overflow-x-auto scrollbar-hide">
-          {tabs.map((tab) => (
-            <div
-              key={tab}
-              data-tab={tab}
-              className={`pb-2 cursor-pointer whitespace-nowrap transition-all duration-300 flex-shrink-0 px-3 text-[13px] ${
-                activeTab === tab ? 'text-gray-900 font-medium' : 'text-gray-500'
-              }`}
-              onClick={() => handleTabClick(tab)}
-            >
-              <span className="relative inline-flex items-center gap-1">
-                {tab}
-                {tab === '我的' && unreadInteractions.length > 0 && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-brand-red" aria-label="有未读社区互动" />
+      {/* 二级Tab - 对齐截图实景 */}
+      <div className="mb-3.5 border-b border-gray-100">
+        <div ref={tabContainerRef} className="flex items-center justify-between px-1">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab;
+            return (
+              <div
+                key={tab}
+                data-tab={tab}
+                className="relative pb-2 cursor-pointer whitespace-nowrap text-center select-none"
+                onClick={() => handleTabClick(tab)}
+              >
+                <span className="relative inline-flex items-center">
+                  <span className={`text-[15px] transition-colors ${
+                    isActive ? 'text-[#E01923] font-bold text-[16px]' : 'text-[#666666] font-medium'
+                  }`}>
+                    {tab}
+                  </span>
+                  {tab === '我的' && (
+                    <span className="absolute -top-0.5 -right-2 h-1.5 w-1.5 rounded-full bg-[#E01923]" aria-label="有未读社区互动" />
+                  )}
+                </span>
+                {isActive && (
+                  <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#E01923] rounded-full" />
                 )}
-              </span>
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -427,8 +441,8 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
         <div>
           {activeTab === '我的' && renderMyTabHome()}
           {activeTab === '关注' && renderFollowTabHome()}
-          {activeTab === '全部话题' && renderAllTabHome()}
-          {activeTab !== '我的' && activeTab !== '关注' && activeTab !== '全部话题' && renderPlaceholderTabHome()}
+          {activeTab === '话题' && renderAllTabHome()}
+          {activeTab !== '我的' && activeTab !== '关注' && activeTab !== '话题' && renderPlaceholderTabHome()}
         </div>
       )}
       </>

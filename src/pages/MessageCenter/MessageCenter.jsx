@@ -72,7 +72,7 @@ const MessageCenter = ({ onBack, onNavigate, onUnreadChange }) => {
   )).length;
 
   return (
-    <div className="absolute inset-0 z-50 flex flex-col bg-[#f4f5f7] text-[#23272f]">
+    <div className="relative flex h-full w-full flex-col bg-[#f4f5f7] text-[#23272f]">
       <header className="flex h-[54px] flex-shrink-0 items-center border-b border-black/5 bg-white px-3">
         <button type="button" onClick={onBack} className="flex h-10 w-10 items-center justify-center rounded-full active:bg-gray-100" aria-label="返回">
           <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

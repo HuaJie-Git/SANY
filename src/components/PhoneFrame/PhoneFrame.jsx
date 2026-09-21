@@ -1,7 +1,7 @@
 import React from 'react';
-import { ExperienceServiceRail, FeedbackFloatingButton, LoginPrompt } from '../ExperienceMode/ExperienceMode';
+import { ExperienceNotice, ExperienceServiceRail, FeedbackFloatingButton, LoginPrompt } from '../ExperienceMode/ExperienceMode';
 
-const PhoneFrame = ({ topNav, bottomNav, children, hideGradient = false, floatingButton, statusBarTheme = 'light', hideStatusBar = false, onLogin, onFeedback, onInquiry, showFeedback = false, showServiceRail = false, showLoginPrompt = false, onCloseLogin }) => {
+const PhoneFrame = ({ topNav, bottomNav, children, hideGradient = false, headerBackground, floatingButton, statusBarTheme = 'light', statusTime = '9:41', showStatusProfile = false, batteryPercent, hideStatusBar = false, contentRoundedTop = false, onLogin, onFeedback, onInquiry, showFeedback = false, showServiceRail = false, showLoginPrompt = false, onCloseLogin, showExperienceNotice = false }) => {
   const statusColor = statusBarTheme === 'dark' ? '#222831' : '#FFFFFF';
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-8">
@@ -10,19 +10,27 @@ const PhoneFrame = ({ topNav, bottomNav, children, hideGradient = false, floatin
         {/* 手机外壳 */}
         <div className="w-[393px] h-[852px] bg-black rounded-[55px] p-[12px] shadow-2xl">
           {/* 屏幕 */}
-          <div className="w-full h-full bg-white rounded-[43px] overflow-hidden relative flex flex-col">
+          <div className="w-full h-full bg-white rounded-[43px] overflow-hidden relative flex flex-col [transform:translateZ(0)]">
             {/* 顶部区域 - 整体渐变：底部红色往上渐变成黑色 */}
-            <div className="flex-shrink-0" style={hideGradient ? {} : { background: 'linear-gradient(180deg, #000000 0%, #BC000F 100%)' }}>
+            <div className="flex-shrink-0 relative z-20" style={hideGradient ? (headerBackground ? { background: headerBackground } : {}) : { background: headerBackground || 'linear-gradient(180deg, #000000 0%, #BC000F 100%)' }}>
               {/* 状态栏 */}
-              {!hideStatusBar && <div className="w-full h-7 flex items-center justify-between px-6" style={{ color: statusColor }}>
+              {!hideStatusBar && <div className="w-full h-[44px] flex items-center justify-between px-7 pt-1" style={{ color: statusColor }}>
                 {/* 时间 */}
-                <div className="text-xs font-semibold" style={{ textShadow: '0 0 2px rgba(255,255,255,0.8)' }}>9:41</div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[14px] font-semibold tracking-tight" style={statusBarTheme === 'dark' ? {} : { textShadow: '0 0 2px rgba(255,255,255,0.8)' }}>{statusTime}</span>
+                  {showStatusProfile && (
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill={statusColor} aria-label="用户">
+                      <circle cx="6" cy="3.25" r="2.25"/>
+                      <path d="M2 10.5c.15-2.4 1.5-3.6 4-3.6s3.85 1.2 4 3.6H2Z"/>
+                    </svg>
+                  )}
+                </div>
 
-                {/* 中间 - 刘海屏区域 */}
+                {/* 中间 - 留白区域 */}
                 <div className="flex-1"></div>
 
-                {/* 右侧状态图标 - 高亮白色 */}
-                <div className="flex items-center gap-1">
+                {/* 右侧状态图标 */}
+                <div className="flex items-center gap-1.5">
                   {/* 信号强度 */}
                   <svg width="15" height="10" viewBox="0 0 15 10" fill={statusColor} className="flex-shrink-0">
                     <rect x="0" y="6" width="2.5" height="4" rx="0.5"/>
@@ -39,11 +47,22 @@ const PhoneFrame = ({ topNav, bottomNav, children, hideGradient = false, floatin
                   </svg>
 
                   {/* 电池 */}
-                  <svg width="20" height="10" viewBox="0 0 20 10" fill={statusColor}>
-                    <rect x="0.5" y="0.5" width="16" height="9" rx="1.5" stroke={statusColor} strokeWidth="0.8" fill="none"/>
-                    <rect x="2" y="2" width="10" height="6" rx="0.8" fill={statusColor}/>
-                    <path d="M17.5 3v4a1.2 1.2 0 000-4z"/>
-                  </svg>
+                  {batteryPercent ? (
+                    <div className={`relative ml-0.5 flex h-[14px] min-w-[25px] items-center justify-center rounded-[4px] px-1 text-[9px] font-bold leading-none ${
+                      statusBarTheme === 'dark' ? 'border border-[#222831] text-[#222831] bg-transparent' : 'bg-white text-[#242832]'
+                    }`}>
+                      {batteryPercent}
+                      <span className={`absolute -right-[2.5px] h-1.5 w-[2px] rounded-r-sm ${
+                        statusBarTheme === 'dark' ? 'bg-[#222831]' : 'bg-white/60'
+                      }`} />
+                    </div>
+                  ) : (
+                    <svg width="20" height="10" viewBox="0 0 20 10" fill={statusColor}>
+                      <rect x="0.5" y="0.5" width="16" height="9" rx="1.5" stroke={statusColor} strokeWidth="0.8" fill="none"/>
+                      <rect x="2" y="2" width="10" height="6" rx="0.8" fill={statusColor}/>
+                      <path d="M17.5 3v4a1.2 1.2 0 000-4z"/>
+                    </svg>
+                  )}
                 </div>
               </div>}
 
@@ -52,7 +71,7 @@ const PhoneFrame = ({ topNav, bottomNav, children, hideGradient = false, floatin
             </div>
 
             {/* 中间内容区域 - 可滚动 */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden">
+            <div className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative ${contentRoundedTop ? 'relative z-10 -mt-px rounded-t-[18px]' : ''}`}>
               {children}
             </div>
 
@@ -69,6 +88,11 @@ const PhoneFrame = ({ topNav, bottomNav, children, hideGradient = false, floatin
             )}
             {showServiceRail && <ExperienceServiceRail onCustomerVoice={onFeedback} onInquiry={onInquiry} />}
             {showFeedback && !showServiceRail && <FeedbackFloatingButton onClick={onFeedback} />}
+            {showExperienceNotice && (
+              <div className={`absolute inset-x-0 z-[55] ${bottomNav ? 'bottom-[70px]' : 'bottom-4'}`}>
+                <ExperienceNotice onLogin={() => onLogin?.('prompt')} />
+              </div>
+            )}
             <LoginPrompt visible={showLoginPrompt} onClose={onCloseLogin} onLogin={onLogin} />
           </div>
         </div>

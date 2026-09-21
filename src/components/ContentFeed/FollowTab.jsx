@@ -2,7 +2,7 @@ import React from 'react';
 import WaterfallCard from './WaterfallCard';
 import { getFollowedUserPosts } from './communityData';
 
-const FollowTab = ({ onPostClick }) => {
+const FollowTab = ({ onPostClick, demoMode = false, onRequireLogin }) => {
   const followedPosts = getFollowedUserPosts();
 
   return (
@@ -27,6 +27,8 @@ const FollowTab = ({ onPostClick }) => {
             <WaterfallCard
               key={post.id}
               post={post}
+              demoMode={demoMode}
+              onRequireLogin={onRequireLogin}
               onClick={() => onPostClick?.(post)}
             />
           ))}

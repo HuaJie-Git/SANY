@@ -169,7 +169,7 @@ const RoleGuideModal = ({ visible, onClose, onConfirm }) => {
   const currentRole = ROLES[currentIndex];
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}>
+    <div className="absolute inset-0 z-[9999] flex items-center justify-center" style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}>
       {/* 弹窗主体 */}
       <div className="relative w-[90%] max-w-[340px] bg-white rounded-3xl overflow-hidden shadow-2xl">
         {/* 关闭按钮 - 极淡，需要认真看才能发现 */}

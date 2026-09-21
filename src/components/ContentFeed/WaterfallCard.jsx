@@ -15,6 +15,8 @@ const WaterfallCard = forwardRef(({
   showAuthor = true,
   imageHeight = 'h-[160px]',
   isMyView = false,
+  demoMode = false,
+  onRequireLogin,
 }, ref) => {
   const author = getUserById(post.authorId);
 
@@ -28,24 +30,17 @@ const WaterfallCard = forwardRef(({
       className="break-inside-avoid mb-2 bg-white rounded-[11px] overflow-hidden shadow-sm cursor-pointer active:bg-gray-50 transition-colors"
       onClick={onClick}
     >
-      {/* 图片区域 - isolate 创建独立 stacking context，防止徽标穿透 */}
-      <div className="relative isolate overflow-hidden">
+      {/* 图片区域 */}
+      <div className={`relative ${imageHeight} bg-gray-100 overflow-hidden`}>
         <img
           src={post.image}
           alt={post.title}
-          className={`w-full ${imageHeight} object-cover`}
+          className="w-full h-full object-cover"
           onError={(e) => {
-            e.target.style.display = 'none';
-            e.target.nextSibling.style.display = 'flex';
+            e.target.src = 'images/机手社区/挖掘机/挖掘机_01.jpg';
           }}
         />
-        <div className={`w-full ${imageHeight} bg-gradient-to-br from-gray-200 to-gray-300 items-center justify-center hidden`}>
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-            <rect x="5" y="5" width="30" height="30" rx="2" stroke="#666" strokeWidth="2" fill="none"/>
-            <path d="M10 25L15 18L20 22L25 15L30 20V28C30 29.1 29.1 30 28 30H12C10.9 30 10 29.1 10 28V25Z" fill="#999"/>
-          </svg>
-        </div>
-        {/* 视频播放按钮 */}
+        {/* 视频标识 */}
         {post.type === 'video' && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-10 h-10 bg-black/50 rounded-full flex items-center justify-center">
@@ -80,13 +75,25 @@ const WaterfallCard = forwardRef(({
         {/* 作者信息 */}
         {showAuthor && author && (
           <div className="flex items-center gap-1.5 mb-1">
-            <img
-              src={author.avatar}
-              alt={author.name}
-              className="w-5 h-5 rounded-full object-cover flex-shrink-0"
-              onError={(e) => { e.target.style.display = 'none'; }}
-            />
-            <span className="text-[11px] text-gray-600 truncate">{author.name}</span>
+            {author.avatar ? (
+              <img
+                src={author.avatar}
+                alt={author.name}
+                className="w-5 h-5 rounded-full object-cover flex-shrink-0"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                }}
+              />
+            ) : null}
+            <div
+              className={`w-5 h-5 rounded-full ${author.badgeBg || 'bg-[#E0F2FE]'} ${author.badgeColor || 'text-[#0369A1]'} text-[10px] font-semibold items-center justify-center flex-shrink-0 ${
+                author.avatar ? 'hidden' : 'flex'
+              }`}
+            >
+              {author.initial || author.name?.[0] || 'U'}
+            </div>
+            <span className="text-[11px] text-gray-600 truncate">{author.displayName || author.name}</span>
             {author.isOfficial && (
               <span className="flex-shrink-0 text-[9px] font-medium text-brand-red bg-red-50 px-1 py-px rounded leading-tight">官方</span>
             )}
@@ -96,8 +103,16 @@ const WaterfallCard = forwardRef(({
         {/* 时间和互动 */}
         <div className="flex items-center justify-between text-[11px] text-gray-500">
           <span>{post.date}</span>
-          <div className="flex items-center gap-1">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <div
+            className="flex items-center gap-1 cursor-pointer hover:text-brand-red"
+            onClick={(e) => {
+              if (demoMode) {
+                e.stopPropagation();
+                onRequireLogin?.();
+              }
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill={post.isLiked ? '#E01923' : 'none'} stroke={post.isLiked ? '#E01923' : 'currentColor'} strokeWidth="2">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
             </svg>
             <span>{post.likes}</span>

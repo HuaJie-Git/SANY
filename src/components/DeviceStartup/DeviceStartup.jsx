@@ -2,6 +2,7 @@ import React from 'react';
 
 const DeviceStartup = ({
   onShowList,
+  onDeviceClick,
   title = '设备开机动态',
   actionLabel = '开机曲线',
   deviceName = 'SAC1300C8PHEVHUF',
@@ -9,6 +10,8 @@ const DeviceStartup = ({
   primaryMetric = { value: '2.3h', label: '当日总工时' },
   secondaryMetric = { value: '1.0h', label: '怠速工时' },
   totalCount = 36,
+  location = '美国·纽约州-希恩街880号',
+  reportTime = '2024-12-28 18:03 (GMT+8)',
 }) => {
   // 模拟工时柱状图数据（0-24小时）
   const hourlyData = [2, 3, 4, 5, 6, 7, 8, 9, 7, 5, 4, 6, 8, 9, 8, 7, 6, 8, 9, 8, 6, 4, 2, 1];
@@ -70,7 +73,7 @@ const DeviceStartup = ({
         </div>
 
         {/* 设备编号和图片 - 中间 */}
-        <div className="flex items-center justify-between mb-4">
+        <button type="button" onClick={onDeviceClick} className="mb-4 flex w-full items-center justify-between text-left active:opacity-70">
           <div className="flex items-center gap-2">
             <div className="w-[40px] h-[30px] rounded overflow-hidden">
               <img
@@ -86,7 +89,7 @@ const DeviceStartup = ({
               <path d="M6 4L10 8L6 12" stroke="#999" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
-        </div>
+        </button>
 
         {/* 工时数据 */}
         <div className="flex justify-between mb-3">
@@ -137,36 +140,36 @@ const DeviceStartup = ({
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M7 1C4.79 1 3 2.79 3 5C3 8 7 13 7 13C7 13 11 8 11 5C11 2.79 9.21 1 7 1ZM7 6.5C6.17 6.5 5.5 5.83 5.5 5C5.5 4.17 6.17 3.5 7 3.5C7.83 3.5 8.5 4.17 8.5 5C8.5 5.83 7.83 6.5 7 6.5Z" fill="#666"/>
               </svg>
-              <span>美国·纽约州-希恩街880号</span>
+              <span>{location}</span>
             </div>
             <div className="flex items-center gap-1">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="7" cy="7" r="6" stroke="#666" strokeWidth="1.5"/>
                 <path d="M7 3.5V7L9.5 8.5" stroke="#666" strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
-              <span>2024-12-28 18:03 (GMT+8)</span>
+              <span>{reportTime}</span>
             </div>
           </div>
           {/* 导航按钮 */}
-          <div className="w-[32px] h-[32px] bg-blue-500 rounded-full flex items-center justify-center cursor-pointer">
+          <button type="button" onClick={onDeviceClick} aria-label="查看设备位置与工况" className="w-[32px] h-[32px] bg-blue-500 rounded-full flex items-center justify-center cursor-pointer">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M2 14L8 2L14 14L8 10L2 14Z" fill="white"/>
             </svg>
-          </div>
+          </button>
         </div>
 
         {/* 更多按钮 */}
-        <div className="flex justify-center">
-          <div
-            className="flex items-center gap-1 text-[12px] text-text辅助 cursor-pointer"
+        <div className="flex justify-center pt-2">
+          <button
+            type="button"
             onClick={onShowList}
+            className="flex items-center justify-center gap-1 px-5 py-1.5 rounded-full bg-[#F3F4F6] text-gray-700 text-[13px] font-medium active:bg-gray-200 transition"
           >
-            <span>更多</span>
-            <span className="text-[14px]">（{totalCount}台）</span>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M3 4.5L6 7.5L9 4.5" stroke="#999" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <span>更多 {Math.max(0, totalCount - 1)}</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          </div>
+          </button>
         </div>
       </div>
     </div>

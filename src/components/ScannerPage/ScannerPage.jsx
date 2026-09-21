@@ -62,7 +62,7 @@ const ScannerPage = ({ onClose, onUseSearch, onOpenAsset, showStatusBar = true }
   if (stage === 'result' && result) {
     return (
       <div className="absolute inset-0 z-[70] flex flex-col bg-[#f4f5f7] text-[#252b33]">
-        {showStatusBar && <div className="h-[44px] flex items-center justify-between px-4 bg-white">
+        {showStatusBar && <div className="h-[44px] flex items-center justify-between px-7 pt-1 bg-white">
           <span className="text-[14px] font-medium">9:41</span>
           <span className="text-[12px] text-gray-400">SanVIST 安全识别</span>
         </div>}
@@ -144,7 +144,7 @@ const ScannerPage = ({ onClose, onUseSearch, onOpenAsset, showStatusBar = true }
   if (stage === 'error') {
     return (
       <div className="absolute inset-0 z-[70] bg-white flex flex-col text-[#252b33]">
-        {showStatusBar && <div className="h-[44px] px-4 flex items-center justify-between"><span className="text-[14px] font-medium">9:41</span></div>}
+        {showStatusBar && <div className="h-[44px] px-7 pt-1 flex items-center justify-between"><span className="text-[14px] font-medium">9:41</span></div>}
         <div className="h-[52px] px-4 flex items-center border-b border-gray-100">
           <button type="button" className="w-9 h-9 -ml-2" onClick={() => setStage('scanning')}>←</button><strong>识别结果</strong>
         </div>
@@ -162,7 +162,7 @@ const ScannerPage = ({ onClose, onUseSearch, onOpenAsset, showStatusBar = true }
   return (
     <div className="absolute inset-0 z-[70] bg-[#12161d] text-white flex flex-col overflow-hidden">
       <div className="pointer-events-none absolute inset-0 opacity-30" style={{ background: 'radial-gradient(circle at 50% 40%, #5f6e83 0%, #1b232e 38%, #0b0e13 75%)' }} />
-      {showStatusBar && <div className="relative z-20 h-[44px] flex items-center justify-between px-4">
+      {showStatusBar && <div className="relative z-20 h-[44px] flex items-center justify-between px-7 pt-1">
         <span className="text-[14px] font-medium">9:41</span><span className="text-[11px] text-white/60">安全扫码</span>
       </div>}
       <div className="relative z-30 h-[52px] px-4 flex items-center justify-between">

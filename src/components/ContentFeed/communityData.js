@@ -23,6 +23,10 @@ export const users = [
   { id: 'user-014', name: '话题达人', avatar: 'images/机手社区/三一起重机/三一起重机_03.jpg', bio: '积极参与社区话题' },
   { id: 'user-015', name: '内容创作者', avatar: 'images/机手社区/泵车/泵车_04.jpg', bio: '记录工地日常' },
   { id: 'user-016', name: '测试用户', avatar: 'images/机手社区/矿卡/矿卡_03.jpg', bio: '测试账号' },
+  { id: 'user-bkk', name: 'ม มหานคร', displayName: 'มหานคร', initial: 'ม', badgeBg: 'bg-[#D1FAE5]', badgeColor: 'text-[#047857]', avatar: '', bio: '三一机手，来自曼谷' },
+  { id: 'user-hx', name: '华 华夏', displayName: '华夏', initial: '华', badgeBg: 'bg-[#E2E8F0]', badgeColor: 'text-[#475569]', avatar: '', bio: '华夏机友' },
+  { id: 'user-cebu', name: 'CebuFarmBoy', displayName: 'CebuFarmBoy', initial: 'C', badgeBg: 'bg-[#E0F2FE]', badgeColor: 'text-[#0369A1]', avatar: '', bio: 'Cebu farm equipment operator' },
+  { id: 'user-arul', name: 'ArulPalm', displayName: 'ArulPalm', initial: 'A', badgeBg: 'bg-[#E2E8F0]', badgeColor: 'text-[#475569]', avatar: '', bio: 'Heavy machinery specialist' },
   { id: 'sany-official', name: '三一官方', avatar: 'images/机手社区/三一重卡/三一重卡_01.jpg', bio: '三一重工官方账号', isOfficial: true },
 ];
 
@@ -54,8 +58,8 @@ export const topics = [
   { id: 6, name: '经验分享', icon: '💡', color: '#98D8C8', description: '资深机手工作经验总结、效率提升心得、职业成长故事', contentCount: 289, viewCount: 41500, participantCount: 1150, heat: 3800 },
   { id: 7, name: '设备维修', icon: '🔩', color: '#F7DC6F', description: '设备故障诊断、维修方案、零配件更换经验交流', contentCount: 234, viewCount: 35600, participantCount: 980, heat: 3200 },
   { id: 8, name: '工作效率', icon: '⚡', color: '#BB8FCE', description: '施工效率优化、工作流程改进、时间管理技巧', contentCount: 189, viewCount: 28400, participantCount: 850, heat: 2800 },
-  { id: 9, name: '占位话题1', icon: '📌', color: '#E8A87C', description: '占位话题1的详细描述内容，后续将替换为真实话题', contentCount: 156, viewCount: 19800, participantCount: 720, heat: 2100 },
-  { id: 10, name: '占位话题2', icon: '📌', color: '#85CDCA', description: '占位话题2的详细描述内容，后续将替换为真实话题', contentCount: 98, viewCount: 12600, participantCount: 540, heat: 1600 },
+  { id: 9, name: '故障求助', icon: '🛠️', color: '#E8A87C', description: '查看常见故障求助、排查思路与社区回复', contentCount: 156, viewCount: 19800, participantCount: 720, heat: 2100 },
+  { id: 10, name: '机型交流', icon: '🚜', color: '#85CDCA', description: '围绕不同机型交流配置、工况与使用心得', contentCount: 98, viewCount: 12600, participantCount: 540, heat: 1600 },
 ];
 
 export const getTopicByName = (name) => topics.find((t) => t.name === name) || null;
@@ -63,6 +67,67 @@ export const getTopicById = (id) => topics.find((t) => t.id === id) || null;
 
 // ---- 帖子数据（公共内容 + 本人内容） ----
 export const posts = [
+  // 故障求助置顶实景帖子（对齐截图实景数据）
+  {
+    id: 301,
+    authorId: 'user-bkk',
+    topicId: 9,
+    title: 'Passcode',
+    content: 'System Unlock - Please enter password. Machine Model: SY135, Serial Number: SY013CEP788K8, Random Code: 43071, Lockout State: 0, Lockout Times: 3, Remaining Hours: 100.0',
+    image: 'images/机手社区/passcode.jpg',
+    views: 534,
+    likes: 10,
+    comments: 2,
+    date: '2026-08-31',
+    type: 'image',
+    auditStatus: 'approved',
+    isLiked: false,
+  },
+  {
+    id: 302,
+    authorId: 'user-hx',
+    topicId: 9,
+    title: '道路千万条',
+    content: '雨天路滑，施工及运输过程中务必注意行车安全，减速慢行，安全第一！',
+    image: 'images/机手社区/road_safe.jpg',
+    views: 227,
+    likes: 11,
+    comments: 4,
+    date: '2026-08-27',
+    type: 'image',
+    auditStatus: 'approved',
+    isLiked: false,
+  },
+  {
+    id: 303,
+    authorId: 'user-cebu',
+    topicId: 9,
+    title: 'Dead after weekend',
+    content: 'Machine won\'t start after sitting over the weekend. Battery checked ok, starter clicks once. Any troubleshooting tips?',
+    image: 'images/机手社区/weekend_dead.jpg',
+    views: 266,
+    likes: 8,
+    comments: 3,
+    date: '2026-08-25',
+    type: 'image',
+    auditStatus: 'approved',
+    isLiked: false,
+  },
+  {
+    id: 304,
+    authorId: 'user-arul',
+    topicId: 9,
+    title: 'Arm sinks slowly',
+    content: 'Excavator arm slowly dropping under load when holding position. Main cylinder seal leak or control valve bypass issue?',
+    image: 'images/机手社区/arm_sinks.jpg',
+    views: 190,
+    likes: 6,
+    comments: 2,
+    date: '2026-08-24',
+    type: 'image',
+    auditStatus: 'approved',
+    isLiked: false,
+  },
   // 本人帖子
   {
     id: 101, authorId: 'user-001', topicId: 1,
@@ -219,29 +284,29 @@ export const posts = [
     image: 'images/机手社区/三一起重机/三一起重机_06.jpg',
     views: 540, likes: 89, comments: 18, date: '2026-07-06', type: 'video', duration: '06:12', auditStatus: 'approved', isLiked: false,
   },
-  // 新品发布话题 - SANY官方帖子
+  // 故障求助
   {
     id: 41, authorId: 'sany-official', topicId: 9,
-    title: 'SY750H发布会现场精彩回顾', content: '带大家回顾SY750H发布会的精彩瞬间，从开场到产品揭幕，每一个环节都充满惊喜。',
+    title: '挖掘机液压油温偏高怎么排查？', content: '连续作业后出现液压油温偏高，已检查液位，想请教下一步排查顺序。',
     image: 'images/机手社区/挖掘机/挖掘机_03.jpg',
     views: 3420, likes: 567, comments: 98, date: '2026-07-14', type: 'video', duration: '02:35', auditStatus: 'approved', isLiked: false,
   },
   {
     id: 42, authorId: 'user-014', topicId: 9,
-    title: '新品发布话题测试内容', content: '这是一条普通用户在新品发布话题下的内容。',
+    title: '起重机风速传感器间歇告警', content: '现场风速正常但告警偶发，分享设备编号和现象，请大家协助判断。',
     image: 'images/机手社区/三一重卡/三一重卡_03.jpg',
     views: 320, likes: 45, comments: 8, date: '2026-07-12', type: 'image', auditStatus: 'approved', isLiked: false,
   },
-  // 占位话题2 内容
+  // 机型交流
   {
     id: 15, authorId: 'user-016', topicId: 10,
-    title: '占位话题2的内容示例', content: '占位话题2的示例内容。',
+    title: '装载机高强度工况油耗交流', content: '分享装载机在高强度装卸场景下的班次油耗与操作习惯。',
     image: 'images/机手社区/三一起重机/三一起重机_06.jpg',
     views: 180, likes: 28, comments: 3, date: '2026-07-10', type: 'image', auditStatus: 'approved', isLiked: false,
   },
   {
     id: 43, authorId: 'user-015', topicId: 10,
-    title: '占位话题2视频内容示例', content: '这是一条占位话题2下的视频帖子，用于验证视频卡片展示效果。',
+    title: '宽体车矿区运输路线实拍', content: '记录宽体车在矿区运输线的爬坡与会车场景。',
     image: 'images/机手社区/矿卡/矿卡_03.jpg',
     views: 240, likes: 36, comments: 7, date: '2026-07-13', type: 'video', duration: '03:45', auditStatus: 'approved', isLiked: false,
   },
@@ -403,3 +468,13 @@ export const getFollowedUserPosts = () =>
   posts.filter(
     (p) => _followedUserIds.has(p.authorId) && p.auditStatus === 'approved' && p.authorId !== CURRENT_USER_ID
   );
+
+// 统计发帖人与帖子总数（真数据统计接口）
+export const getCommunityStats = () => {
+  const authorSet = new Set(posts.map((p) => p.authorId));
+  return {
+    totalPosts: posts.length,
+    totalAuthors: authorSet.size,
+    authors: Array.from(authorSet),
+  };
+};
