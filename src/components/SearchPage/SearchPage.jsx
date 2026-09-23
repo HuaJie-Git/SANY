@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import ScannerPage from '../ScannerPage/ScannerPage';
-import { searchGuestDemoData, GUEST_DEMO_DEVICES } from '../../data/guestDemoData';
+import { searchGuestDemoData, GUEST_SEARCH_DEVICES, GUEST_DEMO_DEVICES } from '../../data/guestDemoData';
 
 const filterSearchItems = (items, keyword, keys) => {
   const normalizedKeyword = keyword.trim().toLowerCase();
@@ -32,16 +32,39 @@ const searchKeysByTab = {
 
 const HISTORY_PAGE_SIZE = 10;
 
+// 询价表单选择模式可检索的产品预置数据集（只包含产品与设备，完全排除配件）
+const INQUIRY_PRODUCTS = [
+  { id: 'inq_1', categoryName: '桩工机械', typeName: '旋挖钻机', name: '旋挖钻机', model: 'SR285R-C10', code: 'SR285R-C10', category: '产品', image: 'images/行业动态/三一起重机/三一起重机_01.jpg' },
+  { id: 'inq_2', categoryName: '桩工机械', typeName: '旋挖钻机', name: '旋挖钻机', model: 'SR215-C10', code: 'SR215-C10', category: '产品', image: 'images/行业动态/三一起重机/三一起重机_02.jpg' },
+  { id: 'inq_3', categoryName: '桩工机械', typeName: '旋挖钻机', name: '旋挖钻机', model: 'SR235S', code: 'SR235S', category: '产品', image: 'images/行业动态/三一起重机/三一起重机_03.jpg' },
+  { id: 'inq_4', categoryName: '桩工机械', typeName: '旋挖钻机', name: '旋挖钻机', model: 'SR305S', code: 'SR305S', category: '产品', image: 'images/行业动态/三一起重机/三一起重机_01.jpg' },
+  { id: 'inq_5', categoryName: '桩工机械', typeName: '旋挖钻机', name: '旋挖钻机', model: 'SR405R-W10', code: 'SR405R-W10', category: '产品', image: 'images/行业动态/三一起重机/三一起重机_02.jpg' },
+  { id: 'inq_6', categoryName: '挖掘机械', typeName: '小型挖掘机', name: '小型挖掘机', model: 'SY135C (EPA Tier4 F & EC Stage V)', code: 'SY135C (EPA Tier4 F & EC Stage V)', category: '产品', image: 'images/机手社区/挖掘机/挖掘机_02.jpg' },
+  { id: 'inq_7', categoryName: '挖掘机械', typeName: '大型挖掘机', name: '大型挖掘机', model: 'SY500H', code: 'SY500H', category: '产品', image: 'images/机手社区/挖掘机/挖掘机_04.jpg' },
+  { id: 'inq_8', categoryName: '混凝土机械', typeName: '车载混凝土泵', name: '车载混凝土泵', model: 'SYM5180THBES 30C-8', code: 'SYM5180THBES 30C-8', category: '产品', image: 'images/asset-models/sany_pump.jpg' },
+  { id: 'inq_9', categoryName: '混凝土机械', typeName: '纯电搅拌车', name: '纯电搅拌车', model: 'SYM5310BEV-8001', code: 'SYM5310BEV-8001', category: '产品', image: 'images/审核/搅拌车.jpg' },
+  { id: 'inq_10', categoryName: '挖掘机械', typeName: '履带挖掘机', name: '三一挖掘机', model: 'KT10SESE50393', code: 'KT10SESE50393', category: '产品', image: 'images/审核/挖掘机.jpg' },
+  { id: 'inq_11', categoryName: '起重机械', typeName: '汽车起重机', name: '三一起重机', model: 'KT10SESE50394', code: 'KT10SESE50394', category: '产品', image: 'images/审核/起重机.jpg' },
+  { id: 'inq_12', categoryName: '路面机械', typeName: '单钢轮压路机', name: '三一压路机', model: 'SSR260-6012', code: 'SSR260-6012', category: '产品', image: 'images/asset-models/sany_roller.jpg' },
+  { id: 'inq_13', categoryName: '路面机械', typeName: '沥青摊铺机', name: '三一摊铺机', model: 'SMP130-8015', code: 'SMP130-8015', category: '产品', image: 'images/asset-models/sany_paver.jpg' },
+  { id: 'inq_20', categoryName: '挖掘机械', typeName: '液压挖掘机', name: '挖掘机', model: 'SY014CF0113D8', code: 'SY014CF0113D8', category: '设备', image: 'images/审核/挖掘机.jpg' },
+  { id: 'inq_21', categoryName: '起重机械', typeName: '汽车起重机', name: '汽车起重机', model: 'AC0250CF0056', code: 'AC0250CF0056', category: '设备', image: 'images/审核/起重机.jpg' },
+  { id: 'inq_22', categoryName: '重卡商用', typeName: '自卸车', name: '自装卸车', model: 'HRZX2331008983', code: 'HRZX2331008983', category: '设备', image: 'images/img_dumptruck.jpg' },
+];
+
 const SearchPage = ({
   onClose,
   onOpenAsset,
   onNavigate,
   onOpenDevice,
-  onRequireLogin,
+  onRequireLogin: _onRequireLogin,
   guestMode = false,
   initialScannerOpen = false,
   initialState,
   onStateChange,
+  selectMode = false,
+  initialSelected = [],
+  onConfirmSelection,
 }) => {
   const [searchText, setSearchText] = useState(initialState?.searchText || '');
   const [activeTab, setActiveTab] = useState(initialState?.activeTab || '资产');
@@ -50,6 +73,63 @@ const SearchPage = ({
   const [historyPage, setHistoryPage] = useState(1);
   const [showScanner, setShowScanner] = useState(initialScannerOpen);
   const scannerOpenedDirectlyRef = useRef(initialScannerOpen);
+
+  // ====== 选择模式专用多选与去重状态 ======
+  const [tempSelected, setTempSelected] = useState(() => initialSelected || []);
+
+  useEffect(() => {
+    if (initialSelected) {
+      setTempSelected(initialSelected);
+    }
+  }, [initialSelected]);
+
+  const toggleSelectItem = (item) => {
+    const key = item.code || item.model || item.id || item.name;
+    setTempSelected((prev) => {
+      const exists = prev.some((x) => (x.code || x.model || x.id || x.name) === key);
+      if (exists) {
+        return prev.filter((x) => (x.code || x.model || x.id || x.name) !== key);
+      }
+      return [...prev, item];
+    });
+  };
+
+  const isItemSelected = (item) => {
+    const key = item.code || item.model || item.id || item.name;
+    return tempSelected.some((x) => (x.code || x.model || x.id || x.name) === key);
+  };
+
+  const selectModeResults = useMemo(() => {
+    if (!selectMode) return [];
+    const clean = searchText.trim().toLowerCase();
+    if (!clean) return [];
+    return INQUIRY_PRODUCTS.filter((item) => {
+      // 严格排除任何配件
+      if (item.category === '配件' || item.categoryName === '配件中心' || /滤芯|履带板|铲斗齿|配件/.test(item.name || item.typeName)) {
+        return false;
+      }
+      const name = (item.name || '').toLowerCase();
+      const model = (item.model || '').toLowerCase();
+      const code = (item.code || '').toLowerCase();
+      const category = (item.category || '').toLowerCase();
+      const target = `${name} ${model} ${code} ${category}`;
+
+      if (target.includes(clean)) return true;
+      if (clean === '挖机' && (name.includes('挖掘机') || name.includes('旋挖钻机'))) return true;
+
+      const chars = clean.split('').filter(Boolean);
+      if (chars.length > 1) {
+        let lastIndex = 0;
+        for (const c of chars) {
+          const idx = target.indexOf(c, lastIndex);
+          if (idx === -1) return false;
+          lastIndex = idx + 1;
+        }
+        return true;
+      }
+      return false;
+    });
+  }, [selectMode, searchText]);
 
   const handleScannerClose = () => {
     setShowScanner(false);
@@ -78,16 +158,15 @@ const SearchPage = ({
   }, [showScanner]);
 
   // ====== 游客模式专属状态与本地检索逻辑 (R-GUEST-SRCH-001~005, STATE-SRCH-*) ======
-  const [guestResults, setGuestResults] = useState({ products: [], parts: [], all: [], total: 0 });
+  const [guestResults, setGuestResults] = useState({ devices: [], all: [], total: 0 });
   const [guestError, setGuestError] = useState(null);
-  const [selectedPartModal, setSelectedPartModal] = useState(null);
   const [guestSimulateError, setGuestSimulateError] = useState(false);
 
   useEffect(() => {
     if (!guestMode) return;
     const clean = searchText.trim();
     if (!clean) {
-      setGuestResults({ products: [], parts: [], all: [], total: 0 });
+      setGuestResults({ devices: [], all: [], total: 0 });
       setGuestError(null);
       setIsLoading(false);
       return;
@@ -111,19 +190,7 @@ const SearchPage = ({
   }, [guestMode, searchText, guestSimulateError]);
 
   const handleGuestProductClick = (item) => {
-    const target = GUEST_DEMO_DEVICES.find((d) => d.code === item.code || d.code === item.deviceRefCode) || {
-      id: 99,
-      name: item.name,
-      displayName: item.name,
-      code: item.code,
-      image: item.image,
-      status: item.status || 'online',
-      statusText: item.statusText || '在线',
-      statusColor: 'text-green-500',
-      location: item.location || '湖南省长沙市宁乡经开区',
-      todayHours: '5.0h',
-      todayEnergy: '80.0L',
-    };
+    const target = GUEST_SEARCH_DEVICES.find((d) => d.code === item.code) || GUEST_DEMO_DEVICES.find((d) => d.code === item.code) || item;
     if (onOpenDevice) {
       onOpenDevice(target);
     } else {
@@ -535,6 +602,141 @@ const SearchPage = ({
     ? currentData
     : currentData.slice((historyPage - 1) * HISTORY_PAGE_SIZE, historyPage * HISTORY_PAGE_SIZE);
 
+  if (selectMode) {
+    const cleanSearch = searchText.trim();
+    const hasSearchKeyword = Boolean(cleanSearch);
+
+    return (
+      <div className="relative flex h-full w-full flex-col min-h-full bg-white" dir="auto">
+        {/* 顶部搜索条 (参考 IMG-INQ-002 与 IMG-INQ-003) */}
+        <header className="flex items-center px-4 pt-2 pb-3 bg-white gap-3 border-b border-gray-100 flex-shrink-0" dir="auto">
+          <div className="flex-1 h-[42px] bg-[#f2f4f7] rounded-full flex items-center px-3.5 gap-2.5 min-w-0">
+            <svg className="flex-shrink-0 text-gray-400" width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <circle cx="8.5" cy="8.5" r="6" stroke="currentColor" strokeWidth="1.8"/>
+              <path d="m13 13 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+            <input
+              ref={inputRef}
+              type="text"
+              autoFocus
+              maxLength={50}
+              dir="auto"
+              placeholder="搜索"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value.slice(0, 50))}
+              className="flex-1 bg-transparent outline-none text-[15px] text-gray-900 placeholder:text-gray-400 min-w-0"
+              aria-label="搜索"
+            />
+            {searchText && (
+              <button
+                type="button"
+                onClick={handleClear}
+                className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 active:opacity-75 transition-opacity"
+                aria-label="清空搜索"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm3.5 10.5-1 1L8 9l-2.5 2.5-1-1L7 8 4.5 5.5l1-1L8 7l2.5-2.5 1 1L9 8l2.5 2.5z"/>
+                </svg>
+              </button>
+            )}
+          </div>
+
+          {/* 右侧关闭按钮 (参考 IMG-INQ-002) */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-gray-700 active:bg-gray-100 transition-colors"
+            aria-label="关闭搜索"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </header>
+
+        {/* 内容展示区域 */}
+        <div className="flex-1 overflow-y-auto bg-white px-4 py-3 flex flex-col">
+          {!hasSearchKeyword ? (
+            /* 未输入关键词，保持白色空内容区 (IMG-INQ-002) */
+            <div className="flex-1 bg-white" />
+          ) : selectModeResults.length === 0 ? (
+            /* 输入未命中，展示无搜索结果插画 (IMG-INQ-002) */
+            <div className="flex-1 flex flex-col items-center justify-center -mt-12 py-12 text-center" dir="auto">
+              <NoResultsIllustration />
+              <div className="text-[14px] text-[#888693] mt-5">无搜索结果</div>
+            </div>
+          ) : (
+            /* 搜索结果列表 (IMG-INQ-003 卡片样式 + 多选状态) */
+            <div className="space-y-3 pt-2 pb-4">
+              {selectModeResults.map((item) => {
+                const selected = isItemSelected(item);
+                return (
+                  <div
+                    key={item.code || item.id}
+                    onClick={() => toggleSelectItem(item)}
+                    className={`flex items-center gap-3.5 p-3.5 rounded-2xl border bg-white cursor-pointer active:scale-[0.99] transition ${
+                      selected ? 'border-[#E01923] bg-red-50/10' : 'border-gray-100 hover:border-gray-200'
+                    }`}
+                    dir="auto"
+                  >
+                    <div className="w-16 h-16 rounded-xl bg-white flex items-center justify-center p-1 border border-gray-100 flex-shrink-0">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-full h-full object-contain"
+                        onError={(e) => {
+                          e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" fill="%23f3f4f6"/><text x="32" y="36" font-size="12" fill="%239ca3af" text-anchor="middle">SANY</text></svg>';
+                        }}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[16px] font-bold text-gray-900 truncate">
+                        {highlightText(item.name, searchText)}
+                      </div>
+                      <div className="mt-1 text-[14px] text-gray-500 font-normal truncate">
+                        {highlightText(item.model || item.code, searchText)}
+                      </div>
+                    </div>
+                    {/* 右侧选中状态指示圈 */}
+                    <div className="flex-shrink-0 ml-1">
+                      {selected ? (
+                        <div className="w-5 h-5 rounded-full bg-[#E01923] border-2 border-[#E01923] flex items-center justify-center text-white">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        </div>
+                      ) : (
+                        <div className="w-5 h-5 rounded-full border-2 border-gray-300" />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* 底部吸底确认栏 (包含已选数量与确认按钮) */}
+        <footer className="flex-shrink-0 bg-white border-t border-gray-100 px-4 py-3 flex items-center justify-between shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+          <div className="text-[14px] text-gray-700">
+            已选 <span className="font-bold text-[#E01923]">{tempSelected.length}</span> 项
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              onConfirmSelection?.(tempSelected);
+              onClose?.();
+            }}
+            className="px-6 py-2.5 rounded-xl bg-[#E01923] text-white text-[15px] font-bold active:bg-[#c4151e] transition shadow-sm"
+          >
+            确认
+          </button>
+        </footer>
+      </div>
+    );
+  }
+
   if (guestMode) {
     const cleanSearch = searchText.trim();
     const hasSearchKeyword = Boolean(cleanSearch);
@@ -554,11 +756,11 @@ const SearchPage = ({
               autoFocus
               maxLength={50}
               dir="auto"
-              placeholder="搜索产品和配件"
+              placeholder="搜索设备名称、型号或编号"
               value={searchText}
               onChange={(e) => setSearchText(e.target.value.slice(0, 50))}
               className="flex-1 bg-transparent outline-none text-[15px] text-gray-900 placeholder:text-gray-400 min-w-0"
-              aria-label="搜索产品和配件"
+              aria-label="搜索设备名称、型号或编号"
             />
             {searchText && (
               <button
@@ -633,20 +835,6 @@ const SearchPage = ({
           ) : !hasSearchKeyword ? (
             /* STATE-SRCH-EMPTY: 首次进入或关键词为空，保持白色空内容区 (IMG-002) */
             <div className="flex-1 bg-white" />
-          ) : isLoading ? (
-            /* 加载中骨架 */
-            <div className="space-y-3 pt-2">
-              {[1, 2, 3].map((idx) => (
-                <div key={idx} className="flex gap-3 p-3 rounded-xl border border-gray-100 animate-pulse">
-                  <div className="w-16 h-16 bg-gray-200 rounded-lg flex-shrink-0" />
-                  <div className="flex-1 space-y-2 py-1">
-                    <div className="h-4 bg-gray-200 rounded w-2/3" />
-                    <div className="h-3 bg-gray-200 rounded w-1/2" />
-                    <div className="h-3 bg-gray-200 rounded w-4/5" />
-                  </div>
-                </div>
-              ))}
-            </div>
           ) : guestResults.total === 0 ? (
             /* STATE-SRCH-NONE: 输入未命中，展示参考设计图的无搜索结果插画 */
             <div className="flex-1 flex flex-col items-center justify-center -mt-12 py-12 text-center" dir="auto">
@@ -654,26 +842,19 @@ const SearchPage = ({
               <div className="text-[14px] text-[#888693] mt-5">无搜索结果</div>
             </div>
           ) : (
-            /* STATE-SRCH-RESULT: 直接展示结果列表 (无需结果计数与演示标记栏) */
+            /* STATE-SRCH-RESULT: 直接展示 3 台假数据设备的搜索结果列表 */
             <div className="space-y-3 pt-2 pb-6">
-
               {guestResults.all.map((item) => (
                 <div
-                  key={item.id}
-                  onClick={() => {
-                    if (item.type === 'product') {
-                      handleGuestProductClick(item);
-                    } else {
-                      setSelectedPartModal(item);
-                    }
-                  }}
-                  className="flex items-start gap-3 p-3 rounded-xl border border-gray-100 bg-white shadow-xs hover:border-gray-200 active:bg-gray-50 transition-all cursor-pointer"
+                  key={item.code}
+                  onClick={() => handleGuestProductClick(item)}
+                  className="flex items-start gap-3 p-3.5 rounded-xl border border-gray-100 bg-white shadow-xs hover:border-gray-200 active:bg-gray-50 transition-all cursor-pointer"
                   dir="auto"
                 >
                   <img
                     src={item.image}
                     alt={item.name}
-                    className="w-16 h-16 rounded-lg object-cover bg-gray-100 flex-shrink-0"
+                    className="w-16 h-16 rounded-lg object-contain bg-[#f8f9fa] flex-shrink-0 p-1 border border-gray-100"
                     onError={(e) => {
                       e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" fill="%23f3f4f6"/><text x="32" y="36" font-size="12" fill="%239ca3af" text-anchor="middle">SANY</text></svg>';
                     }}
@@ -681,123 +862,36 @@ const SearchPage = ({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-[15px] font-semibold text-gray-900 truncate">
-                        {highlightText(item.name, searchText)}
+                        {highlightText(item.displayName || item.name, searchText)}
+                      </span>
+                      <span className="text-[11px] px-1.5 py-0.5 rounded-sm font-medium flex-shrink-0 bg-blue-50 text-blue-600">
+                        {item.type || '设备'}
                       </span>
                       <span className={`text-[11px] px-1.5 py-0.5 rounded-sm font-medium flex-shrink-0 ${
-                        item.type === 'product' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'
+                        item.status === 'online' ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'
                       }`}>
-                        {item.typeLabel}
-                      </span>
-                      <span className="text-[11px] px-1.5 py-0.5 rounded-sm bg-gray-100 text-gray-500 font-medium flex-shrink-0">
-                        演示
+                        {item.statusText || '在线'}
                       </span>
                     </div>
 
-                    <div className="mt-1 text-[13px] text-gray-500 space-y-0.5">
+                    <div className="mt-1 text-[13px] text-gray-500 space-y-1">
                       <div className="truncate">
-                        <span className="text-gray-400">型号/编号: </span>
+                        <span className="text-gray-400">设备编号: </span>
                         <span className="font-mono text-gray-700">
-                          {highlightText(item.model || item.code, searchText)}
+                          {highlightText(item.code, searchText)}
                         </span>
-                        {item.code && item.model && (
-                          <span className="text-gray-400 ml-1.5 font-mono">
-                            ({highlightText(item.code, searchText)})
-                          </span>
-                        )}
                       </div>
-                      <p className="text-[12px] text-gray-400 break-words line-clamp-1">
-                        {item.spec}
-                      </p>
+                      <div className="flex items-center gap-3 text-[12px] text-gray-400">
+                        <span>位置: {item.location || '中国'}</span>
+                        <span>时间: {item.reportTime || '2026-09-23 08:30 (UTC+8)'}</span>
+                      </div>
                     </div>
-
-                    {item.type === 'part' && (
-                      <div className="mt-2 flex items-center justify-between text-[13px]">
-                        <span className="text-[#d40014] font-semibold">¥{item.price}</span>
-                        <span className="text-[11px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-sm font-medium">
-                          {item.stock}
-                        </span>
-                      </div>
-                    )}
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
-
-        {/* 配件演示详情弹窗（R-GUEST-SRCH-003） */}
-        {selectedPartModal && (
-          <div className="absolute inset-0 z-60 flex items-end justify-center bg-black/50" onClick={() => setSelectedPartModal(null)}>
-            <div
-              className="w-full max-w-[393px] bg-white rounded-t-2xl p-4 shadow-2xl animate-in slide-in-from-bottom duration-200"
-              onClick={(e) => e.stopPropagation()}
-              dir="auto"
-            >
-              <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                <div className="flex items-center gap-2">
-                  <span className="text-[16px] font-bold text-gray-900">配件详情</span>
-                  <span className="text-[11px] px-1.5 py-0.5 rounded-sm bg-blue-50 text-blue-600 font-medium">演示配件</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedPartModal(null)}
-                  className="p-1 text-gray-400 hover:text-gray-600 active:opacity-75"
-                  aria-label="关闭详情"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/>
-                    <line x1="6" y1="6" x2="18" y2="18"/>
-                  </svg>
-                </button>
-              </div>
-
-              <div className="py-3 flex gap-3 items-center">
-                <img src={selectedPartModal.image} alt={selectedPartModal.name} className="w-20 h-20 rounded-xl object-cover bg-gray-100 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-[16px] font-semibold text-gray-900 truncate">{selectedPartModal.name}</h4>
-                  <p className="text-[13px] text-gray-500 font-mono mt-0.5">型号: {selectedPartModal.model}</p>
-                  <p className="text-[12px] text-gray-400 font-mono">编号: {selectedPartModal.code}</p>
-                  <p className="text-[16px] font-bold text-[#d40014] mt-1">¥{selectedPartModal.price}</p>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 rounded-xl p-3 mb-4 text-[13px] text-gray-600 space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">规格参数</span>
-                  <span className="text-gray-800 text-right truncate max-w-[200px]">{selectedPartModal.spec}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">库存状态</span>
-                  <span className="text-emerald-600 font-medium">{selectedPartModal.stock}</span>
-                </div>
-              </div>
-
-              {/* R-GUEST-SRCH-003: 任何询价、收藏、绑定、下单或其他真实业务写入均进入登录承接，不伪造成功 */}
-              <div className="grid grid-cols-2 gap-3 pt-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedPartModal(null);
-                    onRequireLogin?.('询价需登录后使用');
-                  }}
-                  className="py-2.5 rounded-full border border-[#d40014] text-[#d40014] text-[14px] font-medium active:bg-red-50 transition-colors"
-                >
-                  立即询价
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedPartModal(null);
-                    onRequireLogin?.('订购配件需登录后使用');
-                  }}
-                  className="py-2.5 rounded-full bg-[#d40014] text-white text-[14px] font-medium active:opacity-90 transition-opacity"
-                >
-                  立即订购
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     );
   }

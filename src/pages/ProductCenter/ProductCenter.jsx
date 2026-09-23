@@ -166,7 +166,42 @@ const COUNTRY_OPTIONS = [
   { code: '+7', name: '俄罗斯', flag: '🇷🇺' },
 ];
 
-const ProductCenter = ({ onBack, initialItem }) => {
+// 基线产品中心（db62a7e 登录态：标准单个产品详情视图）
+const BaselineProductCenter = ({ onBack, initialItem }) => {
+  const product = initialItem || {
+    name: '车载混凝土泵',
+    code: 'SYM5180THBES 30C-8',
+    image: 'images/asset-models/sany_pump.jpg',
+  };
+
+  return (
+    <div className="flex h-full flex-col bg-white text-gray-900">
+      <header className="flex h-[56px] flex-shrink-0 items-center border-b border-gray-100 px-4">
+        <button type="button" onClick={onBack} className="flex h-9 w-9 items-center justify-center rounded-full active:bg-gray-100" aria-label="返回">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m15 18-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </button>
+        <h1 className="flex-1 pr-9 text-center text-[17px] font-semibold">产品中心</h1>
+      </header>
+
+      <main className="flex-1 overflow-y-auto px-5 pb-8 pt-5">
+        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-[0_5px_20px_rgba(31,41,55,0.07)]">
+          <div className="flex h-[280px] items-center justify-center bg-[#fafafa] p-5">
+            <img src={product.image} alt={product.name} className="h-full w-full object-contain" />
+          </div>
+          <div className="px-5 py-5 text-center">
+            <h2 className="text-[22px] font-semibold leading-8">{product.name || '--'}</h2>
+            <div className="mt-3 inline-flex max-w-full items-center rounded-lg bg-gray-50 px-4 py-2 text-[15px] leading-5 tabular-nums text-gray-700">
+              <span className="truncate" title={product.code}>{product.code || '--'}</span>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+// 游客体验模式专属产品中心（b5ded1b：多级品类、型号、对比与询价）
+const GuestProductCenter = ({ onBack, initialItem, onRequireLogin }) => {
   // 视图控制: 'categories' (图1) | 'modelList' (图2) | 'detail' (图3) | 'inquiry' (图4)
   const [currentView, setCurrentView] = useState(initialItem ? 'detail' : 'categories');
 
@@ -205,14 +240,13 @@ const ProductCenter = ({ onBack, initialItem }) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
-  // 询价信息表单数据 (未登录游客状态下：仅能获取设备信息，联系人、手机号、邮箱、国家/地区、城市等需要用户手动填写)
+  // 询价信息表单数据（游客需要手动填写联系人、手机号、邮箱和国家/地区）
   const [inquiryForm, setInquiryForm] = useState({
     contactName: '张华杰',
     phoneCode: '+86',
     phoneNumber: '17673841261',
     email: '2874329754@qq.com',
     country: '中国',
-    city: '',
   });
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [showInquirySuccess, setShowInquirySuccess] = useState(false);
@@ -281,10 +315,6 @@ const ProductCenter = ({ onBack, initialItem }) => {
     }
     if (!inquiryForm.phoneNumber.trim()) {
       setInquiryError('请填写手机号码');
-      return;
-    }
-    if (!inquiryForm.email.trim()) {
-      setInquiryError('请填写电子邮箱');
       return;
     }
     setInquiryError('');
@@ -707,6 +737,10 @@ const ProductCenter = ({ onBack, initialItem }) => {
           <button
             type="button"
             onClick={() => {
+              if (onRequireLogin) {
+                onRequireLogin();
+                return;
+              }
               // 自动将当前选中的设备型号带入询价表单
               setCurrentView('inquiry');
             }}
@@ -817,7 +851,7 @@ const ProductCenter = ({ onBack, initialItem }) => {
           {/* 字段 4：邮箱 (需手动填写) */}
           <div className="rounded-xl bg-[#F3F4F6] p-3.5">
             <div className="flex items-center text-[13px] text-gray-600">
-              <span className="mr-0.5 text-red-500">*</span>邮箱
+              邮箱
             </div>
             <div className="mt-1 flex items-center justify-between">
               <input
@@ -856,31 +890,7 @@ const ProductCenter = ({ onBack, initialItem }) => {
             </svg>
           </div>
 
-          {/* 字段 6：城市/地区 (需手动填写) */}
-          <div className="rounded-xl bg-[#F3F4F6] p-3.5">
-            <div className="flex items-center text-[13px] text-gray-600">
-              <span className="mr-0.5 text-red-500">*</span>城市/地区
-            </div>
-            <div className="mt-1 flex items-center justify-between">
-              <input
-                type="text"
-                value={inquiryForm.city}
-                onChange={(e) => setInquiryForm({ ...inquiryForm, city: e.target.value })}
-                placeholder="请输入省份/城市/地区（如：北京市朝阳区）"
-                className="w-full bg-transparent text-[16px] font-medium text-gray-900 placeholder-gray-400 outline-none"
-              />
-              {inquiryForm.city && (
-                <button
-                  type="button"
-                  onClick={() => setInquiryForm({ ...inquiryForm, city: '' })}
-                  className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-300 text-gray-600"
-                  aria-label="清空城市"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          </div>
+
 
           {inquiryError && (
             <div className="rounded-lg bg-red-50 p-2.5 text-[13px] text-red-600">
@@ -998,6 +1008,13 @@ const ProductCenter = ({ onBack, initialItem }) => {
       )}
     </div>
   );
+};
+
+const ProductCenter = ({ onBack, initialItem, demoMode = false, onRequireLogin }) => {
+  if (demoMode) {
+    return <GuestProductCenter onBack={onBack} initialItem={initialItem} onRequireLogin={onRequireLogin} />;
+  }
+  return <BaselineProductCenter onBack={onBack} initialItem={initialItem} />;
 };
 
 export default ProductCenter;

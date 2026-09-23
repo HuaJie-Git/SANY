@@ -15,12 +15,6 @@ const TaskList = ({ onBack, onTaskClick, onRequireLogin, demoMode = false }) => 
   const [timeFilter, setTimeFilter] = useState({ start: '', end: '' });
 
   const handleTaskClick = (task) => {
-    if (demoMode || onRequireLogin) {
-      if (onRequireLogin) {
-        onRequireLogin();
-        return;
-      }
-    }
     if (onTaskClick) {
       onTaskClick(task);
     }
@@ -30,7 +24,7 @@ const TaskList = ({ onBack, onTaskClick, onRequireLogin, demoMode = false }) => 
   useEffect(() => {
     setLoading(true);
     const timer = setTimeout(() => {
-      let filteredTasks = [...getAllTasks()];
+      let filteredTasks = [...getAllTasks(demoMode)];
 
       // 根据视图筛选
       if (activeTab === 'my') {
@@ -82,7 +76,7 @@ const TaskList = ({ onBack, onTaskClick, onRequireLogin, demoMode = false }) => 
       setLoading(false);
     }, 500);
     return () => clearTimeout(timer);
-  }, [activeTab, selectedStatus, selectedPriority, selectedTaskType, searchQuery, sortBy, timeFilter]);
+  }, [activeTab, selectedStatus, selectedPriority, selectedTaskType, searchQuery, sortBy, timeFilter, demoMode]);
 
   // 获取优先级样式
   const getPriorityStyle = (priority) => {

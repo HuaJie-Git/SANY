@@ -18,7 +18,7 @@ const QuickAccess = ({
   onUnavailable,
   primaryItems,
   applications = [],
-  showInquiryShortcut = false,
+  _showInquiryShortcut = false,
   demoMode = false,
   onRequireLogin,
 }) => {
@@ -26,19 +26,19 @@ const QuickAccess = ({
   const scrollRef = useRef(null);
 
   const guestFirstScreenItems = [
-    { id: 'guest-inquiry', name: '我要询价', icon: '询价', color: '#FFE3D6', target: 'inquiry' },
+    { id: 'guest-inquiry', name: '我要询价', icon: '询价', color: '#FFE3D6', target: 'inquiry', badge: 'hot' },
     { id: 'guest-voice', name: '客户心声', icon: '心声', color: '#D7BDE2', target: 'feedback' },
     { id: 'guest-service', name: '服务中心', icon: '服务', color: '#F7DC6F', target: 'serviceCenter' },
-    { id: 'guest-products', name: '产品中心', icon: '产品', color: '#96CEB4', target: 'productCenter' },
-    { id: 'guest-survey', name: '调研问卷', icon: '问卷', color: '#F8C471', target: 'survey', isHalfHidden: true },
+    { id: 'guest-survey', name: '调研问卷', icon: '问卷', color: '#F8C471', target: 'survey' },
+    { id: 'guest-products', name: '产品中心', icon: '产品', color: '#96CEB4', target: 'productCenter', isHalfHidden: true },
   ];
 
   const defaultFirstScreenItems = [
+    { id: 'default-inquiry', name: '我要询价', icon: '询价', color: '#FFE3D6', target: 'inquiry', badge: 'hot' },
     { id: 1, name: '我要配件', icon: '配件', color: '#FF6B6B' },
     { id: 2, name: '我要召请', icon: '召请', color: '#4ECDC4' },
     { id: 3, name: '设备保养', icon: '保养', color: '#45B7D1' },
-    { id: 4, name: '产品中心', icon: '产品', color: '#96CEB4' },
-    { id: 5, name: '机群报表', icon: '报表', color: '#FFEAA7', isHalfHidden: true },
+    { id: 4, name: '产品中心', icon: '产品', color: '#96CEB4', isHalfHidden: true },
   ];
   const shortcutOverrides = {
     assets: { name: '产品中心', icon: '产品', color: '#96CEB4', target: 'productCenter' },
@@ -52,14 +52,10 @@ const QuickAccess = ({
           isHalfHidden: index === 4,
         }))
       : defaultFirstScreenItems;
-  const inquiryShortcut = { id: 'experience-inquiry', name: '我要询价', icon: '询价', color: '#FFE3D6', target: 'inquiry' };
-  const firstScreenItems = demoMode
-    ? guestFirstScreenItems
-    : showInquiryShortcut
-      ? [...baseFirstScreenItems.slice(0, 4), inquiryShortcut]
-      : baseFirstScreenItems;
+  const firstScreenItems = demoMode ? guestFirstScreenItems : baseFirstScreenItems;
 
   const defaultSecondScreenItems = [
+    { id: 'app-inquiry', name: '我要询价', icon: '询价', color: '#FFE3D6', target: 'inquiry', badge: 'hot' },
     { id: 5, name: '机群报表', icon: '报表', color: '#FFEAA7' },
     { id: 'app-check', name: '检查', icon: '检查', color: '#48C9B0' },
     { id: 'app-fleet', name: '重卡车队运营', icon: '车队', color: '#5DADE2' },
@@ -173,7 +169,7 @@ const QuickAccess = ({
     onUnavailable?.(item);
   };
 
-  const renderIcon = (iconName) => {
+  const renderIcon = (iconName, badge = null) => {
     const iconSize = 24;
 
     const getIcon = (name) => {
@@ -379,8 +375,16 @@ const QuickAccess = ({
     };
 
     return (
-      <div className="w-[56px] h-[56px] bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100">
+      <div className="relative w-[56px] h-[56px] bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100">
         {getIcon(iconName)}
+        {badge && (
+          <span
+            className="absolute top-1 right-1 rtl:right-auto rtl:left-1 inline-flex items-center justify-center px-1.5 py-[2px] min-w-[20px] rounded-full bg-gradient-to-r from-[#FF3B30] to-[#E01923] text-white text-[8.5px] font-extrabold leading-none tracking-tight shadow-[0_1px_2px_rgba(224,25,35,0.35)] -rotate-12 rtl:rotate-12 pointer-events-none select-none z-20"
+            dir="ltr"
+          >
+            {badge}
+          </span>
+        )}
       </div>
     );
   };
@@ -402,30 +406,36 @@ const QuickAccess = ({
         {/* 第一屏 - 5个图标，第5个半隐藏 */}
         <div className="flex-shrink-0 w-[343px] overflow-hidden" style={{ scrollSnapAlign: 'start' }}>
           <div className="flex" style={{ gap: '12px' }}>
-            {firstScreenItems.map((item) => (
-              <button
-                type="button"
-                key={item.id}
-                className={`flex flex-col items-center flex-shrink-0 ${item.isHalfHidden ? 'opacity-60' : ''}`}
-                style={{ width: '64px' }}
-                onClick={() => handleFunctionClick(item)}
-              >
-                {renderIcon(item.icon)}
-                <span className="text-[11px] text-text-primary mt-1 text-center">{item.name}</span>
-              </button>
-            ))}
+            {firstScreenItems.map((item) => {
+              const badge = item.badge || (item.name === '我要询价' || item.target === 'inquiry' ? 'hot' : null);
+              return (
+                <button
+                  type="button"
+                  key={item.id}
+                  className={`flex flex-col items-center flex-shrink-0 ${item.isHalfHidden ? 'opacity-60' : ''}`}
+                  style={{ width: '64px' }}
+                  onClick={() => handleFunctionClick(item)}
+                >
+                  {renderIcon(item.icon, badge)}
+                  <span className="text-[11px] text-text-primary mt-1 text-center">{item.name}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* 第二屏 - 两行图标 */}
         <div className="flex-shrink-0 w-[343px]" style={{ scrollSnapAlign: 'start' }}>
           <div className="grid grid-cols-5 gap-y-2">
-            {secondScreenItems.map((item) => (
-              <button type="button" key={item.id} className="flex flex-col items-center" style={{ width: '68px' }} onClick={() => handleFunctionClick(item)}>
-                {renderIcon(item.icon)}
-                <span className="text-[11px] text-text-primary mt-1 text-center">{item.name}</span>
-              </button>
-            ))}
+            {secondScreenItems.map((item) => {
+              const badge = item.badge || (item.name === '我要询价' || item.target === 'inquiry' ? 'hot' : null);
+              return (
+                <button type="button" key={item.id} className="flex flex-col items-center" style={{ width: '68px' }} onClick={() => handleFunctionClick(item)}>
+                  {renderIcon(item.icon, badge)}
+                  <span className="text-[11px] text-text-primary mt-1 text-center">{item.name}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  topics,
+  BASE_TOPICS,
+  GUEST_TOPICS,
   getTopicByName,
   getContentsByTopicName,
   getMyVisiblePosts,
@@ -12,9 +13,10 @@ import {
 import MyPublishPage from './MyPublishPage';
 import FollowTab from './FollowTab';
 import WaterfallCard from './WaterfallCard';
+import { EmptyBoxIllustration } from '../../pages/Audit/Audit';
 
 const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewportActive, demoMode = false, onRequireLogin }) => {
-  const [activeTab, setActiveTab] = useState('故障求助');
+  const [activeTab, setActiveTab] = useState(demoMode ? '故障求助' : '我的');
   const [drillDown, setDrillDown] = useState(null);
   const [showInteractions, setShowInteractions] = useState(false);
   const [interactionHint, setInteractionHint] = useState('');
@@ -27,8 +29,15 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
   // 标记组件已完成首次挂载
   const mountedRef = useRef(false);
 
-  // 二级Tab：对齐截图实景
-  const tabs = ['故障求助', '经验分享', '话题', '关注', '我的'];
+  useEffect(() => {
+    setActiveTab(demoMode ? '故障求助' : '我的');
+    setDrillDown(null);
+  }, [demoMode]);
+
+  // 二级Tab：游客模式对齐截图实景，登录态恢复占位话题基线
+  const tabs = demoMode
+    ? ['故障求助', '经验分享', '话题', '关注', '我的']
+    : ['占位话题1', '占位话题2', '全部话题', '关注', '我的'];
 
   const supportedInteractionTypes = new Set(['post_comment', 'post_audit_pass', 'post_audit_reject', 'comment_admin_deleted']);
   const unreadInteractions = communityInteractions.filter((item) => item.unread && supportedInteractionTypes.has(item.interactionType));
@@ -79,10 +88,6 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
 
   // Tab点击
   const handleTabClick = (tab) => {
-    if (demoMode && ['关注', '我的'].includes(tab)) {
-      onRequireLogin?.();
-      return;
-    }
     setActiveTab(tab);
     setDrillDown(null);
     if (tabContainerRef.current) {
@@ -166,7 +171,45 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
 
   // 渲染首页 - "我的"Tab
   const renderMyTabHome = () => {
-    const visiblePosts = getMyVisiblePosts();
+    if (demoMode) {
+      return (
+        <div className="space-y-3">
+          {/* 社区互动卡片 - 对齐截图3 */}
+          <button
+            type="button"
+            className="flex w-full items-center justify-between rounded-2xl bg-white p-4 shadow-2xs border border-gray-100/80 text-left active:bg-gray-50 transition-colors cursor-pointer"
+            onClick={() => setShowInteractions(true)}
+          >
+            <div className="flex items-center gap-3.5 min-w-0">
+              <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[#FFF7ED] border border-[#FED7AA] text-[#F97316]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  <line x1="8" y1="9" x2="16" y2="9" />
+                  <line x1="8" y1="13" x2="14" y2="13" />
+                </svg>
+              </span>
+              <div className="min-w-0">
+                <div className="text-[15px] font-bold text-gray-900 truncate">社区互动</div>
+                <div className="mt-0.5 text-[12px] text-gray-500 truncate">1条社区互动未读，点击查看</div>
+              </div>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 flex-shrink-0">
+              <path strokeLinecap="round" strokeLinejoin="round" d="m9 18 6-6-6-6" />
+            </svg>
+          </button>
+
+          {/* 下方空态 - 对齐截图3 */}
+          <div className="bg-white rounded-2xl min-h-[420px] flex flex-col items-center justify-center p-8 shadow-2xs border border-gray-100/60">
+            <EmptyBoxIllustration />
+            <p className="text-[13px] text-gray-400 mt-2 font-normal">
+              暂无话题内容
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    const visiblePosts = getMyVisiblePosts(demoMode);
     return (
       <div>
         {unreadInteractions.length > 0 && (
@@ -204,15 +247,60 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
     );
   };
 
-  const renderInteractions = () => (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
-        <button type="button" className="flex h-8 w-8 items-center justify-center rounded-full active:bg-gray-100" aria-label="返回我的" onClick={() => setShowInteractions(false)}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
-        </button>
-        <h3 className="text-[16px] font-semibold text-gray-900">社区互动</h3>
-        {unreadInteractions.length > 0 && <button type="button" className="ml-auto text-[12px] text-brand-red" onClick={handleMarkAllRead}>全部已读</button>}
-      </div>
+  const renderInteractions = () => {
+    if (demoMode) {
+      return (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
+            <button
+              type="button"
+              className="flex h-8 w-8 items-center justify-center rounded-full active:bg-gray-100"
+              aria-label="返回我的"
+              onClick={() => setShowInteractions(false)}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+            </button>
+            <h3 className="text-[16px] font-semibold text-gray-900">社区互动</h3>
+            <button
+              type="button"
+              className="ml-auto text-[12px] text-gray-400 active:text-gray-600"
+              onClick={() => {
+                setInteractionHint('已全部标记为已读');
+                clearTimeout(interactionHintTimerRef.current);
+                interactionHintTimerRef.current = window.setTimeout(() => setInteractionHint(''), 1800);
+              }}
+            >
+              全部已读
+            </button>
+          </div>
+
+          <div className="bg-white rounded-2xl min-h-[460px] flex flex-col items-center justify-center p-8 shadow-2xs border border-gray-100/60">
+            <EmptyBoxIllustration />
+            <p className="text-[13px] text-gray-400 mt-2 font-normal">
+              暂无数据
+            </p>
+          </div>
+
+          {interactionHint && (
+            <div className="pointer-events-none absolute bottom-24 left-1/2 z-[70] -translate-x-1/2 rounded-full bg-gray-900/85 px-4 py-2 text-[12px] text-white shadow-lg" role="status">
+              {interactionHint}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
+          <button type="button" className="flex h-8 w-8 items-center justify-center rounded-full active:bg-gray-100" aria-label="返回我的" onClick={() => setShowInteractions(false)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+          </button>
+          <h3 className="text-[16px] font-semibold text-gray-900">社区互动</h3>
+          {unreadInteractions.length > 0 && <button type="button" className="ml-auto text-[12px] text-brand-red" onClick={handleMarkAllRead}>全部已读</button>}
+        </div>
       {sortedInteractions.map((item) => {
         const post = posts.find((candidate) => candidate.id === item.postId);
         const isDeletedPost = item.targetStatus === 'post_deleted' || item.targetStatus === 'inaccessible';
@@ -302,6 +390,7 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
       )}
     </div>
   );
+};
 
   // 渲染首页 - "关注"Tab
   const renderFollowTabHome = () => (
@@ -309,55 +398,58 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
   );
 
   // 渲染首页 - "全部话题"Tab（话题分类目录）
-  const renderAllTabHome = () => (
-    <div className="space-y-2.5">
-      {topics.map((topic) => (
-        <div
-          key={topic.id}
-          className="bg-white rounded-xl px-4 py-3 shadow-sm cursor-pointer flex items-center gap-3 active:bg-gray-50 transition-colors"
-          onClick={() => onTopicClick?.(topic.name, 'directory')}
-        >
+  const renderAllTabHome = () => {
+    const currentTopics = demoMode ? GUEST_TOPICS : BASE_TOPICS;
+    return (
+      <div className="space-y-2.5">
+        {currentTopics.map((topic) => (
           <div
-            className="w-10 h-10 rounded-full flex items-center justify-center text-base flex-shrink-0"
-            style={{ backgroundColor: topic.color + '20' }}
+            key={topic.id}
+            className="bg-white rounded-xl px-4 py-3 shadow-sm cursor-pointer flex items-center gap-3 active:bg-gray-50 transition-colors"
+            onClick={() => onTopicClick?.(topic.name, 'directory')}
           >
-            {topic.icon}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[14px] font-medium text-gray-900 truncate">{topic.name}</div>
-            <div className="text-[12px] text-gray-500 truncate mt-0.5">{topic.description}</div>
-            <div className="flex items-center gap-3 mt-1 text-[11px] text-gray-400">
-              <span className="flex items-center gap-1">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-                {topic.viewCount.toLocaleString()}
-              </span>
-              <span className="flex items-center gap-1">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                  <circle cx="9" cy="7" r="4"/>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-                {topic.participantCount.toLocaleString()}
-              </span>
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center text-base flex-shrink-0"
+              style={{ backgroundColor: topic.color + '20' }}
+            >
+              {topic.icon}
             </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[14px] font-medium text-gray-900 truncate">{topic.name}</div>
+              <div className="text-[12px] text-gray-500 truncate mt-0.5">{topic.description}</div>
+              <div className="flex items-center gap-3 mt-1 text-[11px] text-gray-400">
+                <span className="flex items-center gap-1">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  {topic.viewCount.toLocaleString()}
+                </span>
+                <span className="flex items-center gap-1">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                  </svg>
+                  {topic.participantCount.toLocaleString()}
+                </span>
+              </div>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="2" className="flex-shrink-0">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
           </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="2" className="flex-shrink-0">
-            <path d="M9 18l6-6-6-6" />
-          </svg>
-        </div>
-      ))}
-    </div>
-  );
+        ))}
+      </div>
+    );
+  };
 
   // 渲染首页 - 占位话题Tab
   const renderPlaceholderTabHome = () => {
-    const topic = getTopicByName(activeTab);
+    const topic = getTopicByName(activeTab, demoMode);
     if (!topic) return null;
-    const contents = getContentsByTopicName(activeTab);
+    const contents = getContentsByTopicName(activeTab, demoMode);
     return (
       <div>
         {contents.length === 0 ? (
@@ -396,38 +488,64 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
     return null;
   };
 
+  const isAllTopicTab = demoMode ? activeTab === '话题' : activeTab === '全部话题';
+
   return (
     <div className="w-full">
-      {/* 二级Tab - 对齐截图实景 */}
-      <div className="mb-3.5 border-b border-gray-100">
-        <div ref={tabContainerRef} className="flex items-center justify-between px-1">
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab;
-            return (
+      {/* 二级Tab */}
+      {demoMode ? (
+        <div className="mb-3.5 border-b border-gray-100">
+          <div ref={tabContainerRef} className="flex items-center justify-between px-1">
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab;
+              return (
+                <div
+                  key={tab}
+                  data-tab={tab}
+                  className="relative pb-2 cursor-pointer whitespace-nowrap text-center select-none"
+                  onClick={() => handleTabClick(tab)}
+                >
+                  <span className="relative inline-flex items-center">
+                    <span className={`text-[15px] transition-colors ${
+                      isActive ? 'text-[#E01923] font-bold text-[16px]' : 'text-[#666666] font-medium'
+                    }`}>
+                      {tab}
+                    </span>
+                    {tab === '我的' && (
+                      <span className="absolute -top-0.5 -right-2 h-1.5 w-1.5 rounded-full bg-[#E01923]" aria-label="有未读社区互动" />
+                    )}
+                  </span>
+                  {isActive && (
+                    <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#E01923] rounded-full" />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <div className="mb-3 border-b border-gray-100">
+          <div ref={tabContainerRef} className="flex overflow-x-auto scrollbar-hide">
+            {tabs.map((tab) => (
               <div
                 key={tab}
                 data-tab={tab}
-                className="relative pb-2 cursor-pointer whitespace-nowrap text-center select-none"
+                className={`pb-2 cursor-pointer whitespace-nowrap transition-all duration-300 flex-shrink-0 px-3 text-[13px] ${
+                  activeTab === tab ? 'text-gray-900 font-medium' : 'text-gray-500'
+                }`}
                 onClick={() => handleTabClick(tab)}
               >
-                <span className="relative inline-flex items-center">
-                  <span className={`text-[15px] transition-colors ${
-                    isActive ? 'text-[#E01923] font-bold text-[16px]' : 'text-[#666666] font-medium'
-                  }`}>
-                    {tab}
-                  </span>
-                  {tab === '我的' && (
-                    <span className="absolute -top-0.5 -right-2 h-1.5 w-1.5 rounded-full bg-[#E01923]" aria-label="有未读社区互动" />
+                <span className="relative inline-flex items-center gap-1">
+                  {tab}
+                  {tab === '我的' && unreadInteractions.length > 0 && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-brand-red" aria-label="有未读社区互动" />
                   )}
                 </span>
-                {isActive && (
-                  <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#E01923] rounded-full" />
-                )}
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {showInteractions ? renderInteractions() : (
       <>
@@ -441,8 +559,8 @@ const CommunityTab = ({ onPostClick, onTopicClick, setCommunitySubTab, setViewpo
         <div>
           {activeTab === '我的' && renderMyTabHome()}
           {activeTab === '关注' && renderFollowTabHome()}
-          {activeTab === '话题' && renderAllTabHome()}
-          {activeTab !== '我的' && activeTab !== '关注' && activeTab !== '话题' && renderPlaceholderTabHome()}
+          {isAllTopicTab && renderAllTabHome()}
+          {activeTab !== '我的' && activeTab !== '关注' && !isAllTopicTab && renderPlaceholderTabHome()}
         </div>
       )}
       </>

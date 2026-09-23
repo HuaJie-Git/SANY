@@ -1,89 +1,61 @@
-export const GUEST_DEMO_DEVICES = [
+export const GUEST_SEARCH_DEVICES = [
   {
     id: 17,
     name: '挖掘机',
     displayName: '挖掘机',
     code: 'SY014CF0113D8',
+    model: 'SY014CF0113D8',
+    type: '挖掘机',
+    typeLabel: '设备',
     image: 'images/审核/挖掘机.jpg',
     status: 'online',
     statusText: '工作',
     statusColor: 'text-green-500',
-    location: '苏州市·吴中施工区',
+    location: '中国',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
     todayHours: '0.01h',
     todayEnergy: '0.15L',
     auditCounts: { check: 1, exception: 99, maintenance: 37, fuel: 3, location: 0 },
-  },
-  {
-    id: 16,
-    name: '搅拌车',
-    displayName: '搅拌车',
-    code: 'HSGJ1051016142',
-    image: 'images/img_mixer.jpg',
-    status: 'offline',
-    statusText: '离线',
-    statusColor: 'text-gray-400',
-    location: '太古漆油, 清甜街, 西草湾, 新界, 香港',
-    todayHours: '3.32h',
-    todayEnergy: '29%',
-    auditCounts: { check: 2, exception: 4, maintenance: 12, fuel: 1, location: 0 },
   },
   {
     id: 18,
     name: '汽车起重机',
     displayName: '汽车起重机',
     code: 'AC0250CF0056',
+    model: 'AC0250CF0056',
+    type: '汽车起重机',
+    typeLabel: '设备',
     image: 'images/审核/起重机.jpg',
     status: 'offline',
     statusText: '离线',
     statusColor: 'text-gray-400',
-    location: '43, Senoko Way, Sembawang, Singapore, 新加坡, 758054',
+    location: '中国',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
     todayHours: '0.06h',
     todayEnergy: '76.8%',
     auditCounts: { check: 3, exception: 8, maintenance: 15, fuel: 0, location: 2 },
   },
   {
-    id: 21,
-    name: '矿用宽体自卸车',
-    displayName: '矿用宽体自卸车',
-    code: 'KT090AE20208',
-    image: 'images/机手社区/矿卡/矿卡_01.jpg',
-    status: 'online',
-    statusText: '工作',
-    statusColor: 'text-green-500',
-    location: '45H2+HF Simpang Empat Sungai Baru, Tanah Laut Regency, South Kalimantan, 印度尼西亚',
-    todayHours: '0.14h',
-    todayEnergy: '7L',
-    auditCounts: { check: 2, exception: 11, maintenance: 20, fuel: 2, location: 1 },
-  },
-  {
     id: 19,
-    name: '自卸车',
-    displayName: '自卸车',
+    name: '自装卸车',
+    displayName: '自装卸车',
     code: 'HRZX2331008983',
+    model: 'HRZX2331008983',
+    type: '自装卸车',
+    typeLabel: '设备',
     image: 'images/img_dumptruck.jpg',
     status: 'online',
     statusText: '停车',
     statusColor: 'text-blue-500',
-    location: '67QG+XW Na Som, Chai Badan District, Lopburi, 泰国',
+    location: '中国',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
     todayHours: '0.0h',
     todayEnergy: '78%',
     auditCounts: { check: 1, exception: 5, maintenance: 16, fuel: 0, location: 0 },
   },
-  {
-    id: 20,
-    name: '电动装载机',
-    displayName: '电动装载机',
-    code: 'SW970EACG0278',
-    image: 'images/img_earthwork.jpg',
-    status: 'online',
-    statusText: '工作',
-    statusColor: 'text-green-500',
-    location: '4MWV+72 Khlong Khlung, Khlong Khlung District, Kamphaeng Phet, 泰国',
-    todayHours: '0.28h',
-    todayEnergy: '72%',
-    auditCounts: { check: 2, exception: 7, maintenance: 19, fuel: 0, location: 1 },
-  },
 ];
+
+export const GUEST_DEMO_DEVICES = GUEST_SEARCH_DEVICES;
 
 export const getGuestDemoDevice = (code) => GUEST_DEMO_DEVICES.find((device) => device.code === code);
 
@@ -94,6 +66,120 @@ export const GUEST_AUDIT_CATEGORIES = [
   { id: 'fuel', name: '燃油异常' },
   { id: 'location', name: '位置预警' },
 ];
+
+export const GUEST_AUDIT_TAB_DEVICES = {
+  exception: [
+    {
+      id: 'HRZX2331008983',
+      code: 'HRZX2331008983',
+      name: '自装卸车',
+      displayName: '自装卸车',
+      title: '自装卸车',
+      subtitle: 'Sany · 自装卸车',
+      type: 'Sany · 自装卸车',
+      image: 'images/img_dumptruck.jpg',
+      newBadge: '5新',
+      countBadge: 6,
+      activeCategory: 'exception',
+      categoryName: '设备异常',
+      events: [
+        {
+          id: 'exc-1',
+          tag: '故障码',
+          title: '制动开关信号故障(SPN 522738 FMI 12)',
+          time: '2026-09-15 13:01:47 (UTC+7)',
+          isNew: true,
+        },
+        {
+          id: 'exc-2',
+          tag: '故障码',
+          title: 'EBS节点丢失故障(SPN 522715 FMI 12)',
+          time: '2026-09-23 08:30 (UTC+8)',
+          isNew: true,
+        },
+        {
+          id: 'exc-3',
+          tag: '故障码',
+          title: '挂车左转向灯开路(SPN 2372 FMI 5)',
+          time: '2026-09-23 08:30 (UTC+8)',
+          isNew: true,
+        },
+        {
+          id: 'exc-4',
+          tag: '故障码',
+          title: 'CAN总线通讯中断(SPN 522700 FMI 9)',
+          time: '2026-09-22 17:15:02 (UTC+8)',
+          isNew: true,
+        },
+        {
+          id: 'exc-5',
+          tag: '故障码',
+          title: '发动机机油压力过低警告',
+          time: '2026-09-22 14:08:33 (UTC+8)',
+          isNew: true,
+        },
+        {
+          id: 'exc-6',
+          tag: '故障码',
+          title: '尿素加热继电器线路故障',
+          time: '2026-09-21 09:42:19 (UTC+8)',
+          isNew: false,
+        },
+      ],
+    },
+  ],
+  check: [
+    {
+      id: 'AC0250CF0056',
+      code: 'AC0250CF0056',
+      name: '汽车起重机',
+      displayName: '汽车起重机',
+      title: '汽车起重机',
+      subtitle: 'Sany · 汽车起重机',
+      type: 'Sany · 汽车起重机',
+      image: 'images/审核/起重机.jpg',
+      newBadge: '1新',
+      countBadge: 1,
+      activeCategory: 'check',
+      categoryName: '检查异常',
+      events: [
+        {
+          id: 'chk-1',
+          tag: '检查需处理',
+          title: '上车随检发现1项需处理',
+          time: '2026-09-23 08:30 (UTC+8)',
+          isNew: true,
+        },
+      ],
+    },
+    {
+      id: 'SY014CF0113D8',
+      code: 'SY014CF0113D8',
+      name: '挖掘机',
+      displayName: '挖掘机',
+      title: '挖掘机',
+      subtitle: 'Sany · 液压挖掘机',
+      type: 'Sany · 液压挖掘机',
+      image: 'images/审核/挖掘机.jpg',
+      newBadge: '1新',
+      countBadge: 1,
+      activeCategory: 'check',
+      categoryName: '检查异常',
+      events: [
+        {
+          id: 'chk-2',
+          tag: '检查需处理',
+          title: '上车随检发现1项需处理',
+          time: '2026-09-23 08:30 (UTC+8)',
+          isNew: true,
+        },
+      ],
+    },
+  ],
+  location: [],
+  maintenance: [],
+  fuel: [],
+};
 
 // 游客模式专用演示产品数据（R-GUEST-SRCH-002）
 export const GUEST_DEMO_PRODUCTS = [
@@ -108,7 +194,8 @@ export const GUEST_DEMO_PRODUCTS = [
     statusText: '行驶',
     image: 'images/审核/搅拌车.jpg',
     spec: '三一重工 · 纯电动混凝土搅拌运输车',
-    location: '长沙市·宁乡产业园',
+    location: '中国',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
     deviceRefCode: 'MIX-DEMO-005',
   },
   {
@@ -122,7 +209,8 @@ export const GUEST_DEMO_PRODUCTS = [
     statusText: '工作',
     image: 'images/审核/挖掘机.jpg',
     spec: '三一重工 · 大型履带式液压挖掘机',
-    location: '苏州市·吴中施工区',
+    location: '中国',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
     deviceRefCode: 'SY014CF0113D8',
   },
   {
@@ -136,7 +224,8 @@ export const GUEST_DEMO_PRODUCTS = [
     statusText: '作业',
     image: 'images/审核/起重机.jpg',
     spec: '三一重工 · 全地面轮式起重机',
-    location: '上海市·临港吊装区',
+    location: '中国',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
     deviceRefCode: 'CRN-DEMO-002',
   },
   {
@@ -150,7 +239,8 @@ export const GUEST_DEMO_PRODUCTS = [
     statusText: '离线',
     image: 'images/asset-models/sany_truck_pump.jpg',
     spec: '三一重工 · 城市工程自卸车',
-    location: '广州市·南沙堆场',
+    location: '中国',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
     deviceRefCode: 'SLF-DEMO-003',
   },
   {
@@ -164,7 +254,8 @@ export const GUEST_DEMO_PRODUCTS = [
     statusText: '行驶',
     image: 'images/asset-models/sany_grader.jpg',
     spec: '三一重工 · 重载节能型轮式装载机',
-    location: '成都市·天府土方区',
+    location: '中国',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
     deviceRefCode: 'LDR-DEMO-004',
   },
   {
@@ -178,7 +269,8 @@ export const GUEST_DEMO_PRODUCTS = [
     statusText: '装载',
     image: 'images/审核/搅拌车.jpg',
     spec: '三一重工 · 非公路宽体矿用自卸车',
-    location: '鄂尔多斯市·矿区运输线',
+    location: '中国',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
     deviceRefCode: 'WBT-DEMO-006',
   },
   {
@@ -192,7 +284,8 @@ export const GUEST_DEMO_PRODUCTS = [
     statusText: '待命',
     image: 'images/asset-models/sany_pump.jpg',
     spec: '三一重工 · 车载式超高压混凝土泵车',
-    location: '长沙市·星沙产业园',
+    location: '中国',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
   },
 ];
 
@@ -278,7 +371,8 @@ export const GUEST_DEMO_PARTS = [
   },
 ];
 
-// 本地纯前端检索逻辑，不请求任何外部或正式接口（R-GUEST-SRCH-002）
+
+// 游客模式本地检索逻辑：仅使用 3 台指定假数据设备作为唯一设备数据源
 export const searchGuestDemoData = (rawKeyword, options = {}) => {
   const keyword = (rawKeyword || '').trim().toLowerCase();
   if (options.simulateError || keyword === '__error__') {
@@ -287,27 +381,27 @@ export const searchGuestDemoData = (rawKeyword, options = {}) => {
     throw err;
   }
   if (!keyword) {
-    return { products: [], parts: [], all: [], total: 0 };
+    return { devices: [], all: [], total: 0 };
   }
-
-  // STATE-SRCH-RESULT: 单条演示资源已下线时从结果中移除，不回落真实数据
-  const activeProducts = GUEST_DEMO_PRODUCTS.filter((item) => item.status !== 'offline');
-  const activeParts = GUEST_DEMO_PARTS.filter((item) => item.status !== 'offline');
 
   const matchItem = (item) => {
     const name = (item.name || '').toLowerCase();
+    const displayName = (item.displayName || '').toLowerCase();
     const model = (item.model || '').toLowerCase();
     const code = (item.code || '').toLowerCase();
-    return name.includes(keyword) || model.includes(keyword) || code.includes(keyword);
+    if (name.includes(keyword) || displayName.includes(keyword) || model.includes(keyword) || code.includes(keyword)) return true;
+    if (keyword.includes('自卸') && (name.includes('自装卸') || name.includes('自卸'))) return true;
+    if (keyword.includes('装卸') && (name.includes('自装卸') || name.includes('自卸'))) return true;
+    if (keyword.includes('起重') && name.includes('起重机')) return true;
+    if (keyword.includes('挖掘') && name.includes('挖掘机')) return true;
+    return false;
   };
 
-  const matchedProducts = activeProducts.filter(matchItem);
-  const matchedParts = activeParts.filter(matchItem);
+  const matchedDevices = GUEST_SEARCH_DEVICES.filter(matchItem);
 
   return {
-    products: matchedProducts,
-    parts: matchedParts,
-    all: [...matchedProducts, ...matchedParts],
-    total: matchedProducts.length + matchedParts.length,
+    devices: matchedDevices,
+    all: matchedDevices,
+    total: matchedDevices.length,
   };
 };

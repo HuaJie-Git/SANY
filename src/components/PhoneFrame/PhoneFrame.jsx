@@ -1,7 +1,7 @@
 import React from 'react';
 import { ExperienceNotice, ExperienceServiceRail, FeedbackFloatingButton, LoginPrompt } from '../ExperienceMode/ExperienceMode';
 
-const PhoneFrame = ({ topNav, bottomNav, children, hideGradient = false, headerBackground, floatingButton, statusBarTheme = 'light', statusTime = '9:41', showStatusProfile = false, batteryPercent, hideStatusBar = false, contentRoundedTop = false, onLogin, onFeedback, onInquiry, showFeedback = false, showServiceRail = false, showLoginPrompt = false, onCloseLogin, showExperienceNotice = false }) => {
+const PhoneFrame = ({ topNav, bottomNav, children, hideGradient = false, headerBackground, floatingButton, statusBarTheme = 'light', statusTime = '9:41', showStatusProfile = false, batteryPercent, hideStatusBar = false, contentRoundedTop = false, onLogin, onFeedback, onInquiry, showFeedback = false, showServiceRail = false, showLoginPrompt = false, onCloseLogin, showExperienceNotice = false, overlay }) => {
   const statusColor = statusBarTheme === 'dark' ? '#222831' : '#FFFFFF';
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-8">
@@ -93,6 +93,7 @@ const PhoneFrame = ({ topNav, bottomNav, children, hideGradient = false, headerB
                 <ExperienceNotice onLogin={() => onLogin?.('prompt')} />
               </div>
             )}
+            {overlay}
             <LoginPrompt visible={showLoginPrompt} onClose={onCloseLogin} onLogin={onLogin} />
           </div>
         </div>

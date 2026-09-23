@@ -1,6 +1,7 @@
 export const APPLICATION_ORDER_STORAGE_KEY = 'sanvist_application_order_v1';
 
 export const DEFAULT_APPLICATIONS = [
+  { id: 'inquiry', name: '我要询价', description: '获取产品与设备报价', icon: '询价', color: '#ffe3d6', accent: '#e01923', target: 'inquiry', category: '服务', badge: 'hot' },
   { id: 'parts', name: '我要配件', description: '配件查询与订购', icon: '配件', color: '#ffebe8', accent: '#e85d45', target: 'parts', category: '服务' },
   { id: 'service', name: '我要召请', description: '提交现场服务需求', icon: '召请', color: '#e7f7f4', accent: '#1b9a83', target: 'service', category: '服务' },
   { id: 'maintenance', name: '设备保养', description: '保养计划与到期提醒', icon: '保养', color: '#e8f4fb', accent: '#2589bd', target: 'maintenance', category: '设备' },

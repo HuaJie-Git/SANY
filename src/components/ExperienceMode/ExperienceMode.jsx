@@ -82,15 +82,15 @@ export const LoginPrompt = ({ visible, onClose, onLogin }) => {
 };
 
 export const ExperienceNotice = ({ onLogin }) => (
-  <div dir="auto" className="mx-auto flex w-[calc(100%-24px)] max-w-[355px] items-center justify-between gap-2 rounded-xl border border-[#ffd7d9] bg-[#fff6f6] px-3.5 py-2 shadow-[0_6px_18px_rgba(82,19,25,0.12)]">
-    <div className="min-w-0 flex items-center gap-2">
-      <span className="break-words text-[13px] font-semibold text-[#8f111b] whitespace-nowrap">当前为游客模式</span>
-      <span className="break-words text-[12px] text-[#8d5960] truncate">登录后体验完整功能</span>
+  <div dir="auto" className="mx-auto flex w-[calc(100%-24px)] max-w-[355px] items-center justify-between gap-3 rounded-xl border border-[#ffd7d9] bg-[#fff6f6] px-3.5 py-2.5 shadow-[0_6px_18px_rgba(82,19,25,0.12)]">
+    <div className="min-w-0 flex flex-col justify-center">
+      <span className="break-words text-[13px] font-semibold text-[#8f111b] leading-tight">当前为游客模式</span>
+      <span className="mt-0.5 break-words text-[11px] text-[#8d5960] leading-snug">登录后体验完整功能</span>
     </div>
     <button
       type="button"
       onClick={onLogin}
-      className="flex-none rounded-full bg-[#bc000f] px-3.5 py-1 text-[12px] font-medium text-white shadow-xs active:opacity-80 cursor-pointer"
+      className="flex-none rounded-full bg-[#bc000f] px-3.5 py-1.5 text-[12px] font-medium text-white shadow-xs active:opacity-80 cursor-pointer"
     >
       登录
     </button>

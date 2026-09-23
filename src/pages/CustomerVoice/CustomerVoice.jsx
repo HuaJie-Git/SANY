@@ -24,7 +24,7 @@ const COUNTRY_CODES = [
   { code: '+84', name: '越南' },
 ];
 
-const CustomerVoice = ({ onBack }) => {
+const CustomerVoice = ({ onBack, onRequireLogin }) => {
   // 表单核心状态
   const [feedbackType, setFeedbackType] = useState('咨询');
   const [content, setContent] = useState('');
@@ -239,7 +239,7 @@ const CustomerVoice = ({ onBack }) => {
           {/* 历史胶囊按钮 */}
           <button
             type="button"
-            onClick={() => setShowHistoryModal(true)}
+            onClick={() => onRequireLogin?.()}
             className="rounded-full border border-gray-300 px-2.5 py-0.5 text-[13px] font-medium text-gray-700 active:bg-gray-50"
           >
             历史
@@ -375,12 +375,8 @@ const CustomerVoice = ({ onBack }) => {
           </div>
         </div>
 
-        {/* 6. 未登录游客联系信息 (电话与地址均不默认获取，需用户手动填写) */}
+        {/* 6. 联系信息 (电话与地址均由用户填写) */}
         <div className="rounded-2xl border border-gray-100 bg-[#FAFAFA] p-3.5 space-y-3">
-          <div className="text-[12px] font-semibold text-gray-500 uppercase tracking-wide">
-            未登录联系信息（由您手动填写，仅用于客服答复）
-          </div>
-
           {/* 联系电话 */}
           <div>
             <div className="flex items-center text-[13px] text-gray-700 font-medium mb-1.5">
@@ -402,7 +398,6 @@ const CustomerVoice = ({ onBack }) => {
                   type="tel"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="请输入手机号码"
                   className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-900 placeholder-gray-400 outline-none focus:border-gray-400"
                 />
                 {phoneNumber && (
@@ -425,7 +420,6 @@ const CustomerVoice = ({ onBack }) => {
               type="text"
               value={contactName}
               onChange={(e) => setContactName(e.target.value)}
-              placeholder="请输入您的姓名（选填）"
               className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-900 placeholder-gray-400 outline-none focus:border-gray-400"
             />
           </div>
@@ -437,7 +431,6 @@ const CustomerVoice = ({ onBack }) => {
               type="text"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              placeholder="请输入您所在的省市区或具体地址（选填）"
               className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-900 placeholder-gray-400 outline-none focus:border-gray-400"
             />
           </div>

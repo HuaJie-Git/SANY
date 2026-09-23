@@ -1,9 +1,23 @@
 import React from 'react';
 import WaterfallCard from './WaterfallCard';
 import { getFollowedUserPosts } from './communityData';
+import { EmptyBoxIllustration } from '../../pages/Audit/Audit';
 
 const FollowTab = ({ onPostClick, demoMode = false, onRequireLogin }) => {
   const followedPosts = getFollowedUserPosts();
+
+  if (demoMode) {
+    return (
+      <div className="w-full">
+        <div className="bg-white rounded-2xl min-h-[460px] flex flex-col items-center justify-center p-8 shadow-2xs border border-gray-100/60">
+          <EmptyBoxIllustration />
+          <p className="text-[13px] text-gray-400 mt-2 font-normal">
+            暂未关注任何用户
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">

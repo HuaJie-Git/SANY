@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { TASKS } from '../../data/tasks';
+import { BASE_TASKS, GUEST_TASKS } from '../../data/tasks';
 
-const MyTasksSummary = ({ tenantType = 'enterprise', onTaskListClick, onTaskClick }) => {
+const MyTasksSummary = ({ tenantType = 'enterprise', onTaskListClick, onTaskClick, demoMode = false }) => {
   const [tasks, setTasks] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -14,13 +14,13 @@ const MyTasksSummary = ({ tenantType = 'enterprise', onTaskListClick, onTaskClic
       return;
     }
 
-    // 模拟API请求
-    setTimeout(() => {
-      setTasks(TASKS.slice(0, 3)); // 首页只显示前3条
-      setTotal(TASKS.length); // 总数是5
-      setLoading(false);
-    }, 500);
-  }, [tenantType]);
+    // 加载对应模式的数据
+    const all = demoMode ? GUEST_TASKS : BASE_TASKS;
+    const limit = demoMode ? 1 : 3;
+    setTasks(all.slice(0, limit)); // 游客模式显示1条，基线显示前3条
+    setTotal(all.length);
+    setLoading(false);
+  }, [tenantType, demoMode]);
 
   // 个体户不显示任务模块
   if (tenantType === 'individual') {
@@ -115,15 +115,27 @@ const MyTasksSummary = ({ tenantType = 'enterprise', onTaskListClick, onTaskClic
       {/* 标题栏 */}
       <div className="flex items-center justify-between mb-3">
         <div className="text-[16px] font-medium text-text-primary">我的任务</div>
-        <div
-          className="text-[12px] text-text辅助 cursor-pointer flex items-center gap-0.5"
-          onClick={onTaskListClick}
-        >
-          查看全部
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M9 18l6-6-6-6" />
-          </svg>
-        </div>
+        {demoMode ? (
+          <div
+            className="text-[12px] text-text辅助 cursor-pointer flex items-center gap-0.5"
+            onClick={onTaskListClick}
+          >
+            查看全部
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </div>
+        ) : (
+          <div
+            className="text-[12px] text-text辅助 cursor-pointer flex items-center"
+            onClick={onTaskListClick}
+          >
+            更多
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </div>
+        )}
       </div>
 
       {/* 任务列表 */}
@@ -176,16 +188,24 @@ const MyTasksSummary = ({ tenantType = 'enterprise', onTaskListClick, onTaskClic
             </div>
           ))}
 
-          {/* 任务查看全部 */}
-          <div
-            className="flex items-center justify-center gap-1 border-t border-gray-50 py-2.5 text-center text-sm font-medium text-red-500 hover:text-red-600 cursor-pointer active:bg-gray-50"
-            onClick={onTaskListClick}
-          >
-            <span>{total > 3 ? `还有 ${total - 3} 个任务，查看全部` : '查看全部任务'}</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="inline-block">
-              <path d="M9 18l6-6-6-6" />
-            </svg>
-          </div>
+          {/* 任务查看全部/更多 */}
+          {demoMode ? (
+            <div className="text-center text-sm text-red-500 cursor-pointer py-2" onClick={onTaskListClick}>
+              还有 {total - tasks.length} 个任务，查看全部
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="inline-block ml-1">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
+          ) : (
+            total > 3 && (
+              <div className="text-center text-sm text-red-500 cursor-pointer py-2" onClick={onTaskListClick}>
+                还有 {total - 3} 个任务，查看全部
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="inline-block ml-1">
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </div>
+            )
+          )}
         </div>
       )}
       </div>

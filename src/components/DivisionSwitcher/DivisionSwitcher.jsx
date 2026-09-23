@@ -59,12 +59,12 @@ const DivisionSwitcher = ({ divisions, currentDivision, onSelect, onClose, isSwi
         <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-[#f7f8fa] px-3 py-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <strong className="text-[14px] text-[#252b33]">体验模式</strong>
+              <strong className="text-[14px] text-[#252b33]">游客模式</strong>
               <span className={`rounded-full px-2 py-0.5 text-[10px] ${experienceMode ? 'bg-[#fff0f1] text-[#e60012]' : 'bg-gray-200 text-gray-500'}`}>{experienceMode ? '已开启' : '已关闭'}</span>
             </div>
             <p className="mt-1 text-[11px] leading-4 text-gray-500">浏览固定演示数据，不影响真实业务</p>
           </div>
-          <button type="button" role="switch" aria-checked={experienceMode} aria-label={experienceMode ? '关闭体验模式' : '开启体验模式'} onClick={onToggleExperience} className={`relative h-7 w-12 flex-shrink-0 rounded-full transition-colors ${experienceMode ? 'bg-[#e60012]' : 'bg-gray-300'}`}>
+          <button type="button" role="switch" aria-checked={experienceMode} aria-label={experienceMode ? '关闭游客模式' : '开启游客模式'} onClick={onToggleExperience} className={`relative h-7 w-12 flex-shrink-0 rounded-full transition-colors ${experienceMode ? 'bg-[#e60012]' : 'bg-gray-300'}`}>
             <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.28)] transition-[left] ${experienceMode ? 'left-6' : 'left-1'}`} />
           </button>
         </div>

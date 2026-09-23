@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { getTopicByName, posts } from './communityData';
 import WaterfallCard from './WaterfallCard';
 
-const TopicDetailPage = ({ topicName, onBack, onPostClick }) => {
+const TopicDetailPage = ({ topicName, onBack, onPostClick, demoMode = false, onRequireLogin }) => {
   const [sortBy, setSortBy] = useState('latest');
-  const topic = getTopicByName(topicName);
+  const topic = getTopicByName(topicName, demoMode);
 
   if (!topic) {
     return (
@@ -37,35 +37,43 @@ const TopicDetailPage = ({ topicName, onBack, onPostClick }) => {
       {/* 顶部导航栏 - 话题名称作为标题 */}
       <div className="sticky top-0 bg-white z-10">
         <div className="flex items-center h-[44px] px-4">
-          <div className="cursor-pointer mr-3" onClick={onBack}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <button type="button" className="cursor-pointer mr-3 flex items-center justify-center -ml-1" onClick={onBack} aria-label="返回">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M15 18l-6-6 6-6"/>
             </svg>
-          </div>
-          <span className="text-[18px] font-semibold text-gray-900 flex-1 truncate">{topic.name}</span>
+          </button>
+          <span className="text-[18px] font-bold text-gray-900 flex-1 truncate">{topic.name}</span>
         </div>
         {/* 轻量下划线分隔 */}
         <div className="h-[1px] bg-gray-100"></div>
       </div>
 
-      {/* 排序入口 */}
-      <div className="px-4 py-2.5 flex items-center gap-3">
-        <div
-          className={`text-[13px] cursor-pointer px-3 py-1 rounded-full transition-colors ${
-            sortBy === 'latest' ? 'bg-brand-red text-white' : 'bg-gray-100 text-gray-600'
-          }`}
+      {/* 排序入口 - 对齐截图5：最新 最热，带红色下划线高亮 */}
+      <div className="px-4 pt-3 pb-2 flex items-center gap-6 border-b border-gray-100 bg-white">
+        <button
+          type="button"
           onClick={() => setSortBy('latest')}
+          className="relative pb-2 text-[15px] font-bold transition-colors cursor-pointer"
         >
-          最新
-        </div>
-        <div
-          className={`text-[13px] cursor-pointer px-3 py-1 rounded-full transition-colors ${
-            sortBy === 'hottest' ? 'bg-brand-red text-white' : 'bg-gray-100 text-gray-600'
-          }`}
+          <span className={sortBy === 'latest' ? 'text-[#E01923]' : 'text-gray-500 font-medium'}>
+            最新
+          </span>
+          {sortBy === 'latest' && (
+            <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#E01923] rounded-full" />
+          )}
+        </button>
+        <button
+          type="button"
           onClick={() => setSortBy('hottest')}
+          className="relative pb-2 text-[15px] font-bold transition-colors cursor-pointer"
         >
-          最热
-        </div>
+          <span className={sortBy === 'hottest' ? 'text-[#E01923]' : 'text-gray-500 font-medium'}>
+            最热
+          </span>
+          {sortBy === 'hottest' && (
+            <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#E01923] rounded-full" />
+          )}
+        </button>
       </div>
 
       {/* 内容瀑布流 */}
@@ -81,6 +89,8 @@ const TopicDetailPage = ({ topicName, onBack, onPostClick }) => {
               <WaterfallCard
                 key={post.id}
                 post={post}
+                demoMode={demoMode}
+                onRequireLogin={onRequireLogin}
                 onClick={() => onPostClick?.(post)}
               />
             ))}

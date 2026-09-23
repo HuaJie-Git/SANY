@@ -46,8 +46,8 @@ const MACHINE_DATA = {
     code: 'SY014CF0113D8',
     plate: 'SV-22 · Kolkata',
     status: '工作',
-    reportTime: '2026-09-03 16:57:57 (UTC+5.5)',
-    location: '苏州市·吴中施工区',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
+    location: '中国',
     realtime: [
       ['发动机转速', '1245.18', 'RPM'],
       ['油位', '31.62', '%'],
@@ -64,8 +64,8 @@ const MACHINE_DATA = {
     code: 'SY014CF0113D8',
     plate: 'SV-22 · Kolkata',
     status: '工作',
-    reportTime: '2026-09-03 16:57:57 (UTC+5.5)',
-    location: '苏州市·吴中施工区',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
+    location: '中国',
     realtime: [
       ['发动机转速', '1245.18', 'RPM'],
       ['油位', '31.62', '%'],
@@ -85,10 +85,10 @@ const MACHINE_DATA = {
     code: 'HSGJ1051016142',
     plate: '车牌号',
     status: '离线',
-    reportTime: '2026-09-19 20:03:24 (UTC+8)',
-    location: '太古漆油, 清甜街, 西草湾, 新界, 香港',
-    startLocation: '太古漆油, 清甜街, 西草湾, 新界, 香港',
-    endLocation: '太古漆油, 清甜街, 西草湾, 新界, 香港',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
+    location: '中国',
+    startLocation: '中国',
+    endLocation: '中国',
     realtime: [
       ['设备状态', '离线'],
       ['车速', '0', 'km/h'],
@@ -115,10 +115,10 @@ const MACHINE_DATA = {
     code: 'HSGJ1051016142',
     plate: '车牌号',
     status: '离线',
-    reportTime: '2026-09-19 20:03:24 (UTC+8)',
-    location: '太古漆油, 清甜街, 西草湾, 新界, 香港',
-    startLocation: '太古漆油, 清甜街, 西草湾, 新界, 香港',
-    endLocation: '太古漆油, 清甜街, 西草湾, 新界, 香港',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
+    location: '中国',
+    startLocation: '中国',
+    endLocation: '中国',
     realtime: [
       ['设备状态', '离线'],
       ['车速', '0', 'km/h'],
@@ -147,8 +147,8 @@ const MACHINE_DATA = {
     code: 'AC0250CF0056',
     plate: '车牌号',
     status: '离线',
-    reportTime: '2026-09-20 18:29:09 (UTC+8)',
-    location: '43, Senoko Way, Sembawang, Singapore, 新加坡, 758054',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
+    location: '中国',
     craneMetrics: {
       hookMultiplier: '3',
       torquePercentage: '120%',
@@ -192,8 +192,8 @@ const MACHINE_DATA = {
     code: 'AC0250CF0056',
     plate: '车牌号',
     status: '离线',
-    reportTime: '2026-09-20 18:29:09 (UTC+8)',
-    location: '43, Senoko Way, Sembawang, Singapore, 新加坡, 758054',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
+    location: '中国',
     craneMetrics: {
       hookMultiplier: '3',
       torquePercentage: '120%',
@@ -238,8 +238,8 @@ const MACHINE_DATA = {
     code: 'KT090AE20208',
     plate: '车牌号',
     status: '工作',
-    reportTime: '2026-09-21 01:29:02 (UTC+8)',
-    location: '45H2+HF Simpang Empat Sungai Baru, Tanah Laut Regency, South Kalimantan, 印度尼西亚',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
+    location: '中国',
     realtime: [
       ['设备状态', '工作'],
       ['车速', '6', 'km/h'],
@@ -271,8 +271,8 @@ const MACHINE_DATA = {
     code: 'KT090AE20208',
     plate: '车牌号',
     status: '工作',
-    reportTime: '2026-09-21 01:29:02 (UTC+8)',
-    location: '45H2+HF Simpang Empat Sungai Baru, Tanah Laut Regency, South Kalimantan, 印度尼西亚',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
+    location: '中国',
     realtime: [
       ['设备状态', '工作'],
       ['车速', '6', 'km/h'],
@@ -307,10 +307,10 @@ const MACHINE_DATA = {
     code: 'HRZX2331008983',
     plate: '车牌号',
     status: '停车',
-    reportTime: '2026-09-21 00:29:25 (UTC+7)',
-    location: '67QG+XW Na Som, Chai Badan District, Lopburi, 泰国',
-    startLocation: '67QG+XW Na Som, Chai Badan District, Lopburi, 泰国',
-    endLocation: '67QG+XW Na Som, Chai Badan District, Lopburi, 泰国',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
+    location: '中国',
+    startLocation: '中国',
+    endLocation: '中国',
     realtime: [
       ['设备状态', '停车'],
       ['车速', '0', 'km/h'],
@@ -336,10 +336,39 @@ const MACHINE_DATA = {
     code: 'HRZX2331008983',
     plate: '车牌号',
     status: '停车',
-    reportTime: '2026-09-21 00:29:25 (UTC+7)',
-    location: '67QG+XW Na Som, Chai Badan District, Lopburi, 泰国',
-    startLocation: '67QG+XW Na Som, Chai Badan District, Lopburi, 泰国',
-    endLocation: '67QG+XW Na Som, Chai Badan District, Lopburi, 泰国',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
+    location: '中国',
+    startLocation: '中国',
+    endLocation: '中国',
+    realtime: [
+      ['设备状态', '停车'],
+      ['车速', '0', 'km/h'],
+      ['续航里程', '237', 'km'],
+      ['剩余电量', '78', '%'],
+      ['电机转速', '0', 'rpm'],
+    ],
+    today: [
+      ['里程', '-', 'km'],
+      ['电耗', '-', 'kWh'],
+      ['工时', '-', 'h'],
+      ['怠速工时', '-', 'h'],
+    ],
+    workDist: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    cumulative: [
+      ['总里程', '47330.1', 'km'],
+    ],
+  },
+  自装卸车: {
+    supportsTrajectory: true,
+    trajectoryType: 'dump',
+    model: 'HRZX2331',
+    code: 'HRZX2331008983',
+    plate: '车牌号',
+    status: '停车',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
+    location: '中国',
+    startLocation: '中国',
+    endLocation: '中国',
     realtime: [
       ['设备状态', '停车'],
       ['车速', '0', 'km/h'],
@@ -359,6 +388,7 @@ const MACHINE_DATA = {
     ],
   },
 
+
   // 6. 电动装载机
   电动装载机: {
     supportsTrajectory: false,
@@ -367,8 +397,8 @@ const MACHINE_DATA = {
     code: 'SW970EACG0278',
     plate: '车牌号',
     status: '工作',
-    reportTime: '2026-09-21 00:30:09 (UTC+7)',
-    location: '4MWV+72 Khlong Khlung, Khlong Khlung District, Kamphaeng Phet, 泰国',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
+    location: '中国',
     realtime: [
       ['设备状态', '工作'],
       ['剩余电量', '72', '%'],
@@ -393,8 +423,8 @@ const MACHINE_DATA = {
     code: 'SW970EACG0278',
     plate: '车牌号',
     status: '工作',
-    reportTime: '2026-09-21 00:30:09 (UTC+7)',
-    location: '4MWV+72 Khlong Khlung, Khlong Khlung District, Kamphaeng Phet, 泰国',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
+    location: '中国',
     realtime: [
       ['设备状态', '工作'],
       ['剩余电量', '72', '%'],
@@ -641,6 +671,7 @@ const TrajectoryMap = ({ type }) => (
 
 const WorkConditionDetail = ({
   device,
+  escEvent,
   onBack,
   onNavigate,
   backLabel = '返回资产列表',
@@ -678,10 +709,10 @@ const WorkConditionDetail = ({
   const isCrane = ['汽车起重机', '三一起重机', 'AC0250CF', 'AC0250CF0056'].includes(device?.name) || device?.code?.startsWith('AC0250');
   const isMixer = ['搅拌车', '纯电搅拌车', 'HSGJ1051', 'HSGJ1051016142'].includes(device?.name) || device?.code?.startsWith('HSGJ') || device?.code?.startsWith('SYM5310BEV');
   const _isMiningTruck = ['矿用宽体自卸车', '宽体车', 'KT090AE', 'KT090AE20208'].includes(device?.name) || device?.code?.startsWith('KT090AE');
-  const _isDumpTruck = ['自卸车', 'HRZX2331', 'HRZX2331008983'].includes(device?.name) || device?.code?.startsWith('HRZX');
+  const _isDumpTruck = ['自卸车', '自装卸车', 'HRZX2331', 'HRZX2331008983'].includes(device?.name) || device?.code?.startsWith('HRZX');
   const isLoader = ['电动装载机', '装载机', 'SW970EACG', 'SW970EACG0278'].includes(device?.name) || device?.code?.startsWith('SW970E');
 
-  const reportTime = data.reportTime || '2026-09-20 09:41:00';
+  const reportTime = data.reportTime || (demoMode ? '2026-09-23 08:30 (UTC+8)' : '2026-09-20 09:41:00');
   const fuelLevel = data.realtime.find(([label]) => ['当前油位', '油位'].includes(label))?.[1] || '70';
 
   const showHint = (label) => {
@@ -720,7 +751,7 @@ const WorkConditionDetail = ({
   }, [moreOpen]);
 
   if (showEscEvents) {
-    return <EscEventPage device={device} onBack={() => setShowEscEvents(false)}/>;
+    return <EscEventPage device={device} primaryEvent={escEvent} onBack={() => setShowEscEvents(false)}/>;
   }
 
   return (
@@ -751,7 +782,7 @@ const WorkConditionDetail = ({
                 <span>{data.plate || '车牌号'}</span>
                 <button type="button" aria-label="修改车牌" onClick={() => handleAction('修改车牌')} className="ml-1 text-[12px] text-gray-400 hover:text-gray-600 cursor-pointer">✎</button>
               </div>
-              <div className="flex items-center gap-2 text-[12px] text-[#4c535c]"><Icon type="pin" size={16}/><span className="truncate">{data.location || device?.location || '湖南省长沙市宁乡经开区'}</span></div>
+              <div className="flex items-center gap-2 text-[12px] text-[#4c535c]"><Icon type="pin" size={16}/><span className="truncate">{data.location || device?.location || (demoMode ? '中国' : '湖南省长沙市宁乡经开区')}</span></div>
               <div className="flex items-center gap-2 text-[12px] text-[#4c535c]"><Icon type="clock" size={16}/><span>{reportTime}</span></div>
             </div>
             <div className="flex flex-col items-end justify-between">
@@ -790,7 +821,7 @@ const WorkConditionDetail = ({
           <div className="mt-6 grid grid-cols-2 gap-x-6 gap-y-7">{data.realtime.map((item) => <Metric key={item[0]} item={item} />)}</div>
           {isMixer && (
             <div className="mt-4 border-t border-gray-100 pt-3 text-center">
-              <button type="button" onClick={() => handleAction('更多工况参数')} className="text-[12px] text-gray-500 hover:text-gray-700">
+              <button type="button" onClick={() => showHint('已展示全部实时工况参数')} className="text-[12px] text-gray-500 hover:text-gray-700">
                 更多 ∨
               </button>
             </div>
@@ -802,12 +833,12 @@ const WorkConditionDetail = ({
           <section className="rounded-[14px] bg-white px-4 py-5 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
             <div className="flex items-center justify-between">
               <h2 className="text-[16px] font-semibold">行驶轨迹</h2>
-              <button type="button" onClick={() => handleAction('查看详情')} className="text-[12px] text-[#2377f3] active:opacity-70 cursor-pointer">查看详情</button>
+              <button type="button" onClick={() => showHint('轨迹详情')} className="text-[12px] text-[#2377f3] active:opacity-70 cursor-pointer">查看详情</button>
             </div>
             <TrajectoryMap type={data.trajectoryType || 'default'} startLocation={data.startLocation} endLocation={data.endLocation} />
             <div className="mt-3 space-y-1 text-[11px] text-[#666]">
-              <div>起点位置：{data.startLocation || data.location || '湖南省长沙市宁乡经开区'}</div>
-              <div>终点位置：{data.endLocation || data.location || '湖南省长沙市宁乡经开区'}</div>
+              <div>起点位置：{data.startLocation || data.location || (demoMode ? '中国' : '湖南省长沙市宁乡经开区')}</div>
+              <div>终点位置：{data.endLocation || data.location || (demoMode ? '中国' : '湖南省长沙市宁乡经开区')}</div>
             </div>
           </section>
         )}
@@ -816,7 +847,7 @@ const WorkConditionDetail = ({
         <section className="rounded-[14px] bg-white px-4 py-5 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
           <div className="flex items-center gap-1.5">
             <h2 className="text-[16px] font-semibold">今日数据</h2>
-            <button type="button" onClick={() => handleAction('今日数据说明')} className="h-4 w-4 rounded-full bg-[#303640] text-center text-[10px] leading-4 text-white flex items-center justify-center cursor-pointer" aria-label="今日数据说明">?</button>
+            <button type="button" onClick={() => showHint('按自然日统计当日累计数据')} className="h-4 w-4 rounded-full bg-[#303640] text-center text-[10px] leading-4 text-white flex items-center justify-center cursor-pointer" aria-label="今日数据说明">?</button>
           </div>
           <div className={`mt-7 grid gap-6 ${data.today.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>{data.today.map((item) => <Metric key={item[0]} item={item} />)}</div>
           {data.workDist && <WorkStatusTimeline segments={data.workDist} />}
@@ -841,8 +872,8 @@ const WorkConditionDetail = ({
             <section className="rounded-[14px] bg-white px-4 py-5 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
               <h2 className="text-[16px] font-semibold">设备动态</h2>
               <div className="mt-5 space-y-4 text-[12px] text-[#5f6772]">
-                <div className="flex items-center justify-between"><span>设备开机</span><span>16:55:25 (UTC+5.5)</span></div>
-                <div className="flex items-center justify-between"><span>设备关机</span><span>15:36:29 (UTC+5.5)</span></div>
+                <div className="flex items-center justify-between"><span>设备开机</span><span>{demoMode ? '2026-09-23 08:30 (UTC+8)' : '16:55:25 (UTC+5.5)'}</span></div>
+                <div className="flex items-center justify-between"><span>设备关机</span><span>{demoMode ? '2026-09-23 08:30 (UTC+8)' : '15:36:29 (UTC+5.5)'}</span></div>
               </div>
             </section>
           </>

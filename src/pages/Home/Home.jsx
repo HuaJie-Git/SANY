@@ -273,7 +273,9 @@ const Home = () => {
   const enterExperienceMode = () => {
     setExperienceMode(true);
     window.localStorage.setItem('sanvist_experience_mode', '1');
-    setDivisionToast('体验模式已开启');
+    setShowDivisionSwitcher(false);
+    setDivisionToast('切换成游客模式');
+    contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     window.setTimeout(() => setDivisionToast(''), 1800);
   };
   const handleLogin = (action = 'login') => {
@@ -307,6 +309,20 @@ const Home = () => {
     setShowAuthPortal(false);
     setExperienceMode(false);
     window.localStorage.removeItem('sanvist_experience_mode');
+    if (formData?.phone) {
+      try {
+        const countryName = formData.country === '+86' ? '中国' : (formData.country || '中国');
+        const phoneCode = formData.country?.startsWith('+') ? formData.country : '+86';
+        window.localStorage.setItem('sanvist_user_profile', JSON.stringify({
+          phone: formData.phone,
+          phoneNumber: formData.phone,
+          country: countryName,
+          phoneCode,
+          role: formData.role,
+          company: formData.company,
+        }));
+      } catch {}
+    }
     const roleDesc = formData?.role ? `（${formData.role}）` : '';
     setDivisionToast(`注册成功${roleDesc}，已自动登录`);
     window.setTimeout(() => setDivisionToast(''), 2000);
@@ -315,7 +331,9 @@ const Home = () => {
     if (experienceMode) {
       setExperienceMode(false);
       window.localStorage.removeItem('sanvist_experience_mode');
-      setDivisionToast('体验模式已关闭');
+      setShowDivisionSwitcher(false);
+      setDivisionToast('已退出游客模式');
+      contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
       window.setTimeout(() => setDivisionToast(''), 1800);
       return;
     }
@@ -324,7 +342,11 @@ const Home = () => {
   const requireLogin = () => setShowLoginPrompt(true);
   const openInquiry = (source, context = {}) => {
     trackLeadIntent.inquiryFormOpen(source, context);
-    setInquiryContext({ source, ...context });
+    setInquiryContext({
+      source,
+      experienceMode,
+      ...context,
+    });
   };
   useEffect(() => {
     const syncEscEvent = (event) => {
@@ -349,10 +371,6 @@ const Home = () => {
   };
 
   const handleNotificationClick = () => {
-    if (experienceMode) {
-      requireLogin();
-      return;
-    }
     setShowMessageCenter(true);
   };
 
@@ -609,9 +627,13 @@ const Home = () => {
         statusBarTheme="dark"
         statusTime={experienceMode ? '7:46' : '9:41'}
         batteryPercent={experienceMode ? '75' : undefined}
+        showLoginPrompt={showLoginPrompt}
+        onCloseLogin={() => setShowLoginPrompt(false)}
+        onLogin={handleLogin}
       >
         <CustomerVoice
           onBack={() => setShowCustomerVoice(false)}
+          onRequireLogin={requireLogin}
           onInquiry={(context) => {
             setShowCustomerVoice(false);
             openInquiry('customer_voice_inquiry', context);
@@ -659,10 +681,6 @@ const Home = () => {
             restoreNavigationSource();
           }}
           onNavigate={(action) => {
-            if (experienceMode) {
-              requireLogin();
-              return;
-            }
             handleBusinessNavigate(action, 'allApps');
           }}
           onOrderChange={setOrderedApplications}
@@ -682,6 +700,8 @@ const Home = () => {
         batteryPercent={experienceMode ? '75' : undefined}
       >
         <MessageCenter
+          demoMode={experienceMode}
+          onRequireLogin={requireLogin}
           onBack={() => {
             setShowMessageCenter(false);
             restoreNavigationSource();
@@ -706,7 +726,7 @@ const Home = () => {
         onCloseLogin={() => setShowLoginPrompt(false)}
         onLogin={handleLogin}
       >
-        <TaskDetail task={selectedTask} onBack={() => setSelectedTask(null)} onRequireLogin={requireLogin} />
+        <TaskDetail task={selectedTask} demoMode={experienceMode} onBack={() => setSelectedTask(null)} onRequireLogin={requireLogin} />
       </PhoneFrame>
     );
   }
@@ -732,11 +752,7 @@ const Home = () => {
             restoreNavigationSource();
           }}
           onTaskClick={(task) => {
-            if (experienceMode) {
-              requireLogin();
-            } else {
-              setSelectedTask(task);
-            }
+            setSelectedTask(task);
           }}
           onRequireLogin={requireLogin}
         />
@@ -754,20 +770,26 @@ const Home = () => {
         statusBarTheme="dark"
         statusTime={experienceMode ? '7:46' : '9:41'}
         batteryPercent={experienceMode ? '75' : undefined}
+        showServiceRail={experienceMode}
+        onFeedback={() => setShowCustomerVoice(true)}
+        onInquiry={() => openInquiry('recent_detail_service_rail')}
       >
         <RecentDetail
-          demoMode={experienceMode}
-          onBack={() => setShowRecentList(false)}
-          onNavigate={(item) => {
+          onBack={() => {
             setShowRecentList(false);
-            handleRecentNavigate(item, 'recentList');
+            restoreNavigationSource();
           }}
+          onDeviceClick={(device) => {
+            setShowRecentList(false);
+            setSelectedWorkCondition(device);
+          }}
+          demoMode={experienceMode}
         />
       </PhoneFrame>
     );
   }
 
-  // 如果显示数据报表页
+  // 如果显示数据分析页 - 禁用渐变背景
   if (dataAnalysisDevice) {
     return (
       <PhoneFrame
@@ -777,8 +799,12 @@ const Home = () => {
         statusBarTheme="dark"
         statusTime={experienceMode ? '7:46' : '9:41'}
         batteryPercent={experienceMode ? '75' : undefined}
+        showServiceRail={experienceMode}
+        onFeedback={() => setShowCustomerVoice(true)}
+        onInquiry={() => openInquiry('data_analysis_service_rail', { model: dataAnalysisDevice?.name })}
       >
         <DataAnalysis
+          device={dataAnalysisDevice}
           onBack={() => {
             setDataAnalysisDevice(null);
             if (!selectedWorkCondition) restoreNavigationSource();
@@ -838,10 +864,6 @@ const Home = () => {
             if (currentPage !== 'assetList') restoreNavigationSource();
           }}
           onNavigate={(page) => {
-            if (experienceMode) {
-              requireLogin();
-              return;
-            }
             if (page === 'dataReport') setDataReportDevice(selectedWorkCondition);
             if (page === 'dataAnalysis') setDataAnalysisDevice(selectedWorkCondition);
           }}
@@ -1034,6 +1056,8 @@ const Home = () => {
         <ContentFeed
           showPublishPage={showPublishPage}
           setShowPublishPage={setShowPublishPage}
+          demoMode={experienceMode}
+          onRequireLogin={requireLogin}
         />
       </PhoneFrame>
     );
@@ -1046,7 +1070,7 @@ const Home = () => {
         case 'parts':
           return <PartsOrder onBack={closeCurrentPage} initialQuery={pageContext?.query} initialItem={pageContext?.item} />;
         case 'productCenter':
-          return <ProductCenter onBack={closeCurrentPage} initialItem={pageContext?.item} />;
+          return <ProductCenter onBack={closeCurrentPage} initialItem={pageContext?.item} demoMode={experienceMode} onRequireLogin={requireLogin} />;
         case 'serviceCenter':
           return <ServiceCenter onBack={closeCurrentPage} onInquiry={() => openInquiry('service_center')} />;
         case 'survey':
@@ -1070,6 +1094,9 @@ const Home = () => {
         statusBarTheme={isDarkHeader ? 'light' : 'dark'}
         statusTime={experienceMode ? '7:46' : '9:41'}
         batteryPercent={experienceMode ? '75' : undefined}
+        showLoginPrompt={showLoginPrompt}
+        onCloseLogin={() => setShowLoginPrompt(false)}
+        onLogin={handleLogin}
       >
         {renderPage()}
       </PhoneFrame>
@@ -1133,10 +1160,15 @@ const Home = () => {
               绑定设备
             </button>
             {/* 地图按钮 - 右边（用户提供的地图SVG） */}
-            <button type="button" onClick={() => {
-              setDivisionToast(experienceMode ? '地图模式：展示 6 台设备位置' : '地图模式已打开');
-              window.setTimeout(() => setDivisionToast(''), 1800);
-            }} className="w-8 h-8 flex items-center justify-center bg-white/30 rounded-full" aria-label="地图模式">
+            <button
+              type="button"
+              onClick={() => {
+                setDivisionToast('地图模式已打开');
+                window.setTimeout(() => setDivisionToast(''), 1800);
+              }}
+              className="w-8 h-8 flex items-center justify-center bg-white/30 rounded-full"
+              aria-label="地图模式"
+            >
               <svg width="18" height="18" viewBox="0 0 1024 1024" fill="white">
                 <path d="M85.333333 469.717333C85.333333 451.829333 99.658667 437.333333 117.333333 437.333333s32 14.506667 32 32.384V786.133333c0 5.962667 4.778667 10.794667 10.666667 10.794667a10.56 10.56 0 0 0 5.045333-1.28l154.848-84.021333a73.898667 73.898667 0 0 1 72.853334 1.290666l252.544 148.842667a10.56 10.56 0 0 0 10.122666 0.341333l213.333334-107.264c3.626667-1.824 5.92-5.568 5.92-9.664V469.717333C874.666667 451.829333 888.992 437.333333 906.666667 437.333333s32 14.506667 32 32.384V745.173333c0 28.682667-16.053333 54.890667-41.44 67.658667l-213.333334 107.264a73.898667 73.898667 0 0 1-70.805333-2.378667L360.533333 768.896a10.56 10.56 0 0 1-10.410666-0.192l-154.848 84.032a73.973333 73.973333 0 0 1-35.285334 8.96c-41.237333 0-74.666667-33.813333-74.666666-75.552V469.717333z m672-132.266666c0 87.808-73.173333 192.917333-217.056 320.288a42.666667 42.666667 0 0 1-56.554666 0C339.829333 530.378667 266.666667 425.258667 266.666667 337.450667 266.666667 203.968 376.64 96 512 96s245.333333 107.968 245.333333 241.450667z m-426.666666 0c0 61.514667 59.712 149.557333 181.333333 259.701333 121.621333-110.144 181.333333-198.186667 181.333333-259.701333C693.333333 239.584 612.277333 160 512 160s-181.333333 79.573333-181.333333 177.450667zM512 405.333333a64 64 0 1 1 0-128 64 64 0 0 1 0 128z"/>
               </svg>
@@ -1155,6 +1187,7 @@ const Home = () => {
             setDivisionToast(`${device.displayName || device.name}详情即将补充`);
             window.setTimeout(() => setDivisionToast(''), 1800);
           }}
+          onRequireLogin={requireLogin}
         />
       </PhoneFrame>
     );
@@ -1222,9 +1255,6 @@ const Home = () => {
           searchQuery={auditSearchQuery}
           onRequireLogin={requireLogin}
           onDeviceClick={(device) => {
-            if (experienceMode) {
-              requireLogin();
-            }
             setSelectedDevice(device);
           }}
           initialTab={auditInitialTab}
@@ -1324,7 +1354,7 @@ const Home = () => {
           onRequireLogin={requireLogin}
           onNavigate={(target) => {
             if (target === 'auditList') handleBusinessNavigate({ target: 'auditList' });
-            if (target === 'usageReport') handleBusinessNavigate({ target: 'usageReport', item: GUEST_DEMO_DEVICES[0] });
+            if (target === 'usageReport') handleBusinessNavigate({ target: 'usageReport', item: experienceMode ? GUEST_DEMO_DEVICES[0] : undefined });
             if (target === 'content') openHomeSection('content');
             if (target === 'selfService') {
               setDivisionToast('自助服务演示：请选择常见问题或服务网点');
@@ -1339,7 +1369,7 @@ const Home = () => {
   return (
     <PhoneFrame
       experienceMode={experienceMode}
-      showExperienceNotice={experienceMode}
+      showExperienceNotice={experienceMode && !showDivisionSwitcher}
       headerBackground={experienceMode ? 'linear-gradient(180deg, #181e29 0%, #181e29 24%, #690815 58%, #d40014 100%)' : undefined}
       statusTime={experienceMode ? '7:46' : '9:41'}
       showStatusProfile={experienceMode}
@@ -1352,13 +1382,28 @@ const Home = () => {
       showLoginPrompt={showLoginPrompt}
       onCloseLogin={() => setShowLoginPrompt(false)}
       onLogin={handleLogin}
+      overlay={
+        showDivisionSwitcher ? (
+          <DivisionSwitcher
+            divisions={BUSINESS_SCOPES}
+            currentDivision={currentDivision}
+            onSelect={handleDivisionSelect}
+            onClose={() => !isSwitchingDivision && setShowDivisionSwitcher(false)}
+            isSwitching={isSwitchingDivision}
+            experienceMode={experienceMode}
+            onToggleExperience={toggleExperienceMode}
+          />
+        ) : null
+      }
       topNav={
         experienceMode ? (
           <GuestTopNav
             onLoginClick={() => setShowAuthPortal(true)}
             onSearchClick={handleSearchClick}
             onScanClick={handleScanClick}
+            onNotificationClick={handleNotificationClick}
             onAddClick={requireLogin}
+            notificationCount={messageUnreadCount}
           />
         ) : (
           <TopNav
@@ -1432,37 +1477,39 @@ const Home = () => {
         {/* 我的任务 */}
         <MyTasksSummary
           tenantType="enterprise"
+          demoMode={experienceMode}
           onTaskListClick={() => setShowTaskList(true)}
           onTaskClick={(task) => {
             if (experienceMode) {
               requireLogin();
-            } else {
-              setSelectedTask(task);
+              return;
             }
+            setSelectedTask(task);
           }}
         />
 
         {/* 设备开机动态 */}
           <DeviceStartup
+            demoMode={experienceMode}
             onShowList={() => setShowDeviceStartupList(true)}
-            onDeviceClick={() => setSelectedWorkCondition(experienceMode ? (GUEST_DEMO_DEVICES.find((d) => d.code === 'SW970EACG0278') || GUEST_DEMO_DEVICES[0]) : normalizeDevice({
+            onDeviceClick={() => setSelectedWorkCondition(experienceMode ? (GUEST_DEMO_DEVICES.find((d) => d.code === 'SY014CF0113D8') || GUEST_DEMO_DEVICES[0]) : normalizeDevice({
               name: '三一平地机',
               code: 'SAC1300C8PHEVHUF',
               image: 'images/机手社区/挖掘机/挖掘机_02.jpg',
             }))}
             {...(experienceMode ? {
-              deviceName: '电动装载机 · SW970EACG0278',
-              deviceImage: 'images/img_earthwork.jpg',
-              primaryMetric: { value: '3.08h', label: '当日总工时' },
-              secondaryMetric: { value: '64kWh', label: '当日总能耗' },
-              totalCount: 4,
-              location: 'CCJG+9H Kawasi, South Halmahera Regency...',
-              reportTime: '2026-09-21 03:10:43 (UTC+9)',
+              deviceName: '挖掘机 · SY014CF0113D8',
+              deviceImage: 'images/审核/挖掘机.jpg',
+              primaryMetric: { value: '0.01h', label: '当日总工时' },
+              secondaryMetric: { value: '0.15L', label: '当日总能耗' },
+              totalCount: 3,
+              location: '中国',
+              reportTime: '2026-09-23 08:30 (UTC+8)',
             } : currentDivision.operation)}
           />
 
         {/* 审核事件 */}
-        <AuditEvents demoMode={experienceMode} onCategoryClick={handleAuditCategoryClick} />
+        <AuditEvents demoMode={experienceMode} onRequireLogin={requireLogin} onCategoryClick={handleAuditCategoryClick} />
 
         {/* 内容信息流 */}
           <div data-home-section="content">
@@ -1478,17 +1525,6 @@ const Home = () => {
             />
           </div>
         </div>
-        {showDivisionSwitcher && (
-          <DivisionSwitcher
-            divisions={BUSINESS_SCOPES}
-            currentDivision={currentDivision}
-            onSelect={handleDivisionSelect}
-            onClose={() => !isSwitchingDivision && setShowDivisionSwitcher(false)}
-            isSwitching={isSwitchingDivision}
-            experienceMode={experienceMode}
-            onToggleExperience={toggleExperienceMode}
-          />
-        )}
         {divisionToast && <div className="absolute bottom-24 left-1/2 z-[100] -translate-x-1/2 rounded-full bg-black/75 px-4 py-2 text-[12px] text-white">{divisionToast}</div>}
       </>
     </PhoneFrame>
