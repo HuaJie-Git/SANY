@@ -1,9 +1,44 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import FuelLevelChart from '../../components/FuelLevelChart/FuelLevelChart';
 import WorkStatusTimeline from '../../components/WorkStatusTimeline/WorkStatusTimeline';
 import IconFont from '../../components/IconFont/IconFont';
+import EscEventPage from '../EscEvent/EscEventPage';
+
+const PURE_ELECTRIC_MIXER_DATA = {
+  supportsTrajectory: true,
+  trajectoryType: 'mixer',
+  electric: true,
+  model: 'SYM5310BEV',
+  code: 'SYM5310BEV-8001',
+  plate: 'SYM5310BEV-8001',
+  status: '行驶',
+  reportTime: '2026-09-20 09:41:00',
+  location: '湖南省长沙市宁乡经开区',
+  startLocation: '湖南省长沙市宁乡经开区',
+  endLocation: '湖南省长沙市宁乡经开区',
+  realtime: [
+    ['设备状态', '行驶'],
+    ['搅拌桶方向', '正转'],
+    ['剩余电量', '70', '%'],
+  ],
+  today: [
+    ['里程', '360', 'km'],
+    ['用电量', '150', 'kWh'],
+    ['工时', '6.8', 'h'],
+    ['怠速工时', '1.4', 'h'],
+  ],
+  workDist: [0,0,0,0,1,1,1,1,1,2,2,1,0,0,1,1,1,1,2,2,1,0,0,0],
+  cumulative: [
+    ['总里程', '12680', 'km'],
+    ['累计搅拌方量', '2760', 'm³'],
+    ['总工时', '1750', 'h'],
+  ],
+};
 
 const MACHINE_DATA = {
+  纯电搅拌车: PURE_ELECTRIC_MIXER_DATA,
+  'SYM5310BEV-8001': PURE_ELECTRIC_MIXER_DATA,
+
   // 1. 挖掘机
   挖掘机: {
     supportsTrajectory: false,
@@ -613,6 +648,8 @@ const WorkConditionDetail = ({
   onRequireLogin,
 }) => {
   const [hint, setHint] = useState('');
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [showEscEvents, setShowEscEvents] = useState(false);
   const timerRef = useRef(null);
 
   const templateData = MACHINE_DATA['三一平地机'];
@@ -639,7 +676,7 @@ const WorkConditionDetail = ({
 
   const isExcavator = ['挖掘机', '三一挖掘机', 'SY014CF', 'SY014CF0113D8'].includes(device?.name) || device?.code?.startsWith('SY014CF');
   const isCrane = ['汽车起重机', '三一起重机', 'AC0250CF', 'AC0250CF0056'].includes(device?.name) || device?.code?.startsWith('AC0250');
-  const isMixer = ['搅拌车', '纯电搅拌车', 'HSGJ1051', 'HSGJ1051016142'].includes(device?.name) || device?.code?.startsWith('HSGJ');
+  const isMixer = ['搅拌车', '纯电搅拌车', 'HSGJ1051', 'HSGJ1051016142'].includes(device?.name) || device?.code?.startsWith('HSGJ') || device?.code?.startsWith('SYM5310BEV');
   const _isMiningTruck = ['矿用宽体自卸车', '宽体车', 'KT090AE', 'KT090AE20208'].includes(device?.name) || device?.code?.startsWith('KT090AE');
   const _isDumpTruck = ['自卸车', 'HRZX2331', 'HRZX2331008983'].includes(device?.name) || device?.code?.startsWith('HRZX');
   const isLoader = ['电动装载机', '装载机', 'SW970EACG', 'SW970EACG0278'].includes(device?.name) || device?.code?.startsWith('SW970E');
@@ -665,6 +702,27 @@ const WorkConditionDetail = ({
     }
   };
 
+  const openMoreActions = () => {
+    if (demoMode) {
+      onRequireLogin?.();
+      return;
+    }
+    setMoreOpen(true);
+  };
+
+  useEffect(() => {
+    if (!moreOpen) return undefined;
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') setMoreOpen(false);
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [moreOpen]);
+
+  if (showEscEvents) {
+    return <EscEventPage device={device} onBack={() => setShowEscEvents(false)}/>;
+  }
+
   return (
     <div className="relative min-h-full bg-[#f1f3f7] text-[#252b33]">
       <header className="sticky top-0 z-20 bg-[#f1f3f7]/95 backdrop-blur-sm">
@@ -673,7 +731,7 @@ const WorkConditionDetail = ({
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#252b33" strokeWidth="2" strokeLinecap="round"><path d="m15 18-6-6 6-6"/></svg>
           </button>
           <div className="flex-1 truncate px-2 text-[15px] font-medium">{device?.code}</div>
-          <button type="button" aria-label="更多操作" onClick={() => handleAction('更多')} className="h-9 w-9 flex items-center justify-center text-[20px] tracking-[2px] cursor-pointer active:opacity-70">•••</button>
+          <button type="button" aria-label="更多操作" onClick={openMoreActions} className="h-9 w-9 flex items-center justify-center text-[20px] tracking-[2px] cursor-pointer active:opacity-70">•••</button>
         </div>
         <div className="pb-3 text-center text-[11px] text-[#9299a8] flex items-center justify-center gap-1">
           <span>上数时间 {reportTime}</span>
@@ -708,12 +766,12 @@ const WorkConditionDetail = ({
               ["report", "数据报表", () => handleAction('数据报表', () => onNavigate?.('dataReport'))],
               ["nav", "动态曲线", () => handleAction('动态曲线')],
               ["charge", "充电数据", () => handleAction('充电数据')],
-              ["grid", "更多操作", () => handleAction('更多操作')],
+              ["grid", "更多操作", openMoreActions],
             ] : [
               ["report", "数据报表", () => handleAction('数据报表', () => onNavigate?.('dataReport'))],
               ["behavior", "数据分析", () => handleAction('数据分析', () => onNavigate?.('dataAnalysis'))],
               ["nav", "动态曲线", () => handleAction('动态曲线')],
-              ["grid", "更多操作", () => handleAction('更多操作')],
+              ["grid", "更多操作", openMoreActions],
             ]).map(([icon, label, fn]) => (
               <button key={label} type="button" aria-label={label} onClick={fn} className="h-[76px] rounded-[12px] border border-[#aeb5bf] flex flex-col items-center justify-center gap-1.5 text-[#303640] active:bg-gray-50 cursor-pointer"><Icon type={icon}/><span className="text-[11px] text-[#68707d] leading-tight">{label}</span></button>
             ))}
@@ -797,6 +855,21 @@ const WorkConditionDetail = ({
         </section>
 
       </main>
+
+      {moreOpen && <div className="fixed inset-x-0 bottom-0 top-[44px] z-50 flex items-end bg-black/45" role="presentation" onClick={() => setMoreOpen(false)}>
+        <section className="w-full rounded-t-[24px] bg-white px-4 pb-8 pt-3 shadow-[0_-14px_40px_rgba(26,31,39,0.14)]" role="dialog" aria-modal="true" aria-labelledby="more-actions-title" onClick={(event) => event.stopPropagation()}>
+          <div className="mx-auto h-1 w-10 rounded-full bg-[#dfe2e7]"/>
+          <div className="mt-4 flex items-center justify-between">
+            <div><h2 id="more-actions-title" className="text-[17px] font-semibold text-[#252b33]">更多操作</h2><p className="mt-1 text-[11px] text-[#8a929e]">{device?.code || '-'}</p></div>
+            <button type="button" onClick={() => setMoreOpen(false)} aria-label="关闭更多操作" className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f2f3f5] text-[19px] text-[#69727e]">×</button>
+          </div>
+          {isMixer ? <button type="button" onClick={() => { setMoreOpen(false); setShowEscEvents(true); }} className="mt-5 flex w-full items-center gap-3 rounded-[16px] border border-[#f0d4d7] bg-[#fffafb] p-4 text-left active:bg-[#fff2f3]">
+            <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[14px] bg-[#c9192e] text-[13px] font-bold text-white">ESC</span>
+            <span className="min-w-0 flex-1"><strong className="block text-[15px] font-semibold text-[#29313b]">ESC事件</strong><small className="mt-1 block break-words text-[11px] leading-[17px] text-[#7b838e]">查看该设备的 ESC 状态与属性明细</small></span>
+            <span className="flex-shrink-0 text-[20px] text-[#b7bdc6]">›</span>
+          </button> : <div className="mt-5 rounded-[16px] bg-[#f5f6f8] px-4 py-6 text-center text-[12px] text-[#8a929e]">当前设备暂无可用的更多操作</div>}
+        </section>
+      </div>}
 
       {hint && <div role="status" className="absolute left-1/2 top-[45%] z-50 -translate-x-1/2 rounded-lg bg-black/75 px-4 py-2 text-[12px] text-white">{hint}</div>}
     </div>
