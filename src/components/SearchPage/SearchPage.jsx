@@ -56,7 +56,7 @@ const SearchPage = ({
   onClose,
   onOpenAsset,
   onNavigate,
-  onOpenDevice,
+  onOpenDevice: _onOpenDevice,
   onRequireLogin: _onRequireLogin,
   guestMode = false,
   initialScannerOpen = false,
@@ -191,11 +191,19 @@ const SearchPage = ({
 
   const handleGuestProductClick = (item) => {
     const target = GUEST_SEARCH_DEVICES.find((d) => d.code === item.code) || GUEST_DEMO_DEVICES.find((d) => d.code === item.code) || item;
-    if (onOpenDevice) {
-      onOpenDevice(target);
-    } else {
-      onNavigate?.({ target: 'assetDetail', item: target });
-    }
+    const productItem = {
+      ...target,
+      name: target.displayName || target.name || item.name,
+      code: target.model || target.code || item.code,
+      image: target.image || item.image,
+    };
+    onNavigate?.({
+      target: 'productCenter',
+      context: {
+        query: productItem.name,
+        item: productItem,
+      },
+    });
   };
 
   // ====== 各 Tab 的默认数据（进入搜索页时展示） ======
@@ -432,37 +440,36 @@ const SearchPage = ({
 
   // ====== 各 Tab 的卡片组件 ======
 
-  // 资产 Tab
+  // 资产 Tab：横向行卡片（整行浅灰边框独立卡片，左缩略图，右名称与型号/编码）
   const AssetCard = ({ item }) => {
-    const name = item.name || '--';
-    const brand = item.brand || name.split(/\s+/)[0] || '--';
-    const deviceType = item.deviceType || '--';
-    const code = item.code || '--';
-    const status = item.onlineStatus || '--';
-    const isOnline = status === '在线';
+    const displayName = item.displayName || item.name || '--';
+    const code = item.model || item.code || '--';
 
     return (
       <button
         type="button"
-        aria-label={`${brand} ${deviceType}，序列号 ${code}，${status}`}
+        aria-label={`${displayName}，编码 ${code}`}
         onClick={() => onNavigate?.({ target: 'assetDetail', item: { ...item, name: item.deviceType || item.name } })}
-        className="mb-3 flex w-full items-center gap-3 rounded-[14px] border border-gray-100 bg-white p-3 text-left shadow-[0_3px_12px_rgba(31,41,55,0.06)] transition active:scale-[0.99] active:bg-gray-50"
+        className="mb-3 flex w-full items-center gap-3.5 rounded-xl border border-gray-100 bg-white p-3.5 text-left shadow-2xs transition active:scale-[0.99] active:bg-gray-50"
       >
-        <DeviceImage src={item.image} name={name} />
-        <span className="min-w-0 flex-1 space-y-1">
-          <span className="flex min-w-0 items-center gap-1 text-[16px] font-semibold leading-6 text-gray-900">
-            <span className="truncate" title={brand}>{searchText ? highlightText(brand, searchText) : brand}</span>
-            <span className="flex-shrink-0 text-gray-300" aria-hidden="true">·</span>
-            <span className="truncate" title={deviceType}>{searchText ? highlightText(deviceType, searchText) : deviceType}</span>
-          </span>
-          <span className="flex min-w-0 items-center gap-3 text-[14px] leading-5">
-            <span className="min-w-0 truncate tabular-nums text-gray-400" title={code}>{searchText ? highlightText(code, searchText) : code}</span>
-            <span className={`flex flex-shrink-0 items-center leading-5 ${isOnline ? 'text-[#18c75a]' : 'text-gray-400'}`}>
-              <span className={`mr-1.5 h-2 w-2 rounded-full ${isOnline ? 'bg-[#18c75a]' : 'bg-gray-400'}`} aria-hidden="true" />
-              {status}
-            </span>
-          </span>
-        </span>
+        <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-100 bg-[#f8f9fa] p-1">
+          <img
+            src={item.image}
+            alt={displayName}
+            className="max-h-full max-w-full object-contain"
+            onError={(e) => {
+              e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" fill="%23f3f4f6"/><text x="32" y="36" font-size="12" fill="%239ca3af" text-anchor="middle">SANY</text></svg>';
+            }}
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[15px] font-semibold text-gray-900" title={displayName}>
+            {searchText ? highlightText(displayName, searchText) : displayName}
+          </div>
+          <div className="mt-1 truncate text-[13px] text-gray-500 tabular-nums" title={code}>
+            {searchText ? highlightText(code, searchText) : code}
+          </div>
+        </div>
       </button>
     );
   };
@@ -517,23 +524,36 @@ const SearchPage = ({
     );
   };
 
-  // 产品中心 Tab：沿用通用搜索逻辑，展示车型名称和三一设备编码。
+  // 产品中心 Tab：横向行卡片（整行浅灰边框独立卡片，左缩略图，右名称与型号）
   const ProductCenterCard = ({ item }) => {
     const name = item.name || '--';
-    const code = item.code || '--';
+    const model = item.model || item.code || '--';
 
     return (
-      <button type="button" onClick={() => onNavigate?.({ target: 'productCenter', context: { query: name, item } })} className="flex w-full items-center gap-3 border-b border-gray-100 py-4 text-left transition-colors active:bg-gray-50">
-        <DeviceImage src={item.image} name={name} size="small" />
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-[16px] font-semibold leading-6 text-gray-800" title={name}>
+      <button
+        type="button"
+        aria-label={`${name}，型号 ${model}`}
+        onClick={() => onNavigate?.({ target: 'productCenter', context: { query: name, item } })}
+        className="mb-3 flex w-full items-center gap-3.5 rounded-xl border border-gray-100 bg-white p-3.5 text-left shadow-2xs transition active:scale-[0.99] active:bg-gray-50"
+      >
+        <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-100 bg-[#f8f9fa] p-1">
+          <img
+            src={item.image}
+            alt={name}
+            className="max-h-full max-w-full object-contain"
+            onError={(e) => {
+              e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" fill="%23f3f4f6"/><text x="32" y="36" font-size="12" fill="%239ca3af" text-anchor="middle">SANY</text></svg>';
+            }}
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[15px] font-semibold text-gray-900" title={name}>
             {searchText ? highlightText(name, searchText) : name}
-          </span>
-          <span className="mt-0.5 block truncate text-[13px] leading-5 tabular-nums text-gray-400" title={code}>
-            {searchText ? highlightText(code, searchText) : code}
-          </span>
-        </span>
-        <svg className="h-4 w-4 flex-shrink-0 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </div>
+          <div className="mt-1 truncate text-[13px] text-gray-500 tabular-nums" title={model}>
+            {searchText ? highlightText(model, searchText) : model}
+          </div>
+        </div>
       </button>
     );
   };
@@ -756,11 +776,11 @@ const SearchPage = ({
               autoFocus
               maxLength={50}
               dir="auto"
-              placeholder="搜索设备名称、型号或编号"
+              placeholder="搜索产品和配件"
               value={searchText}
               onChange={(e) => setSearchText(e.target.value.slice(0, 50))}
               className="flex-1 bg-transparent outline-none text-[15px] text-gray-900 placeholder:text-gray-400 min-w-0"
-              aria-label="搜索设备名称、型号或编号"
+              aria-label="搜索产品和配件"
             />
             {searchText && (
               <button
@@ -842,53 +862,40 @@ const SearchPage = ({
               <div className="text-[14px] text-[#888693] mt-5">无搜索结果</div>
             </div>
           ) : (
-            /* STATE-SRCH-RESULT: 直接展示 3 台假数据设备的搜索结果列表 */
+            /* STATE-SRCH-RESULT: 商品卡片列表（整行浅灰边框独立卡片，左缩略图，右名称与型号/编码） */
             <div className="space-y-3 pt-2 pb-6">
-              {guestResults.all.map((item) => (
-                <div
-                  key={item.code}
-                  onClick={() => handleGuestProductClick(item)}
-                  className="flex items-start gap-3 p-3.5 rounded-xl border border-gray-100 bg-white shadow-xs hover:border-gray-200 active:bg-gray-50 transition-all cursor-pointer"
-                  dir="auto"
-                >
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-16 h-16 rounded-lg object-contain bg-[#f8f9fa] flex-shrink-0 p-1 border border-gray-100"
-                    onError={(e) => {
-                      e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" fill="%23f3f4f6"/><text x="32" y="36" font-size="12" fill="%239ca3af" text-anchor="middle">SANY</text></svg>';
-                    }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[15px] font-semibold text-gray-900 truncate">
-                        {highlightText(item.displayName || item.name, searchText)}
-                      </span>
-                      <span className="text-[11px] px-1.5 py-0.5 rounded-sm font-medium flex-shrink-0 bg-blue-50 text-blue-600">
-                        {item.type || '设备'}
-                      </span>
-                      <span className={`text-[11px] px-1.5 py-0.5 rounded-sm font-medium flex-shrink-0 ${
-                        item.status === 'online' ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'
-                      }`}>
-                        {item.statusText || '在线'}
-                      </span>
-                    </div>
+              {guestResults.all.map((item) => {
+                const name = item.displayName || item.name || '--';
+                const model = item.model || item.code || '--';
 
-                    <div className="mt-1 text-[13px] text-gray-500 space-y-1">
-                      <div className="truncate">
-                        <span className="text-gray-400">设备编号: </span>
-                        <span className="font-mono text-gray-700">
-                          {highlightText(item.code, searchText)}
-                        </span>
+                return (
+                  <div
+                    key={item.code || item.id}
+                    onClick={() => handleGuestProductClick(item)}
+                    className="flex w-full items-center gap-3.5 rounded-xl border border-gray-100 bg-white p-3.5 text-left shadow-2xs transition active:scale-[0.99] active:bg-gray-50 cursor-pointer"
+                    dir="auto"
+                  >
+                    <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-100 bg-[#f8f9fa] p-1">
+                      <img
+                        src={item.image}
+                        alt={name}
+                        className="max-h-full max-w-full object-contain"
+                        onError={(e) => {
+                          e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" fill="%23f3f4f6"/><text x="32" y="36" font-size="12" fill="%239ca3af" text-anchor="middle">SANY</text></svg>';
+                        }}
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[15px] font-semibold text-gray-900" title={name}>
+                        {searchText ? highlightText(name, searchText) : name}
                       </div>
-                      <div className="flex items-center gap-3 text-[12px] text-gray-400">
-                        <span>位置: {item.location || '中国'}</span>
-                        <span>时间: {item.reportTime || '2026-09-23 08:30 (UTC+8)'}</span>
+                      <div className="mt-1 truncate text-[13px] text-gray-500 tabular-nums" title={model}>
+                        {searchText ? highlightText(model, searchText) : model}
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

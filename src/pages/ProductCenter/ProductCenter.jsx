@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 
 // 预置三一全系列产品分类与型号数据
 const PRODUCT_CATEGORIES = [
@@ -166,42 +166,33 @@ const COUNTRY_OPTIONS = [
   { code: '+7', name: '俄罗斯', flag: '🇷🇺' },
 ];
 
-// 基线产品中心（db62a7e 登录态：标准单个产品详情视图）
-const BaselineProductCenter = ({ onBack, initialItem }) => {
-  const product = initialItem || {
-    name: '车载混凝土泵',
-    code: 'SYM5180THBES 30C-8',
-    image: 'images/asset-models/sany_pump.jpg',
-  };
-
-  return (
-    <div className="flex h-full flex-col bg-white text-gray-900">
-      <header className="flex h-[56px] flex-shrink-0 items-center border-b border-gray-100 px-4">
-        <button type="button" onClick={onBack} className="flex h-9 w-9 items-center justify-center rounded-full active:bg-gray-100" aria-label="返回">
-          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m15 18-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-        </button>
-        <h1 className="flex-1 pr-9 text-center text-[17px] font-semibold">产品中心</h1>
-      </header>
-
-      <main className="flex-1 overflow-y-auto px-5 pb-8 pt-5">
-        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-[0_5px_20px_rgba(31,41,55,0.07)]">
-          <div className="flex h-[280px] items-center justify-center bg-[#fafafa] p-5">
-            <img src={product.image} alt={product.name} className="h-full w-full object-contain" />
-          </div>
-          <div className="px-5 py-5 text-center">
-            <h2 className="text-[22px] font-semibold leading-8">{product.name || '--'}</h2>
-            <div className="mt-3 inline-flex max-w-full items-center rounded-lg bg-gray-50 px-4 py-2 text-[15px] leading-5 tabular-nums text-gray-700">
-              <span className="truncate" title={product.code}>{product.code || '--'}</span>
-            </div>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
+const shouldMockFailure = (explicitMock) => {
+  if (typeof explicitMock === 'function') {
+    return Boolean(explicitMock());
+  }
+  if (typeof explicitMock === 'boolean') {
+    return explicitMock;
+  }
+  if (typeof explicitMock === 'string') {
+    return explicitMock === 'fail' || explicitMock === 'failure';
+  }
+  try {
+    if (typeof window !== 'undefined' && window.location) {
+      const search = window.location.search || (window.location.hash.includes('?') ? '?' + window.location.hash.split('?')[1] : '');
+      const params = new URLSearchParams(search);
+      const val = params.get('mock_inquiry') || params.get('mock') || params.get('inquiry_mock') || params.get('inquiry_status');
+      if (val === 'fail' || val === 'failure' || val === 'error' || val === '500') {
+        return true;
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return false;
 };
 
-// 游客体验模式专属产品中心（b5ded1b：多级品类、型号、对比与询价）
-const GuestProductCenter = ({ onBack, initialItem, onRequireLogin }) => {
+// 产品中心（统一游客与登录态浏览体验，保留模式差异）
+const ProductCenter = ({ onBack, initialItem, demoMode = false, onRequireLogin, mockFailure }) => {
   // 视图控制: 'categories' (图1) | 'modelList' (图2) | 'detail' (图3) | 'inquiry' (图4)
   const [currentView, setCurrentView] = useState(initialItem ? 'detail' : 'categories');
 
@@ -236,21 +227,91 @@ const GuestProductCenter = ({ onBack, initialItem, onRequireLogin }) => {
     return PRODUCT_MODELS_DATA.pump_truck[0];
   });
 
+  useEffect(() => {
+    if (initialItem) {
+      setSelectedProduct({
+        code: initialItem.code || 'SYM5180THBES 30C-8',
+        name: initialItem.name || '车载混凝土泵',
+        image: initialItem.image || 'images/机手社区/泵车/泵车_01.png',
+        specs: initialItem.specs || [
+          { label: '垂直达到距离', value: '30.1 m' },
+          { label: '压力', value: '6 MPa' },
+          { label: '输出', value: '101 m³/h' },
+        ],
+        fullSpecs: initialItem.fullSpecs || [
+          { label: '垂直达到距离', value: '30.1 m' },
+          { label: '压力', value: '6 MPa' },
+          { label: '输出', value: '101 m³/h' },
+          { label: '理论输送量', value: '101 m³/h' },
+          { label: '底盘型号', value: 'SYM5180THB' },
+        ],
+      });
+      setCurrentView('detail');
+    }
+  }, [initialItem]);
+
   // 详情页收藏状态与轻提示
   const [isFavorite, setIsFavorite] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
-  // 询价信息表单数据（游客需要手动填写联系人、手机号、邮箱和国家/地区）
-  const [inquiryForm, setInquiryForm] = useState({
-    contactName: '张华杰',
-    phoneCode: '+86',
-    phoneNumber: '17673841261',
-    email: '2874329754@qq.com',
-    country: '中国',
+  // 询价信息表单数据：登录用户自动回填账号资料；游客保留固定字段名，手动填写
+  const getLoggedInProfile = () => {
+    try {
+      if (typeof window !== 'undefined') {
+        const saved = window.localStorage.getItem('sanvist_user_profile');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && typeof parsed === 'object') {
+            return {
+              contactName: parsed.contactName || parsed.name || '',
+              phoneCode: parsed.phoneCode || '+86',
+              phoneNumber: parsed.phoneNumber || parsed.phone || '',
+              email: parsed.email || '',
+              country: parsed.country || '中国',
+            };
+          }
+        }
+      }
+    } catch {}
+    return {
+      contactName: '',
+      phoneCode: '+86',
+      phoneNumber: '',
+      email: '',
+      country: '中国',
+    };
+  };
+
+  const [inquiryForm, setInquiryForm] = useState(() => {
+    if (!demoMode) {
+      return getLoggedInProfile();
+    }
+    return {
+      contactName: '',
+      phoneCode: '+86',
+      phoneNumber: '',
+      email: '',
+      country: '中国',
+    };
   });
+
+  useEffect(() => {
+    if (currentView === 'inquiry' && !demoMode) {
+      const profile = getLoggedInProfile();
+      setInquiryForm((prev) => ({
+        contactName: prev.contactName || profile.contactName || '',
+        phoneCode: prev.phoneCode || profile.phoneCode || '+86',
+        phoneNumber: prev.phoneNumber || profile.phoneNumber || '',
+        email: prev.email || profile.email || '',
+        country: prev.country || profile.country || '中国',
+      }));
+    }
+  }, [currentView, demoMode]);
+
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [showInquirySuccess, setShowInquirySuccess] = useState(false);
   const [inquiryError, setInquiryError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -308,7 +369,9 @@ const GuestProductCenter = ({ onBack, initialItem, onRequireLogin }) => {
 
   // 提交询价表单
   const handleInquirySubmit = (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
+    if (isSubmitting) return;
+
     if (!inquiryForm.contactName.trim()) {
       setInquiryError('请填写联系人姓名');
       return;
@@ -318,7 +381,18 @@ const GuestProductCenter = ({ onBack, initialItem, onRequireLogin }) => {
       return;
     }
     setInquiryError('');
-    setShowInquirySuccess(true);
+    setIsSubmitting(true);
+
+    setTimeout(() => {
+      setIsSubmitting(false);
+      const isFailure = shouldMockFailure(mockFailure);
+      if (isFailure) {
+        setInquiryError('提交失败，请重试');
+        showToast('提交失败，请重试');
+      } else {
+        setShowInquirySuccess(true);
+      }
+    }, 400);
   };
 
   // 计算当前子品类和产品列表
@@ -737,11 +811,11 @@ const GuestProductCenter = ({ onBack, initialItem, onRequireLogin }) => {
           <button
             type="button"
             onClick={() => {
-              if (onRequireLogin) {
-                onRequireLogin();
+              if (demoMode) {
+                onRequireLogin?.();
                 return;
               }
-              // 自动将当前选中的设备型号带入询价表单
+              // 登录态：自动将当前选中的设备型号带入询价表单
               setCurrentView('inquiry');
             }}
             className="flex-1 h-11 rounded-lg bg-[#E01923] text-[15px] font-bold text-white shadow-md active:bg-[#c4151e]"
@@ -791,7 +865,6 @@ const GuestProductCenter = ({ onBack, initialItem, onRequireLogin }) => {
                 type="text"
                 value={inquiryForm.contactName}
                 onChange={(e) => setInquiryForm({ ...inquiryForm, contactName: e.target.value })}
-                placeholder="请输入联系人姓名"
                 className="w-full bg-transparent text-[16px] font-medium text-gray-900 outline-none"
               />
               {inquiryForm.contactName && (
@@ -831,7 +904,6 @@ const GuestProductCenter = ({ onBack, initialItem, onRequireLogin }) => {
                   type="tel"
                   value={inquiryForm.phoneNumber}
                   onChange={(e) => setInquiryForm({ ...inquiryForm, phoneNumber: e.target.value })}
-                  placeholder="请输入手机号码"
                   className="w-full bg-transparent text-[16px] font-medium text-gray-900 outline-none"
                 />
                 {inquiryForm.phoneNumber && (
@@ -855,10 +927,9 @@ const GuestProductCenter = ({ onBack, initialItem, onRequireLogin }) => {
             </div>
             <div className="mt-1 flex items-center justify-between">
               <input
-                type="email"
+                type="text"
                 value={inquiryForm.email}
                 onChange={(e) => setInquiryForm({ ...inquiryForm, email: e.target.value })}
-                placeholder="请输入邮箱"
                 className="w-full bg-transparent text-[16px] font-medium text-gray-900 outline-none"
               />
               {inquiryForm.email && (
@@ -890,8 +961,6 @@ const GuestProductCenter = ({ onBack, initialItem, onRequireLogin }) => {
             </svg>
           </div>
 
-
-
           {inquiryError && (
             <div className="rounded-lg bg-red-50 p-2.5 text-[13px] text-red-600">
               {inquiryError}
@@ -903,10 +972,13 @@ const GuestProductCenter = ({ onBack, initialItem, onRequireLogin }) => {
         <footer className="flex-shrink-0 border-t border-gray-100 bg-white p-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
           <button
             type="button"
+            disabled={isSubmitting}
             onClick={handleInquirySubmit}
-            className="h-12 w-full rounded-xl bg-[#E01923] text-[16px] font-bold text-white shadow-md active:bg-[#c4151e] transition"
+            className={`h-12 w-full rounded-xl bg-[#E01923] text-[16px] font-bold text-white shadow-md transition ${
+              isSubmitting ? 'opacity-60 cursor-not-allowed' : 'active:bg-[#c4151e]'
+            }`}
           >
-            提交
+            {isSubmitting ? '提交中...' : '提交'}
           </button>
         </footer>
 
@@ -959,10 +1031,11 @@ const GuestProductCenter = ({ onBack, initialItem, onRequireLogin }) => {
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               </div>
-              <h3 className="mt-4 text-[18px] font-bold text-gray-900">询价提交成功</h3>
-              <p className="mt-2 text-[14px] text-gray-600">
-                感谢您的垂询！已为您登记对设备 <span className="font-semibold text-gray-900">{selectedProduct.code}</span> 的报价请求，专属客户经理将在 24 小时内与联系人 <span className="font-semibold text-gray-900">{inquiryForm.contactName}</span> ({inquiryForm.phoneNumber}) 取得联系。
+              <h3 className="mt-4 text-[18px] font-bold text-gray-900">提交成功</h3>
+              <p className="mt-2 text-[14px] leading-relaxed text-gray-600">
+                感谢您的垂询！已为您登记对设备 <span className="font-semibold text-gray-900">{selectedProduct.code}</span> 的报价请求，专属客户经理将在 24 小时内与联系人 <span className="font-semibold text-gray-900">{inquiryForm.contactName}</span> ({inquiryForm.phoneCode} {inquiryForm.phoneNumber}) 取得联系。
               </p>
+              <p className="mt-2 text-[12px] text-gray-400">（原型演示：已模拟 MOSS 接收与确认，未接通真实生产接口）</p>
               <div className="mt-6 flex space-x-3">
                 <button
                   type="button"
@@ -1008,13 +1081,6 @@ const GuestProductCenter = ({ onBack, initialItem, onRequireLogin }) => {
       )}
     </div>
   );
-};
-
-const ProductCenter = ({ onBack, initialItem, demoMode = false, onRequireLogin }) => {
-  if (demoMode) {
-    return <GuestProductCenter onBack={onBack} initialItem={initialItem} onRequireLogin={onRequireLogin} />;
-  }
-  return <BaselineProductCenter onBack={onBack} initialItem={initialItem} />;
 };
 
 export default ProductCenter;

@@ -66,6 +66,9 @@ const getLoggedInUserProfile = (context) => {
       country: context.user.country || '中国',
       phoneCode: context.user.phoneCode || '+86',
       phoneNumber: context.user.phoneNumber || context.user.phone || '',
+      contactName: context.user.contactName || context.user.name || '',
+      email: context.user.email || '',
+      companyName: context.user.company || context.user.companyName || '',
     };
   }
   try {
@@ -78,6 +81,9 @@ const getLoggedInUserProfile = (context) => {
             country: parsed.country || '中国',
             phoneCode: parsed.phoneCode || '+86',
             phoneNumber: parsed.phoneNumber || parsed.phone || '',
+            contactName: parsed.contactName || parsed.name || '',
+            email: parsed.email || '',
+            companyName: parsed.company || parsed.companyName || '',
           };
         }
       }
@@ -89,10 +95,38 @@ const getLoggedInUserProfile = (context) => {
     country: '中国',
     phoneCode: '+86',
     phoneNumber: '',
+    contactName: '',
+    email: '',
+    companyName: '',
   };
 };
 
-const InquiryPage = ({ onBack, context = {}, onSubmit }) => {
+const shouldMockFailure = (explicitMock) => {
+  if (typeof explicitMock === 'function') {
+    return Boolean(explicitMock());
+  }
+  if (typeof explicitMock === 'boolean') {
+    return explicitMock;
+  }
+  if (typeof explicitMock === 'string') {
+    return explicitMock === 'fail' || explicitMock === 'failure';
+  }
+  try {
+    if (typeof window !== 'undefined' && window.location) {
+      const search = window.location.search || (window.location.hash.includes('?') ? '?' + window.location.hash.split('?')[1] : '');
+      const params = new URLSearchParams(search);
+      const val = params.get('mock_inquiry') || params.get('mock') || params.get('inquiry_mock') || params.get('inquiry_status');
+      if (val === 'fail' || val === 'failure' || val === 'error' || val === '500') {
+        return true;
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return false;
+};
+
+const InquiryPage = ({ onBack, context = {}, onSubmit, mockFailure }) => {
   const initialDeviceModel = context?.model || context?.code || context?.deviceName || 'SYM5180THBES 30C-8';
   const initialDeviceName = context?.deviceName || (context?.model ? context.model : '车载混凝土泵');
 
@@ -121,19 +155,19 @@ const InquiryPage = ({ onBack, context = {}, onSubmit }) => {
   };
 
   // 询价信息表单数据：
-  // 1) 已登录状态进入询价页时，自动回填当前登录账号资料中已有的“国家/地区”和“手机号码”；
-  // 2) 游客态保持现有填写逻辑，国家/地区现有默认值规则不变（中国/+86，手机号为空）。
+  // 1) 已登录状态进入询价页时，自动回填当前登录账号资料中已有的联系人、国家/地区、手机号码和邮箱；
+  // 2) 游客态保持现有填写逻辑，国家/地区现有默认值规则不变（中国/+86，其余字段由用户填写）。
   const [inquiryForm, setInquiryForm] = useState(() => {
     const isGuest = resolveIsGuest(context);
     if (!isGuest) {
       const profile = getLoggedInUserProfile(context);
       return {
-        contactName: context?.contactName || '',
+        contactName: context?.contactName || profile.contactName || '',
         phoneCode: profile.phoneCode || '+86',
-        phoneNumber: profile.phoneNumber || profile.phone || '',
-        email: context?.email || '',
+        phoneNumber: context?.phoneNumber || context?.phone || profile.phoneNumber || '',
+        email: context?.email || profile.email || '',
         country: profile.country || '中国',
-        companyName: context?.companyName || '',
+        companyName: context?.companyName || profile.companyName || '',
       };
     }
     return {
@@ -149,9 +183,12 @@ const InquiryPage = ({ onBack, context = {}, onSubmit }) => {
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [inquiryError, setInquiryError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInquirySubmit = (e) => {
     if (e) e.preventDefault();
+    if (isSubmitting) return;
+
     if (!selectedDevices || selectedDevices.length === 0) {
       setInquiryError('请至少选择一项设备');
       return;
@@ -165,14 +202,17 @@ const InquiryPage = ({ onBack, context = {}, onSubmit }) => {
       return;
     }
     setInquiryError('');
-    setShowSuccessModal(true);
-    const modelSummary = selectedDevices.map((d) => d.name || d.model || d.code).join(', ') || initialDeviceModel;
-    onSubmit?.({
-      ...context,
-      ...inquiryForm,
-      devices: selectedDevices,
-      model: modelSummary,
-    });
+    setIsSubmitting(true);
+
+    setTimeout(() => {
+      setIsSubmitting(false);
+      const isFailure = shouldMockFailure(mockFailure ?? context?.mockFailure ?? context?.mock_inquiry);
+      if (isFailure) {
+        setInquiryError('提交失败，请重试');
+        return;
+      }
+      setShowSuccessModal(true);
+    }, 400);
   };
 
   return (
@@ -386,21 +426,24 @@ const InquiryPage = ({ onBack, context = {}, onSubmit }) => {
           </div>
         </div>
 
-        {inquiryError && (
-          <div className="rounded-lg bg-red-50 p-2.5 text-[13px] text-red-600">
-            {inquiryError}
-          </div>
-        )}
+          {inquiryError && (
+            <div className="rounded-lg bg-red-50 p-2.5 text-[13px] text-red-600">
+              {inquiryError}
+            </div>
+          )}
       </form>
 
       {/* 底部吸底提交按钮 (严格还原截图大红圆角按钮) */}
       <footer className="flex-shrink-0 border-t border-gray-100 bg-white p-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
         <button
           type="button"
+          disabled={isSubmitting}
           onClick={handleInquirySubmit}
-          className="h-12 w-full rounded-xl bg-[#E01923] text-[16px] font-bold text-white shadow-md active:bg-[#c4151e] transition"
+          className={`h-12 w-full rounded-xl bg-[#E01923] text-[16px] font-bold text-white shadow-md transition ${
+            isSubmitting ? 'opacity-60 cursor-not-allowed' : 'active:bg-[#c4151e]'
+          }`}
         >
-          提交
+          {isSubmitting ? '提交中...' : '提交'}
         </button>
       </footer>
 
@@ -453,15 +496,23 @@ const InquiryPage = ({ onBack, context = {}, onSubmit }) => {
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
-            <h3 className="mt-4 text-[18px] font-bold text-gray-900">询价提交成功</h3>
+            <h3 className="mt-4 text-[18px] font-bold text-gray-900">提交成功</h3>
             <p className="mt-2 text-[14px] leading-relaxed text-gray-600">
               感谢您的垂询！已为您登记对设备 <span className="font-semibold text-gray-900">{selectedDevices.map((d) => d.name || d.model || d.code).join(', ') || initialDeviceModel}</span> 的报价请求，专属客户经理将在 24 小时内与联系人 <span className="font-semibold text-gray-900">{inquiryForm.contactName}</span> ({inquiryForm.phoneCode} {inquiryForm.phoneNumber}) 取得联系。
             </p>
+            <p className="mt-2 text-[12px] text-gray-400">（原型演示：已模拟 MOSS 接收与确认，未接通真实生产接口）</p>
             <div className="mt-6 flex space-x-3">
               <button
                 type="button"
                 onClick={() => {
                   setShowSuccessModal(false);
+                  const modelSummary = selectedDevices.map((d) => d.name || d.model || d.code).join(', ') || initialDeviceModel;
+                  onSubmit?.({
+                    ...context,
+                    ...inquiryForm,
+                    devices: selectedDevices,
+                    model: modelSummary,
+                  });
                   onBack?.();
                 }}
                 className="flex-1 rounded-xl bg-[#E01923] py-2.5 text-[15px] font-bold text-white active:bg-[#c4151e]"

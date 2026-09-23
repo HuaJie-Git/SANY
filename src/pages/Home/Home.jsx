@@ -656,7 +656,11 @@ const Home = () => {
         <InquiryForm
           context={inquiryContext}
           onBack={() => setInquiryContext(null)}
-          onSubmit={(context) => trackLeadIntent.inquirySubmit(context.source, context)}
+          onSubmit={(context) => {
+            trackLeadIntent.inquirySubmit(context?.source, context);
+            setDivisionToast('提交成功');
+            window.setTimeout(() => setDivisionToast(''), 2500);
+          }}
         />
       </PhoneFrame>
     );
