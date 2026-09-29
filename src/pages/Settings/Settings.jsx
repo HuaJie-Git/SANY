@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const Settings = ({ onBack }) => {
+const Settings = ({ onBack, onLogout }) => {
   const [toastMessage, setToastMessage] = useState('');
   const [currentLanguage, setCurrentLanguage] = useState('跟随系统');
   const [showLanguageModal, setShowLanguageModal] = useState(false);
@@ -159,6 +159,16 @@ const Settings = ({ onBack }) => {
         >
           <span className="text-[15px] text-[#1a1a1a] font-normal">清除缓存</span>
         </button>
+
+        {onLogout && (
+          <button
+            type="button"
+            onClick={onLogout}
+            className="w-full rounded-2xl bg-[#f6f7fa] px-5 py-4 flex items-center justify-center active:bg-[#edf0f5] transition-colors"
+          >
+            <span className="text-[15px] font-medium text-[#e60012] leading-snug whitespace-normal break-words" dir="auto">退出登录</span>
+          </button>
+        )}
       </div>
 
       {/* 语言选择弹窗 */}

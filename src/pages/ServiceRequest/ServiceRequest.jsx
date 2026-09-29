@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import PhoneBindModal from '../../components/PhoneBindModal/PhoneBindModal';
+import React, { useState } from 'react';
 
 const ServiceRequest = ({ onBack }) => {
-  const [showPhoneBindModal, setShowPhoneBindModal] = useState(false);
   const [serviceType, setServiceType] = useState('');
   const [country] = useState('中国');
   const [contactName, setContactName] = useState('');
@@ -16,23 +14,7 @@ const ServiceRequest = ({ onBack }) => {
     { id: 'startup', name: '我要开机' }
   ];
 
-  // 模拟检查用户手机号
-  useEffect(() => {
-    const userPhone = null; // 模拟未绑定手机号
-
-    if (!userPhone) {
-      const timer = setTimeout(() => {
-        setShowPhoneBindModal(true);
-      }, 500);
-
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
-  // 处理手机号绑定成功
-  const handlePhoneBindSuccess = () => {
-    console.log('手机号绑定成功');
-  };
+  // 召请页「绑定手机号」自动弹窗暂时停用。
 
   // 处理服务类型选择
   const handleServiceTypeSelect = (type) => {
@@ -173,13 +155,6 @@ const ServiceRequest = ({ onBack }) => {
         </button>
       </div>
 
-      {/* 手机号绑定弹窗 */}
-      <PhoneBindModal
-        visible={showPhoneBindModal}
-        onClose={() => setShowPhoneBindModal(false)}
-        onSuccess={handlePhoneBindSuccess}
-        sourcePage="ServiceRequest"
-      />
     </div>
   );
 };

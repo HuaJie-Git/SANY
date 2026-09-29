@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 
 const LOGIN_REQUIRED_NAMES = [
+  '客户心声',
   '我要召请',
   '我要配件',
   '设备保养',
@@ -27,9 +28,9 @@ const QuickAccess = ({
 
   const guestFirstScreenItems = [
     { id: 'guest-inquiry', name: '我要询价', icon: '询价', color: '#FFE3D6', target: 'inquiry', badge: 'hot' },
-    { id: 'guest-voice', name: '客户心声', icon: '心声', color: '#D7BDE2', target: 'feedback' },
-    { id: 'guest-service', name: '服务中心', icon: '服务', color: '#F7DC6F', target: 'serviceCenter' },
     { id: 'guest-survey', name: '调研问卷', icon: '问卷', color: '#F8C471', target: 'survey' },
+    { id: 'guest-service', name: '服务中心', icon: '服务', color: '#F7DC6F', target: 'serviceCenter' },
+    { id: 'guest-voice', name: '客户心声', icon: '心声', color: '#D7BDE2', target: 'feedback' },
     { id: 'guest-products', name: '产品中心', icon: '产品', color: '#96CEB4', target: 'productCenter', isHalfHidden: true },
   ];
 
@@ -108,13 +109,13 @@ const QuickAccess = ({
 
     const itemName = item.name;
 
-    // 游客/体验模式：登录拦截（我要召请、我要配件、设备保养、机群报表、检查、重卡车队运营、三一认证二手机、吊臂计算、三一新闻、绑定设备）
+    // 游客/体验模式：需要登录后使用的功能统一拦截
     if (demoMode && LOGIN_REQUIRED_NAMES.includes(itemName)) {
       onRequireLogin?.(itemName);
       return;
     }
 
-    // 可直接访问数据的功能：我要询价、产品中心、服务中心、客户心声、调研问卷
+    // 可直接访问数据的功能：我要询价、产品中心、服务中心、调研问卷
     if (itemName === '我要询价' || item.target === 'inquiry') {
       onNavigate?.({ target: 'inquiry', app: item });
       return;

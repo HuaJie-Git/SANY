@@ -15,6 +15,10 @@ const TaskList = ({ onBack, onTaskClick, onRequireLogin, demoMode = false }) => 
   const [timeFilter, setTimeFilter] = useState({ start: '', end: '' });
 
   const handleTaskClick = (task) => {
+    if (demoMode) {
+      onRequireLogin?.();
+      return;
+    }
     if (onTaskClick) {
       onTaskClick(task);
     }

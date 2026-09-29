@@ -1,18 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import RoleGuideModal from '../../components/RoleGuideModal/RoleGuideModal';
+import React from 'react';
 
-const Profile = ({ userRole, onRoleConfirm, onFeedback, demoMode = false, onRequireLogin, onNavigate }) => {
-  const [showModal, setShowModal] = useState(false);
-
-  // 进入页面自动弹出角色引导弹窗（未填写角色时）
-  useEffect(() => {
-    if (!userRole && !demoMode) {
-      const timer = setTimeout(() => {
-        setShowModal(true);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [demoMode, userRole]);
+const Profile = ({ onFeedback, demoMode = false, onRequireLogin, onNavigate }) => {
+  // 「解锁专属服务」自动弹窗暂时停用。
 
   const handleFeatureClick = (name) => {
     if (name === '设备预警') return onNavigate?.('auditList');
@@ -24,16 +13,6 @@ const Profile = ({ userRole, onRoleConfirm, onFeedback, demoMode = false, onRequ
     return undefined;
   };
 
-  // 关闭弹窗 - 仅关闭弹窗，保留提示条
-  const handleModalClose = () => {
-    setShowModal(false);
-  };
-
-  // 确认选择角色
-  const handleRoleConfirm = (role) => {
-    onRoleConfirm?.(role);
-    setShowModal(false);
-  };
   // 功能菜单数据
   const menuItems = [
     { id: 1, name: '主机询价', icon: '询价', color: '#E3F2FD', iconColor: '#2196F3' },
@@ -162,13 +141,6 @@ const Profile = ({ userRole, onRoleConfirm, onFeedback, demoMode = false, onRequ
 
   return (
     <div className="h-full bg-gray-100 overflow-y-auto">
-      {/* 角色引导弹窗 */}
-      <RoleGuideModal
-        visible={!demoMode && showModal}
-        onClose={handleModalClose}
-        onConfirm={handleRoleConfirm}
-      />
-
       {/* 星星积分区域 - 顶上去，不再有用户信息区域 */}
       <div className="bg-white mx-4 mt-2 rounded-xl p-4 shadow-md relative z-10">
         <div className="flex items-center justify-between mb-4">

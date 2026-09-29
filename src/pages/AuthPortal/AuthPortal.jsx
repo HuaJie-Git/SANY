@@ -5,7 +5,6 @@ const AuthPortal = ({ onLogin, onRegister, onNavigateTab, onOpenSettings }) => {
   const [toastMessage, setToastMessage] = useState('');
   const [showAgreementModal, setShowAgreementModal] = useState(false);
   const [agreementType, setAgreementType] = useState('service');
-
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 2000);
@@ -120,7 +119,8 @@ const AuthPortal = ({ onLogin, onRegister, onNavigateTab, onOpenSettings }) => {
           <button
             type="button"
             onClick={handleLoginClick}
-            className="w-full h-[48px] bg-[#d40014] hover:bg-[#bd0012] active:scale-[0.99] text-white font-medium text-[16px] rounded-xl flex items-center justify-center transition-all shadow-[0_4px_12px_rgba(212,0,20,0.2)]"
+            className="w-full min-h-[48px] py-2.5 px-3 bg-[#d40014] hover:bg-[#bd0012] active:scale-[0.99] text-white font-medium text-[16px] leading-snug whitespace-normal break-words rounded-xl flex items-center justify-center transition-all shadow-[0_4px_12px_rgba(212,0,20,0.2)]"
+            dir="auto"
           >
             登录
           </button>
@@ -129,14 +129,15 @@ const AuthPortal = ({ onLogin, onRegister, onNavigateTab, onOpenSettings }) => {
           <button
             type="button"
             onClick={handleRegisterClick}
-            className="w-full h-[48px] bg-white border border-gray-900 active:bg-gray-50 active:scale-[0.99] text-gray-900 font-medium text-[16px] rounded-xl flex items-center justify-center transition-all"
+            className="w-full min-h-[48px] py-2.5 px-3 bg-white border border-gray-900 active:bg-gray-50 active:scale-[0.99] text-gray-900 font-medium text-[16px] leading-snug whitespace-normal break-words rounded-xl flex items-center justify-center transition-all"
+            dir="auto"
           >
             注册账号
           </button>
         </div>
 
         {/* 协议勾选行 */}
-        <div className="mt-5 flex items-center justify-center gap-2">
+        <div className="mt-5 flex items-start justify-center gap-2 px-1 max-w-full" dir="auto">
           <button
             type="button"
             onClick={() => setAgreed(!agreed)}
@@ -151,7 +152,7 @@ const AuthPortal = ({ onLogin, onRegister, onNavigateTab, onOpenSettings }) => {
               </svg>
             )}
           </button>
-          <span className="text-[13px] text-[#8e95a0]">
+          <span className="text-[13px] text-[#8e95a0] leading-relaxed whitespace-normal break-words">
             同意
             <button
               type="button"

@@ -20,6 +20,8 @@ const Toggle = ({ checked, onChange }) => (
   </button>
 );
 
+// 保留旧版人工客服对话视图，待后续重新接入时复用。
+// oxlint-disable-next-line no-unused-vars
 const CustomerServiceView = ({ onBack, demoMode: _demoMode = true, onRequireLogin: _onRequireLogin }) => {
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState([
@@ -146,17 +148,12 @@ const CustomerServiceView = ({ onBack, demoMode: _demoMode = true, onRequireLogi
 };
 
 const GuestMessageCenter = ({ onBack, onRequireLogin }) => {
-  const [showService, setShowService] = useState(false);
   const [toastHint, setToastHint] = useState('');
 
   const showToast = (msg) => {
     setToastHint(msg);
     window.setTimeout(() => setToastHint(''), 1600);
   };
-
-  if (showService) {
-    return <CustomerServiceView onBack={() => setShowService(false)} demoMode={true} onRequireLogin={onRequireLogin} />;
-  }
 
   return (
     <div className="relative flex h-full w-full flex-col bg-[#F5F6F8] text-[#23272f]">
@@ -187,9 +184,10 @@ const GuestMessageCenter = ({ onBack, onRequireLogin }) => {
       {/* 内容区域 */}
       <div className="flex-1 overflow-y-auto px-4 pt-3 space-y-4">
         {/* 人工客服卡片 - 对齐截图2 */}
-        <div
-          onClick={() => setShowService(true)}
-          className="bg-white rounded-2xl p-4 flex items-center justify-between shadow-2xs border border-gray-100/80 cursor-pointer active:bg-gray-50 transition-colors"
+        <button
+          type="button"
+          onClick={() => onRequireLogin?.()}
+          className="w-full bg-white rounded-2xl p-4 flex items-center justify-between text-left shadow-2xs border border-gray-100/80 cursor-pointer active:bg-gray-50 transition-colors"
         >
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="w-11 h-11 rounded-xl bg-[#EEF4FE] flex items-center justify-center text-[#2F78EE] flex-shrink-0">
@@ -206,7 +204,7 @@ const GuestMessageCenter = ({ onBack, onRequireLogin }) => {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-300 flex-shrink-0">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
-        </div>
+        </button>
 
         {/* 空状态：没有数据 - 对齐截图2 */}
         <div className="flex flex-col items-center justify-center pt-24 pb-12">

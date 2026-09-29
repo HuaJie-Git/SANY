@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import PhoneBindModal from '../../components/PhoneBindModal/PhoneBindModal';
+import React, { useState } from 'react';
 
 const PartsOrder = ({ onBack, initialQuery = '', initialItem = null }) => {
-  const [showPhoneBindModal, setShowPhoneBindModal] = useState(false);
   const [activeTab, setActiveTab] = useState('materials');
   const [searchQuery, setSearchQuery] = useState(initialQuery);
 
@@ -69,23 +67,7 @@ const PartsOrder = ({ onBack, initialQuery = '', initialItem = null }) => {
     .filter((part, index, list) => list.findIndex((item) => item.code === part.code) === index)
     .filter((part) => !keyword || `${part.code}${part.name}`.toLowerCase().includes(keyword));
 
-  // 模拟检查用户手机号
-  useEffect(() => {
-    const userPhone = null; // 模拟未绑定手机号
-
-    if (!userPhone) {
-      const timer = setTimeout(() => {
-        setShowPhoneBindModal(true);
-      }, 500);
-
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
-  // 处理手机号绑定成功
-  const handlePhoneBindSuccess = () => {
-    console.log('手机号绑定成功');
-  };
+  // 配件页「绑定手机号」自动弹窗暂时停用。
 
   // 处理搜索
   const handleSearch = (e) => {
@@ -191,13 +173,6 @@ const PartsOrder = ({ onBack, initialQuery = '', initialItem = null }) => {
         </div>
       </div>
 
-      {/* 手机号绑定弹窗 */}
-      <PhoneBindModal
-        visible={showPhoneBindModal}
-        onClose={() => setShowPhoneBindModal(false)}
-        onSuccess={handlePhoneBindSuccess}
-        sourcePage="PartsOrder"
-      />
     </div>
   );
 };

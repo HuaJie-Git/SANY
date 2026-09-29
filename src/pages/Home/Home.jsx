@@ -32,6 +32,7 @@ import ProductCenter from '../ProductCenter/ProductCenter';
 import Register from '../Register/Register';
 import AuthPortal from '../AuthPortal/AuthPortal';
 import Settings from '../Settings/Settings';
+import QuickLogin from '../QuickLogin/QuickLogin';
 import ServiceCenter from '../ServiceCenter/ServiceCenter';
 import Survey from '../Survey/Survey';
 import { CustomerVoice, InquiryForm } from '../../components/ExperienceMode/ExperienceMode';
@@ -161,6 +162,7 @@ const Home = () => {
   const [showRegisterPage, setShowRegisterPage] = useState(false);
   const [showAuthPortal, setShowAuthPortal] = useState(false);
   const [showSettingsPage, setShowSettingsPage] = useState(false);
+  const [showQuickLogin, setShowQuickLogin] = useState(false);
   const [openSearchWithScanner, setOpenSearchWithScanner] = useState(false);
   const [currentPage, setCurrentPage] = useState(null); // 当前显示的功能页面
   const [selectedDevice, setSelectedDevice] = useState(null); // 选中的设备详情
@@ -204,6 +206,7 @@ const Home = () => {
   const savedHomeScrollTopRef = useRef(0); // 记录进入搜索/详情前的滚动位置 (R-GUEST-HDR-002, STATE-SRCH-RETURN)
   const isRestoringScrollRef = useRef(false);
   const restoreScrollTimersRef = useRef([]);
+  const experienceToastTimerRef = useRef(null);
 
   const restoreHomeScroll = useCallback((targetTop) => {
     const top = typeof targetTop === 'number' ? targetTop : (savedHomeScrollTopRef.current || 0);
@@ -270,13 +273,76 @@ const Home = () => {
 
   const currentDivision = BUSINESS_SCOPES.find((division) => division.id === currentDivisionId) || BUSINESS_SCOPES[0];
 
+  const showExperienceModeToast = () => {
+    if (experienceToastTimerRef.current) return;
+    setDivisionToast('切换成游客模式');
+    experienceToastTimerRef.current = window.setTimeout(() => {
+      setDivisionToast('');
+      experienceToastTimerRef.current = null;
+    }, 1800);
+  };
+
   const enterExperienceMode = () => {
     setExperienceMode(true);
     window.localStorage.setItem('sanvist_experience_mode', '1');
     setShowDivisionSwitcher(false);
-    setDivisionToast('切换成游客模式');
+    showExperienceModeToast();
     contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-    window.setTimeout(() => setDivisionToast(''), 1800);
+  };
+
+  const openGuestTabFromAuthPortal = (tab, { showToastIfAlreadyGuest = false } = {}) => {
+    if (tab === 'profile') return;
+    if (!experienceMode) {
+      enterExperienceMode();
+    } else if (showToastIfAlreadyGuest) {
+      showExperienceModeToast();
+    }
+    setShowAuthPortal(false);
+    setSelectedDevice(null);
+    setActiveTab(tab);
+    setAssetNavigationContext(null);
+    setAuditNavigationContext(null);
+    setNavigationSource(null);
+    setPageContext(null);
+    window.setTimeout(() => {
+      contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 0);
+  };
+
+  const handleAuthPortalNavigateTab = (tab) => {
+    openGuestTabFromAuthPortal(tab, { showToastIfAlreadyGuest: false });
+  };
+
+  const handleLogout = () => {
+    setShowSettingsPage(false);
+    setShowAuthPortal(false);
+    setShowRegisterPage(false);
+    setShowLoginPrompt(false);
+    setExperienceMode(false);
+    window.localStorage.removeItem('sanvist_experience_mode');
+    setSelectedDevice(null);
+    setActiveTab('home');
+    setAssetNavigationContext(null);
+    setAuditNavigationContext(null);
+    setNavigationSource(null);
+    setPageContext(null);
+    setShowQuickLogin(true);
+  };
+
+  const handleQuickLoginAccount = () => {
+    setShowQuickLogin(false);
+    handleLogin('login');
+  };
+
+  const handleQuickLoginGuest = () => {
+    setShowQuickLogin(false);
+    enterExperienceMode();
+    setActiveTab('home');
+  };
+
+  const handleQuickLoginOther = () => {
+    setShowQuickLogin(false);
+    setShowAuthPortal(true);
   };
   const handleLogin = (action = 'login') => {
     if (action === 'prompt') {
@@ -298,6 +364,7 @@ const Home = () => {
     setShowSearchPage(false);
     setShowRegisterPage(false);
     setShowAuthPortal(false);
+    setShowQuickLogin(false);
     setExperienceMode(false);
     window.localStorage.removeItem('sanvist_experience_mode');
     setDivisionToast('已登录，已切换至标准环境');
@@ -371,6 +438,10 @@ const Home = () => {
   };
 
   const handleNotificationClick = () => {
+    if (experienceMode) {
+      requireLogin();
+      return;
+    }
     setShowMessageCenter(true);
   };
 
@@ -702,6 +773,9 @@ const Home = () => {
         statusBarTheme="dark"
         statusTime={experienceMode ? '7:46' : '9:41'}
         batteryPercent={experienceMode ? '75' : undefined}
+        showLoginPrompt={showLoginPrompt}
+        onCloseLogin={() => setShowLoginPrompt(false)}
+        onLogin={handleLogin}
       >
         <MessageCenter
           demoMode={experienceMode}
@@ -995,7 +1069,30 @@ const Home = () => {
         batteryPercent="80"
         showLoginPrompt={false}
       >
-        <Settings onBack={() => setShowSettingsPage(false)} />
+        <Settings
+          onBack={() => setShowSettingsPage(false)}
+          onLogout={experienceMode ? undefined : handleLogout}
+        />
+      </PhoneFrame>
+    );
+  }
+
+  if (showQuickLogin) {
+    return (
+      <PhoneFrame
+        topNav={null}
+        bottomNav={null}
+        hideGradient={true}
+        statusBarTheme="dark"
+        statusTime="16:25"
+        batteryPercent="99"
+        showLoginPrompt={false}
+      >
+        <QuickLogin
+          onLoginAccount={handleQuickLoginAccount}
+          onBrowseGuest={handleQuickLoginGuest}
+          onOtherLogin={handleQuickLoginOther}
+        />
       </PhoneFrame>
     );
   }
@@ -1019,10 +1116,7 @@ const Home = () => {
             setShowRegisterPage(true);
           }}
           onOpenSettings={() => setShowSettingsPage(true)}
-          onNavigateTab={(tab) => {
-            setShowAuthPortal(false);
-            setActiveTab(tab);
-          }}
+          onNavigateTab={handleAuthPortalNavigateTab}
         />
       </PhoneFrame>
     );
@@ -1154,6 +1248,9 @@ const Home = () => {
         showLoginPrompt={showLoginPrompt}
         onCloseLogin={() => setShowLoginPrompt(false)}
         onLogin={handleLogin}
+        overlay={divisionToast ? (
+          <div className="absolute bottom-24 left-1/2 z-[100] -translate-x-1/2 max-w-[80%] rounded-full bg-black/75 px-4 py-2 text-[12px] text-white whitespace-normal break-words text-center pointer-events-none" dir="auto">{divisionToast}</div>
+        ) : null}
         topNav={
           <div className="h-[60px] px-4 flex items-center justify-between">
             {/* 绑定设备按钮 - 左边 */}
@@ -1209,6 +1306,9 @@ const Home = () => {
         showLoginPrompt={showLoginPrompt}
         onCloseLogin={() => setShowLoginPrompt(false)}
         onLogin={handleLogin}
+        overlay={divisionToast ? (
+          <div className="absolute bottom-24 left-1/2 z-[100] -translate-x-1/2 max-w-[80%] rounded-full bg-black/75 px-4 py-2 text-[12px] text-white whitespace-normal break-words text-center pointer-events-none" dir="auto">{divisionToast}</div>
+        ) : null}
         hideGradient={true}
         headerBackground="#FFFFFF"
         statusBarTheme="dark"
@@ -1287,9 +1387,7 @@ const Home = () => {
               setShowRegisterPage(true);
             }}
             onOpenSettings={() => setShowSettingsPage(true)}
-            onNavigateTab={(tab) => {
-              setActiveTab(tab);
-            }}
+            onNavigateTab={handleAuthPortalNavigateTab}
           />
         </PhoneFrame>
       );
@@ -1337,7 +1435,7 @@ const Home = () => {
                 </svg>
               </button>
               {/* 设置图标 */}
-              <button type="button" onClick={experienceMode ? requireLogin : undefined} className="w-7 h-7 flex items-center justify-center bg-white/20 rounded-full hover:bg-white/30 transition-colors" aria-label="设置">
+              <button type="button" onClick={experienceMode ? requireLogin : () => setShowSettingsPage(true)} className="w-7 h-7 flex items-center justify-center bg-white/20 rounded-full hover:bg-white/30 transition-colors" aria-label="设置">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                   <circle cx="12" cy="12" r="3"/>
                   <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -1529,7 +1627,7 @@ const Home = () => {
             />
           </div>
         </div>
-        {divisionToast && <div className="absolute bottom-24 left-1/2 z-[100] -translate-x-1/2 rounded-full bg-black/75 px-4 py-2 text-[12px] text-white">{divisionToast}</div>}
+        {divisionToast && <div className="absolute bottom-24 left-1/2 z-[100] -translate-x-1/2 max-w-[80%] rounded-full bg-black/75 px-4 py-2 text-[12px] text-white whitespace-normal break-words text-center pointer-events-none" dir="auto">{divisionToast}</div>}
       </>
     </PhoneFrame>
   );
