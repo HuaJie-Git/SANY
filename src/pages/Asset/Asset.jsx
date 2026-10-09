@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GUEST_DEMO_DEVICES } from '../../data/guestDemoData';
 
-const Asset = ({ onDeviceClick, onUnavailable, navigationContext, demoMode = false, onRequireLogin: _onRequireLogin }) => {
+const Asset = ({ onDeviceClick, onUnavailable, navigationContext, demoMode = false, onRequireLogin }) => {
   const [activeTab, setActiveTab] = useState(
     navigationContext?.kind === 'status' && ['online', 'offline'].includes(navigationContext.value)
       ? navigationContext.value
@@ -225,7 +225,13 @@ const Asset = ({ onDeviceClick, onUnavailable, navigationContext, demoMode = fal
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                if (demoMode) {
+                  onRequireLogin?.();
+                  return;
+                }
+                setActiveTab(tab.id);
+              }}
               className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'bg-gray-900 text-white'
@@ -260,6 +266,10 @@ const Asset = ({ onDeviceClick, onUnavailable, navigationContext, demoMode = fal
               className="ml-2"
               aria-label="快速筛选设备"
               onClick={() => {
+                if (demoMode) {
+                  onRequireLogin?.();
+                  return;
+                }
                 setActiveTab((current) => current === 'all' ? 'online' : current === 'online' ? 'offline' : 'all');
               }}
             >

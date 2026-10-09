@@ -235,7 +235,13 @@ const TaskList = ({ onBack, onTaskClick, onRequireLogin, demoMode = false }) => 
             />
           </div>
           <button
-            onClick={() => setShowFilter(true)}
+            onClick={() => {
+              if (demoMode) {
+                onRequireLogin?.();
+                return;
+              }
+              setShowFilter(true);
+            }}
             className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-lg"
           >
             <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -243,7 +249,13 @@ const TaskList = ({ onBack, onTaskClick, onRequireLogin, demoMode = false }) => 
             </svg>
           </button>
           <button
-            onClick={() => setShowTimeFilter(true)}
+            onClick={() => {
+              if (demoMode) {
+                onRequireLogin?.();
+                return;
+              }
+              setShowTimeFilter(true);
+            }}
             className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-lg"
           >
             <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -543,6 +555,10 @@ const TaskList = ({ onBack, onTaskClick, onRequireLogin, demoMode = false }) => 
       <button
         type="button"
         onClick={() => {
+          if (demoMode) {
+            onRequireLogin?.();
+            return;
+          }
           if (onRequireLogin) {
             onRequireLogin();
           }

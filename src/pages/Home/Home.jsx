@@ -830,6 +830,10 @@ const Home = () => {
             restoreNavigationSource();
           }}
           onTaskClick={(task) => {
+            if (experienceMode) {
+              requireLogin();
+              return;
+            }
             setSelectedTask(task);
           }}
           onRequireLogin={requireLogin}
@@ -1335,6 +1339,10 @@ const Home = () => {
               <button
                 type="button"
                 onClick={() => {
+                  if (experienceMode) {
+                    requireLogin();
+                    return;
+                  }
                   setDivisionToast('可按异常类型、状态与时间筛选');
                   window.setTimeout(() => setDivisionToast(''), 1800);
                 }}
@@ -1359,6 +1367,10 @@ const Home = () => {
           searchQuery={auditSearchQuery}
           onRequireLogin={requireLogin}
           onDeviceClick={(device) => {
+            if (experienceMode) {
+              requireLogin();
+              return;
+            }
             setSelectedDevice(device);
           }}
           initialTab={auditInitialTab}

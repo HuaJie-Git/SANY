@@ -852,6 +852,10 @@ const GuestAudit = ({ onDeviceClick, initialTab, navigationContext, searchQuery 
   };
 
   const handleToggleGroupByDevice = () => {
+    if (demoMode && onRequireLogin) {
+      onRequireLogin();
+      return;
+    }
     setGroupByDevice((prev) => !prev);
   };
 
@@ -963,7 +967,13 @@ const GuestAudit = ({ onDeviceClick, initialTab, navigationContext, searchQuery 
         <div className="px-4 py-2.5 flex items-center justify-between">
           <button
             type="button"
-            onClick={() => showFilterHint('日期范围：8-22 至 9-21')}
+            onClick={() => {
+              if (demoMode && onRequireLogin) {
+                onRequireLogin();
+                return;
+              }
+              showFilterHint('日期范围：8-22 至 9-21');
+            }}
             className="flex items-center gap-1 text-[12px] text-gray-700 bg-white border border-gray-200 rounded-full px-3 py-1 shadow-2xs hover:bg-gray-50 active:bg-gray-100"
           >
             <span>8-22 至 9-21</span>
@@ -1007,6 +1017,10 @@ const GuestAudit = ({ onDeviceClick, initialTab, navigationContext, searchQuery 
               <div
                 key={event.id}
                 onClick={() => {
+                  if (demoMode && onRequireLogin) {
+                    onRequireLogin();
+                    return;
+                  }
                   onDeviceClick?.({ ...device, activeCategory: activeTab, categoryName: categories.find((t) => t.id === activeTab)?.name || '设备异常' });
                 }}
                 className={`bg-white rounded-2xl p-4 shadow-2xs border border-gray-100/80 cursor-pointer active:bg-gray-50 transition-colors ${
@@ -1122,6 +1136,10 @@ const GuestAudit = ({ onDeviceClick, initialTab, navigationContext, searchQuery 
               <div
                 key={device.id}
                 onClick={() => {
+                  if (demoMode && onRequireLogin) {
+                    onRequireLogin();
+                    return;
+                  }
                   onDeviceClick?.({ ...device, activeCategory: activeTab, categoryName: categories.find((t) => t.id === activeTab)?.name || '设备异常' });
                 }}
                 className={`bg-white rounded-2xl p-4 flex items-center justify-between shadow-2xs border border-gray-100/80 cursor-pointer active:bg-gray-50 transition-colors ${
