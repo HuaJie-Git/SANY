@@ -5,16 +5,18 @@ import { createMaintenanceRows, MAINTENANCE_GROUPS, maintenanceStatus } from '..
 import { CURRENT_USER } from '../data/session';
 import './home-dashboard.css';
 
-// v3 让新版首页骨架与旧版用户排序隔离；用户仍可在设置抽屉中重新排序。
-const MODULES_KEY = 'sanvist_pc_home_modules_v4';
+// v5 恢复“设备运行概览”模块为默认展示，并平滑迁移 v4 旧版排序与显隐偏好；用户仍可在设置抽屉中重新排序与隐藏。
+const MODULES_KEY = 'sanvist_pc_home_modules_v5';
 const ACTIONS_KEY = 'sanvist_pc_quick_actions_v2';
 const LINKS_KEY = 'sanvist_pc_quick_links_v1';
+const LINK_URLS_KEY = 'sanvist_pc_quick_link_urls_v1';
+const LINK_CATALOG_KEY = 'sanvist_pc_quick_links_catalog_v1';
 const RECENT_KEY = 'sanvist_pc_recent_items_v3';
 const TODO_KEY = 'sanvist_pc_todos_v1';
 
 const DEFAULT_MODULES = [
   { id: 'maintenance', label: '计划保养', description: '保养状态概览与设备保养清单', visible: true },
-  { id: 'operations', label: '设备运行概览', description: '管辖设备运行与能耗概览', visible: false },
+  { id: 'operations', label: '设备运行概览', description: '管辖设备运行与能耗概览', visible: true },
   { id: 'tasks', label: '我的任务', description: '按任务状态跟踪个人工作队列', visible: true },
   { id: 'audit', label: '审核概览', description: '待处理事件与未读审核提醒', visible: true },
   { id: 'links', label: '快速链接', description: '常用业务系统入口', visible: true },
@@ -22,10 +24,10 @@ const DEFAULT_MODULES = [
 ];
 
 const DEFAULT_LINKS = [
-  { id: 'map-monitor', label: '地图监控', meta: '监控中心 · 地图监控', action: 'map-monitor', visible: true, tone: 'blue' },
-  { id: 'warning-center', label: '预警中心', meta: '监控中心 · 预警中心', action: 'warning-center', visible: true, tone: 'orange' },
-  { id: 'maintenance-navigation', label: '设备保养', meta: '设备管理 · 设备保养', action: 'maintenance', visible: true, tone: 'green' },
-  { id: 'project-management', label: '项目管理', meta: '项目管理', action: 'projects', visible: true, tone: 'red' },
+  { id: 'map-monitor', label: '地图监控', meta: '监控中心 · 地图监控', action: 'map-monitor', visible: true, enabled: true, tone: 'blue', icon: 'link', url: '' },
+  { id: 'warning-center', label: '预警中心', meta: '监控中心 · 预警中心', action: 'warning-center', visible: true, enabled: true, tone: 'orange', icon: 'link', url: '' },
+  { id: 'maintenance-navigation', label: '设备保养', meta: '设备管理 · 设备保养', action: 'maintenance', visible: true, enabled: true, tone: 'green', icon: 'link', url: '' },
+  { id: 'project-management', label: '项目管理', meta: '项目管理', action: 'projects', visible: true, enabled: true, tone: 'red', icon: 'link', url: '' },
 ];
 
 const QUICK_ACTIONS = [
@@ -120,14 +122,75 @@ function mergePreference(defaults, saved) {
   return [...merged, ...defaults.filter((item) => !seen.has(item.id))];
 }
 
-// 快速链接只允许保留用户配置的排序和显隐，名称、来源与跳转均以产品内功能目录为准。
+// 用户偏好只保留排序和显隐；名称、地址、图标与启停以运营配置为准。
 function mergeLinkPreference(defaults, saved) {
   if (!Array.isArray(saved)) return defaults;
   const defaultMap = new Map(defaults.map((item) => [item.id, item]));
   const savedMap = new Map(saved.map((item) => [item.id, item]));
-  const ordered = saved.map((item) => item.id).filter((id, index, ids) => defaultMap.has(id) && ids.indexOf(id) === index);
-  const ids = [...ordered, ...defaults.map((item) => item.id).filter((id) => !ordered.includes(id))];
+  const ids = saved.map((item) => item.id).filter((id, index, values) => defaultMap.has(id) && values.indexOf(id) === index);
+  defaults.forEach((item, index) => {
+    if (ids.includes(item.id)) return;
+    const previous = defaults.slice(0, index).reverse().find((candidate) => ids.includes(candidate.id));
+    const next = defaults.slice(index + 1).find((candidate) => ids.includes(candidate.id));
+    if (previous) ids.splice(ids.indexOf(previous.id) + 1, 0, item.id);
+    else if (next) ids.splice(ids.indexOf(next.id), 0, item.id);
+    else ids.push(item.id);
+  });
   return ids.map((id) => ({ ...defaultMap.get(id), visible: typeof savedMap.get(id)?.visible === 'boolean' ? savedMap.get(id).visible : defaultMap.get(id).visible }));
+}
+
+const linkPreferenceKey = (user) => user.id === CURRENT_USER.id ? LINKS_KEY : `${LINKS_KEY}:${user.id}`;
+
+function matchesQuickLinkAudience(link, user) {
+  if (link.audience === 'all') return true;
+  if (link.audience === 'enterprise') return user.tenantType === 'enterprise' && Boolean(link.tenantId) && link.tenantId === user.tenantId;
+  if (link.audience === 'users') return link.userIds.includes(user.id);
+  return false;
+}
+
+function readQuickLinkCatalog(user = CURRENT_USER) {
+  try {
+    const config = JSON.parse(window.localStorage.getItem(LINK_CATALOG_KEY) || 'null');
+    if (config && Array.isArray(config.links)) {
+      const defaultMap = new Map(DEFAULT_LINKS.map((item) => [item.id, item]));
+      const seen = new Set();
+      return config.links.filter((item) => item && typeof item.id === 'string' && !seen.has(item.id) && seen.add(item.id)).map((item) => {
+        const original = defaultMap.get(item.id);
+        const url = typeof item.url === 'string' ? item.url : '';
+        return {
+          ...original,
+          id: item.id,
+          label: typeof item.name === 'string' ? item.name : original?.label || '未命名链接',
+          meta: original?.meta || '运营配置',
+          action: original?.action || 'external',
+          tone: ['blue', 'orange', 'green', 'red', 'purple'].includes(item.tone) ? item.tone : original?.tone || 'blue',
+          icon: ['link', 'map', 'alert', 'calendar', 'project', 'asset', 'order', 'person'].includes(item.icon) ? item.icon : original?.icon || 'link',
+          iconData: typeof item.iconData === 'string' && /^data:image\/(png|jpeg|webp);base64,/.test(item.iconData) ? item.iconData : '',
+          url,
+          enabled: item.enabled !== false,
+          visible: true,
+          sort: Number.isInteger(item.sort) ? item.sort : 999,
+          audience: item.audience === undefined ? 'all' : item.audience,
+          tenantId: typeof item.tenantId === 'string' ? item.tenantId : '',
+          userIds: Array.isArray(item.userIds) ? item.userIds : [],
+        };
+      }).filter((item) => (item.action !== 'external' || Boolean(safeQuickLinkUrl(item.url))) && matchesQuickLinkAudience(item, user)).sort((a, b) => a.sort - b.sort);
+    }
+    const legacy = JSON.parse(window.localStorage.getItem(LINK_URLS_KEY) || 'null');
+    return DEFAULT_LINKS.map((item) => ({ ...item, url: typeof legacy?.urls?.[item.id] === 'string' ? legacy.urls[item.id] : '' }));
+  } catch {
+    return DEFAULT_LINKS;
+  }
+}
+
+function safeQuickLinkUrl(value) {
+  if (typeof value !== 'string' || !value.trim() || /\s/.test(value) || value.length > 2048) return '';
+  try {
+    const url = new URL(value.trim());
+    return ['http:', 'https:'].includes(url.protocol) && url.hostname && !url.username && !url.password ? url.href : '';
+  } catch {
+    return '';
+  }
 }
 
 // 工作流动作 → 我的任务条目的演示映射（本地演示状态）
@@ -345,10 +408,23 @@ function ModuleCard({ title, subtitle, action, className = '', children }) {
   </section>;
 }
 
-export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness }) {
+export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness, previewUser = CURRENT_USER }) {
   const [modules, setModules] = useState(() => {
     const saved = loadPreference(MODULES_KEY, null);
     if (saved) return mergePreference(DEFAULT_MODULES, saved);
+    const savedV4 = loadPreference('sanvist_pc_home_modules_v4', null);
+    if (savedV4) {
+      const migrated = mergePreference(
+        DEFAULT_MODULES,
+        savedV4.map((item) => (item.id === 'operations' ? { ...item, visible: true } : item))
+      );
+      try {
+        window.localStorage.setItem(MODULES_KEY, JSON.stringify(migrated));
+      } catch {
+        // 忽略存储写入限制
+      }
+      return migrated;
+    }
     const previous = mergePreference(DEFAULT_MODULES, loadPreference('sanvist_pc_home_modules_v3', DEFAULT_MODULES));
     return [DEFAULT_MODULES[0], ...previous.filter((item) => item.id !== 'maintenance')];
   });
@@ -359,7 +435,7 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
     const added = DEFAULT_ACTION_CONFIG.slice(0, 4);
     return [...added, ...previous.filter((item) => !added.some((entry) => entry.id === item.id))];
   });
-  const [links, setLinks] = useState(() => mergeLinkPreference(DEFAULT_LINKS, loadPreference(LINKS_KEY, DEFAULT_LINKS)));
+  const [links, setLinks] = useState(() => mergeLinkPreference(readQuickLinkCatalog(previewUser), loadPreference(linkPreferenceKey(previewUser), [])));
   const [recentItems, setRecentItems] = useState(() => loadPreference(RECENT_KEY, DEFAULT_RECENT_ITEMS).filter(isSearchRecent).slice(0, 10));
   const [currentTime, setCurrentTime] = useState(() => new Date());
   const [recentPanelPosition, setRecentPanelPosition] = useState(null);
@@ -401,6 +477,20 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
     const timer = window.setInterval(() => setCurrentTime(new Date()), 60 * 1000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const refreshLinks = (event) => {
+      if (event?.key && ![LINK_CATALOG_KEY, LINK_URLS_KEY].includes(event.key) && !event.key.startsWith(LINKS_KEY)) return;
+      setLinks(mergeLinkPreference(readQuickLinkCatalog(previewUser), loadPreference(linkPreferenceKey(previewUser), [])));
+    };
+    refreshLinks();
+    window.addEventListener('storage', refreshLinks);
+    window.addEventListener('focus', refreshLinks);
+    return () => {
+      window.removeEventListener('storage', refreshLinks);
+      window.removeEventListener('focus', refreshLinks);
+    };
+  }, [previewUser]);
 
   const visibleActions = actionConfig.filter((item) => item.visible).map((item) => QUICK_ACTIONS.find((action) => action.id === item.id)).filter(Boolean);
 
@@ -537,7 +627,7 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
 
   const saveModules = (next) => { setModules(next); window.localStorage.setItem(MODULES_KEY, JSON.stringify(next)); };
   const saveActions = (next) => { setActionConfig(next); window.localStorage.setItem(ACTIONS_KEY, JSON.stringify(next)); };
-  const saveLinks = (next) => { setLinks(next); window.localStorage.setItem(LINKS_KEY, JSON.stringify(next)); };
+  const saveLinks = (next) => { const preference = next.map(({ id, visible }) => ({ id, visible })); window.localStorage.setItem(linkPreferenceKey(previewUser), JSON.stringify(preference)); setLinks(mergeLinkPreference(readQuickLinkCatalog(previewUser), preference)); };
   const openList = (label, ids) => onOpenList?.({ key: `${label}-${Date.now()}`, label, deviceIds: ids });
   const openAudit = () => {
     if (onOpenBusiness) return onOpenBusiness('audit');
@@ -546,6 +636,14 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
   };
   const openSettings = (tab) => { setDraftModules(modules); setDraftActions(actionConfig); setDraftLinks(links); setEditorTab(tab); setSettingsOpen(true); };
   const openQuickLink = (link) => {
+    const latest = readQuickLinkCatalog(previewUser).find((item) => item.id === link.id);
+    if (!latest || !latest.enabled) { setAuditNotice('该快速链接已停用或当前用户不可见，请刷新工作台。'); return; }
+    const configuredUrl = safeQuickLinkUrl(latest.url);
+    if (configuredUrl) {
+      window.open(configuredUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    if (latest.action === 'external') { setAuditNotice('链接地址暂不可用，请联系管理员更新配置。'); return; }
     if (link.action === 'map-monitor') return onOpenBusiness?.('map-monitor');
     if (link.action === 'warning-center') return onOpenBusiness?.('warning-center');
     if (link.action === 'devices') return openList('设备管理', DEVICES.map((item) => item.id));
@@ -787,7 +885,7 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
       <div className="operations-layout"><section className="operation-usage"><div className="operation-section-title"><div><Icon name="trend"/><span>运行概览</span></div><small>运行状态来源：设备管理</small></div><div className="operation-status-summary" aria-label="设备运行状态统计">{usage.statusGroups.map((group) => <button type="button" key={group.status} onClick={() => openList(`运行状态 · ${group.status}`, group.ids)}><span><i/>{group.status}</span><strong>{group.count}<em>台设备</em></strong></button>)}</div><div className="operation-kpis"><button type="button" onClick={() => openList('过去 7 天有运行数据的设备', DEVICES.map((item) => item.id))}><span>工时</span><strong>{formatHours(usage.total)}<em>h</em></strong></button><button type="button" onClick={() => openList('高怠速关注设备', usage.idleIds)}><span>怠速工时</span><strong>{formatHours(usage.idle)}<em>h</em></strong></button><button type="button" title="作业效率 = 有效作业时间 ÷ 总运行时间，点击查看高怠速设备" onClick={() => openList('高怠速关注设备', usage.idleIds)}><span>作业效率</span><strong>{Math.round((usage.work / usage.total) * 100)}<em>%</em></strong></button></div><div className="operation-chart">{usage.daily.map((value, index) => <div key={index}><i style={{ height: `${value}%` }}/><span>周{['一', '二', '三', '四', '五', '六', '日'][index]}</span></div>)}</div></section><aside className="operation-fuel"><div className="operation-section-title"><div><Icon name="fuel"/><span>能耗概览</span></div><small>过去 7 天</small></div><div className="energy-tabs" role="tablist" aria-label="能耗类型"><button type="button" role="tab" aria-selected={energyMode === 'oil'} className={energyMode === 'oil' ? 'is-active' : ''} onClick={() => setEnergyMode('oil')}>油耗</button><button type="button" role="tab" aria-selected={energyMode === 'electricity'} className={energyMode === 'electricity' ? 'is-active' : ''} onClick={() => setEnergyMode('electricity')}>电耗</button></div>{energyMode === 'oil' ? <><button type="button" className="fuel-callout" onClick={() => openList('高油耗关注设备', energy.highIds)}><strong>{formatHours(energy.total)}<em>L</em></strong><div><span>累计油耗</span><small>日均 {formatHours(energy.daily)} L · 点击查看高油耗设备</small></div></button><div className="fuel-distribution">{energy.groups.map((group) => <button type="button" key={group.id} onClick={() => openList(`日均油耗 ${group.label} 的设备`, group.ids)}><span>{group.label}</span><div><i style={{ width: `${Math.max(4, (group.ids.length / DEVICES.length) * 100)}%` }}/></div><strong>{group.ids.length} 台</strong></button>)}</div></> : <div className="energy-empty"><span><Icon name="fuel"/></span><strong>暂无电耗数据</strong><small>当前管辖设备尚未接入电耗采集，接入后将在此展示累计电耗、日均电耗和设备分布。</small></div>}</aside></div>
     </ModuleCard>,
     links: <ModuleCard title="快速链接" className="is-span-12 is-links">
-      <div className="quick-links">{links.filter((link) => link.visible).map((link) => <button type="button" key={link.id} title={link.label} onClick={() => openQuickLink(link)}><span className={link.tone}><Icon name="link"/></span><div><strong>{link.label}</strong></div><Icon name="arrow" size={14}/></button>)}</div>
+      <div className="quick-links">{links.filter((link) => link.visible && link.enabled).map((link) => <button type="button" key={link.id} title={safeQuickLinkUrl(link.url) ? `${link.label} · 新标签页打开` : link.label} onClick={() => openQuickLink(link)}><span className={link.tone}>{link.iconData ? <img src={link.iconData} alt=""/> : <Icon name={link.icon || 'link'}/>}</span><div><strong>{link.label}</strong></div><Icon name="arrow" size={14}/></button>)}{!links.some((link) => link.visible && link.enabled) && <p className="quick-links-empty">当前身份暂无可见的快速链接。</p>}</div>
     </ModuleCard>,
     projects: <ModuleCard title="重点项目" subtitle="在场设备与项目运行状态" className="is-span-12" action={<span className="module-count">{PROJECTS.length} 个进行中</span>}>
       <div className="project-list">{PROJECTS.slice(0, 3).map((project) => <button type="button" key={project.id} title={`${project.name} · ${project.project?.address || '项目地址待补充'}`} onClick={() => openProject(project, false)}><span><Icon name="project"/></span><div><strong>{project.name}</strong><small>{project.project?.address || '项目地址待补充'}</small></div><b>{project.deviceIds.length} 台设备</b><Icon name="arrow" size={14}/></button>)}</div>
@@ -813,7 +911,7 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
     {auditNotice && <div className="home-inline-notice" role="status">{auditNotice}</div>}
     <section className={`home-hero${searchOpen && query ? ' is-search-open' : ''}`}>
       <div className="hero-grid"/>
-      <div className="hero-copy"><h1>{getTimeGreeting(currentTime)}，{CURRENT_USER.name}</h1><p>统一掌握设备与运营全局，快速推动关键事项落地。</p></div>
+      <div className="hero-copy"><h1>{getTimeGreeting(currentTime)}，{previewUser.name}</h1><p>统一掌握设备与运营全局，快速推动关键事项落地。</p></div>
       <div className="global-search-wrap" ref={globalSearchRef}>
         <div className="global-search"><Icon name="search" size={22}/><input ref={searchInputRef} value={query} onChange={(event) => { setQuery(event.target.value); setSearchOpen(true); }} onFocus={() => setSearchOpen(true)} aria-expanded={searchOpen} aria-controls="global-search-panel" aria-label="全局搜索" placeholder="搜索设备、项目、审核等信息"/><kbd>⌘ K</kbd></div>
         {searchOpen && query && <section id="global-search-panel" className="search-inline-panel" aria-label="全局搜索结果">
@@ -846,10 +944,10 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
     <button type="button" className="robot-fab" onClick={() => setRobotOpen(true)} aria-label="打开 SanVIST 助手"><Icon name="robot" size={24}/><span>SanVIST 助手</span></button>
 
     {workflow && <WorkflowDrawer context={workflow} onClose={() => setWorkflow(null)} onCreate={handleWorkflowCreate}/>}
-    {settingsOpen && <Drawer title="配置主屏幕" onClose={() => setSettingsOpen(false)} wide footer={<><button type="button" onClick={() => { if (editorTab === 'modules') setDraftModules(DEFAULT_MODULES); else if (editorTab === 'actions') setDraftActions(DEFAULT_ACTION_CONFIG); else setDraftLinks(DEFAULT_LINKS); }}>恢复当前页默认</button><button type="button" className="primary" onClick={() => { saveModules(draftModules); saveActions(draftActions); saveLinks(draftLinks); setSettingsOpen(false); }}>保存并应用</button></>}>
+    {settingsOpen && <Drawer title="配置主屏幕" onClose={() => setSettingsOpen(false)} wide footer={<><button type="button" onClick={() => { if (editorTab === 'modules') setDraftModules(DEFAULT_MODULES); else if (editorTab === 'actions') setDraftActions(DEFAULT_ACTION_CONFIG); else setDraftLinks(readQuickLinkCatalog(previewUser)); }}>恢复当前页默认</button><button type="button" className="primary" onClick={() => { saveModules(draftModules); saveActions(draftActions); saveLinks(draftLinks); setSettingsOpen(false); }}>保存并应用</button></>}>
       <div className="home-editor">
-        <div className="editor-tabs"><button type="button" className={editorTab === 'modules' ? 'is-active' : ''} onClick={() => setEditorTab('modules')}>页面模块 <span>{draftModules.filter((item) => item.visible).length}/{draftModules.length}</span></button><button type="button" className={editorTab === 'actions' ? 'is-active' : ''} onClick={() => setEditorTab('actions')}>快速行动 <span>{draftActions.filter((item) => item.visible).length}/{draftActions.length}</span></button><button type="button" className={editorTab === 'links' ? 'is-active' : ''} onClick={() => setEditorTab('links')}>快速链接 <span>{draftLinks.filter((item) => item.visible).length}/{draftLinks.length}</span></button></div>
-        {editorTab === 'modules' ? <><div className="editor-caption"><strong>拖动调整整个页面的模块顺序</strong><span>隐藏的模块仍保留在功能库，可随时重新添加</span></div><div className="editor-list">{draftModules.map((module, index) => <div key={module.id} className={module.visible ? '' : 'is-hidden'} draggable onDragStart={() => setDraggingId(module.id)} onDragOver={(event) => event.preventDefault()} onDrop={(event) => moduleDrop(event, module.id)}><span className="drag-handle">⠿</span><b>{String(index + 1).padStart(2, '0')}</b><div><strong>{module.label}</strong><small>{module.description}</small></div><button type="button" className={module.visible ? 'editor-toggle is-added' : 'editor-toggle'} onClick={() => setDraftModules(draftModules.map((item) => item.id === module.id ? { ...item, visible: !item.visible } : item))}>{module.visible ? '已添加' : '+ 添加'}</button></div>)}</div></> : editorTab === 'actions' ? <><div className="editor-caption"><strong>拖动调整快速行动的左右顺序</strong><span>首页只显示已启用入口，左右按钮会按位置自动出现</span></div><div className="editor-list">{draftActions.map((config, index) => { const action = QUICK_ACTIONS.find((item) => item.id === config.id); return <div key={config.id} className={config.visible ? '' : 'is-hidden'} draggable onDragStart={() => setActionDraggingId(config.id)} onDragOver={(event) => event.preventDefault()} onDrop={(event) => actionDrop(event, config.id)}><span className="drag-handle">⠿</span><b>{String(index + 1).padStart(2, '0')}</b><i className="editor-action-icon"><Icon name={action?.icon}/></i><div><strong>{action?.label}</strong><small>{action?.note}</small></div><button type="button" className={config.visible ? 'editor-toggle is-added' : 'editor-toggle'} onClick={() => setDraftActions(draftActions.map((item) => item.id === config.id ? { ...item, visible: !item.visible } : item))}>{config.visible ? '已启用' : '+ 启用'}</button></div>; })}</div></> : <><div className="editor-caption"><strong>拖动调整快速链接顺序</strong><span>首页只显示已启用入口，名称与跳转保持统一</span></div><div className="editor-list">{draftLinks.map((link, index) => <div key={link.id} className={link.visible ? '' : 'is-hidden'} draggable onDragStart={() => setLinkDraggingId(link.id)} onDragOver={(event) => event.preventDefault()} onDrop={(event) => linkDrop(event, link.id)}><span className="drag-handle">⠿</span><b>{String(index + 1).padStart(2, '0')}</b><div><strong>{link.label}</strong><small>{link.meta}</small></div><button type="button" className={link.visible ? 'editor-toggle is-added' : 'editor-toggle'} onClick={() => setDraftLinks(draftLinks.map((item) => item.id === link.id ? { ...item, visible: !item.visible } : item))}>{link.visible ? '已添加' : '+ 添加'}</button></div>)}</div></>}
+        <div className="editor-tabs"><button type="button" className={editorTab === 'modules' ? 'is-active' : ''} onClick={() => setEditorTab('modules')}>页面模块 <span>{draftModules.filter((item) => item.visible).length}/{draftModules.length}</span></button><button type="button" className={editorTab === 'actions' ? 'is-active' : ''} onClick={() => setEditorTab('actions')}>快速行动 <span>{draftActions.filter((item) => item.visible).length}/{draftActions.length}</span></button><button type="button" className={editorTab === 'links' ? 'is-active' : ''} onClick={() => setEditorTab('links')}>快速链接 <span>{draftLinks.filter((item) => item.visible && item.enabled).length}/{draftLinks.filter((item) => item.enabled).length}</span></button></div>
+        {editorTab === 'modules' ? <><div className="editor-caption"><strong>拖动调整整个页面的模块顺序</strong><span>隐藏的模块仍保留在功能库，可随时重新添加</span></div><div className="editor-list">{draftModules.map((module, index) => <div key={module.id} className={module.visible ? '' : 'is-hidden'} draggable onDragStart={() => setDraggingId(module.id)} onDragOver={(event) => event.preventDefault()} onDrop={(event) => moduleDrop(event, module.id)}><span className="drag-handle">⠿</span><b>{String(index + 1).padStart(2, '0')}</b><div><strong>{module.label}</strong><small>{module.description}</small></div><button type="button" className={module.visible ? 'editor-toggle is-added' : 'editor-toggle'} onClick={() => setDraftModules(draftModules.map((item) => item.id === module.id ? { ...item, visible: !item.visible } : item))}>{module.visible ? '已添加' : '+ 添加'}</button></div>)}</div></> : editorTab === 'actions' ? <><div className="editor-caption"><strong>拖动调整快速行动的左右顺序</strong><span>首页只显示已启用入口，左右按钮会按位置自动出现</span></div><div className="editor-list">{draftActions.map((config, index) => { const action = QUICK_ACTIONS.find((item) => item.id === config.id); return <div key={config.id} className={config.visible ? '' : 'is-hidden'} draggable onDragStart={() => setActionDraggingId(config.id)} onDragOver={(event) => event.preventDefault()} onDrop={(event) => actionDrop(event, config.id)}><span className="drag-handle">⠿</span><b>{String(index + 1).padStart(2, '0')}</b><i className="editor-action-icon"><Icon name={action?.icon}/></i><div><strong>{action?.label}</strong><small>{action?.note}</small></div><button type="button" className={config.visible ? 'editor-toggle is-added' : 'editor-toggle'} onClick={() => setDraftActions(draftActions.map((item) => item.id === config.id ? { ...item, visible: !item.visible } : item))}>{config.visible ? '已启用' : '+ 启用'}</button></div>; })}</div></> : <><div className="editor-caption"><strong>拖动调整快速链接顺序</strong><span>运营后台关闭的入口不可添加；名称、地址和图标由运营配置决定</span></div><div className="editor-list">{draftLinks.map((link, index) => <div key={link.id} className={link.visible && link.enabled ? '' : 'is-hidden'} draggable={link.enabled} onDragStart={() => setLinkDraggingId(link.id)} onDragOver={(event) => event.preventDefault()} onDrop={(event) => linkDrop(event, link.id)}><span className="drag-handle">⠿</span><b>{String(index + 1).padStart(2, '0')}</b><div><strong>{link.label}</strong><small>{link.enabled ? link.meta : '运营后台已关闭'}</small></div><button type="button" disabled={!link.enabled} className={link.visible && link.enabled ? 'editor-toggle is-added' : 'editor-toggle'} onClick={() => setDraftLinks(draftLinks.map((item) => item.id === link.id ? { ...item, visible: !item.visible } : item))}>{!link.enabled ? '不可添加' : link.visible ? '已添加' : '+ 添加'}</button></div>)}</div></>}
       </div>
     </Drawer>}
     {robotOpen && <Drawer title="SanVIST 助手" subtitle="查询设备、解释异常并发起业务操作" onClose={() => setRobotOpen(false)}>

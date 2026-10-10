@@ -11,6 +11,7 @@ import EscEventDetailPage from './pages/EscEventDetailPage'
 import BusinessModulePage from './pages/BusinessModulePage'
 import { DEVICES } from './data/devices'
 import { ESC_EVENT_STORAGE_KEY, acknowledgeEscEvent, readEscEvent } from './data/escEvent'
+import { PREVIEW_USER_KEY, PREVIEW_USERS, readPreviewUser } from './data/session'
 import './App.css'
 
 const BUSINESS_VIEWS = [
@@ -53,6 +54,22 @@ function App() {
   const [messageCenterOpen, setMessageCenterOpen] = useState(false)
   const [messageCategory, setMessageCategory] = useState('all')
   const [auditEventId, setAuditEventId] = useState(null)
+  const [previewUser, setPreviewUser] = useState(readPreviewUser)
+
+  useEffect(() => {
+    const syncPreviewUser = (event) => {
+      if (!event.key || event.key === PREVIEW_USER_KEY) setPreviewUser(readPreviewUser())
+    }
+    window.addEventListener('storage', syncPreviewUser)
+    return () => window.removeEventListener('storage', syncPreviewUser)
+  }, [])
+
+  const switchPreviewUser = (id) => {
+    const user = PREVIEW_USERS.find((item) => item.id === id)
+    if (!user) return
+    window.localStorage.setItem(PREVIEW_USER_KEY, id)
+    setPreviewUser(user)
+  }
 
   useEffect(() => {
     const syncEscEvent = (event) => {
@@ -119,10 +136,11 @@ function App() {
     <div className="sany-shell">
       <Sidebar activeKey={view === 'esc-event-detail' ? 'esc-events' : view === 'workbench' ? 'workbench' : view === 'list' || view === 'detail' ? 'devices' : view} onNavigate={navigate} />
       <div className="sany-workspace">
-        <Header onOpenNotifications={() => setNotificationOpen(true)} />
+        <Header onOpenNotifications={() => setNotificationOpen(true)} currentUser={previewUser} onPreviewUserChange={switchPreviewUser} />
         <main className="sany-main">
           {view === 'workbench' && (
             <HomeDashboard
+              previewUser={previewUser}
               onOpenDevice={(index, tab) => navigate('detail', { index, tab })}
               onOpenList={(preset) => navigate('list', { preset })}
               onOpenBusiness={(nextView, options) => navigate(nextView, options)}

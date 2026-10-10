@@ -17,6 +17,8 @@ npm install
 npm run dev
 ```
 
+如需与本地运营后台联动预览快速链接配置，在 PC 项目运行 `SANVIST_PREVIEW_SHARED_ORIGIN=1 npm run dev`，同时在 `SanVist-Admin` 运行 `npm run dev`，通过 `http://127.0.0.1:5175/pc/` 查看 PC 页面。点击 PC 顶部右侧头像与用户名，可直接切换演示用户，检查所有用户、指定企业租户和指定人员三种可见结果；该控件仅用于原型验收，正式版本应使用实际登录账号及当前租户。
+
 ## 构建
 
 ```bash
