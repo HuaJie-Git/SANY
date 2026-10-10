@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 const menuItems = [
   { key: 'circle', label: '社区管理', children: ['话题管理', '内容管理', '内容审核', '评论管理'] },
+  { key: 'config', label: '配置管理', children: ['PC 快速链接', '角色工作台'] },
 ];
 
 const tabs = [
@@ -10,12 +11,16 @@ const tabs = [
   { key: 'content', label: '内容管理' },
   { key: 'audit', label: '内容审核' },
   { key: 'comments', label: '评论管理' },
+  { key: 'quick-links', label: 'PC 快速链接' },
+  { key: 'role-workbench', label: '角色工作台' },
 ];
+
+const routes = { 话题管理: 'topic', 内容管理: 'content', 内容审核: 'audit', 评论管理: 'comments', 'PC 快速链接': 'quick-links', 角色工作台: 'role-workbench' };
 
 const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 768);
   const [activeMenu, setActiveMenu] = useState('circle');
   const [activeSubMenu, setActiveSubMenu] = useState('话题管理');
   const [activeTab, setActiveTab] = useState('topic');
@@ -25,44 +30,32 @@ const AdminLayout = () => {
     if (!route) return;
     setActiveTab(route.key);
     setActiveSubMenu(route.label);
+    setActiveMenu(route.key === 'quick-links' || route.key === 'role-workbench' ? 'config' : 'circle');
   }, [location.pathname]);
 
   const handleMenuClick = (key, sub) => {
     setActiveMenu(key);
     if (sub) {
       setActiveSubMenu(sub);
-      if (sub === '话题管理') {
-        setActiveTab('topic');
-        navigate('/topic');
-      } else if (sub === '内容管理') {
-        setActiveTab('content');
-        navigate('/content');
-      } else if (sub === '内容审核') {
-        setActiveTab('audit');
-        navigate('/audit');
-      } else if (sub === '评论管理') {
-        setActiveTab('comments');
-        navigate('/comments');
-      }
+      const route = routes[sub];
+      if (route) navigate(`/${route}`);
     }
   };
 
   const handleTabClick = (key) => {
-    setActiveTab(key);
-    if (key === 'topic') navigate('/topic');
-    if (key === 'content') navigate('/content');
-    if (key === 'audit') navigate('/audit');
-    if (key === 'comments') navigate('/comments');
+    navigate(`/${key}`);
   };
 
   return (
     <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
       {/* 顶部导航栏 */}
-      <header className="h-12 bg-[#001529] flex items-center justify-between px-4 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <span className="text-white font-semibold text-[15px]">MySANY管理平台</span>
+      <header className="h-12 bg-[#001529] flex items-center justify-between gap-3 px-4 flex-shrink-0">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="text-white font-semibold text-[15px] whitespace-nowrap">MySANY管理平台</span>
           <button
-            className="text-white/60 hover:text-white ml-2"
+            type="button"
+            aria-label={sidebarOpen ? '收起菜单' : '展开菜单'}
+            className="text-white/60 hover:text-white ml-2 shrink-0"
             onClick={() => setSidebarOpen(!sidebarOpen)}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -70,19 +63,19 @@ const AdminLayout = () => {
             </svg>
           </button>
         </div>
-        <div className="flex items-center gap-4 text-white/80 text-[13px]">
-          <span>新加坡站点 ▾</span>
-          <span className="text-white/30">|</span>
-          <span>三一集团 ▾</span>
-          <span className="text-white/30">|</span>
-          <span>简体中文 ▾</span>
+        <div className="flex items-center gap-4 text-white/80 text-[13px] shrink-0">
+          <span className="hidden md:inline">新加坡站点 ▾</span>
+          <span className="hidden md:inline text-white/30">|</span>
+          <span className="hidden md:inline">三一集团 ▾</span>
+          <span className="hidden md:inline text-white/30">|</span>
+          <span className="hidden md:inline">简体中文 ▾</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/60">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
             <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
           </svg>
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-white text-[12px] font-medium">张</div>
-            <span className="text-white">张华杰_产品 ▾</span>
+            <span className="hidden md:inline text-white">张华杰_产品 ▾</span>
           </div>
         </div>
       </header>
@@ -90,7 +83,7 @@ const AdminLayout = () => {
       <div className="flex flex-1 overflow-hidden">
         {/* 左侧菜单 */}
         {sidebarOpen && (
-          <aside className="w-[200px] bg-[#001529] flex-shrink-0 overflow-y-auto">
+          <aside className="w-[200px] bg-[#001529] flex-shrink-0 overflow-y-auto max-md:absolute max-md:top-12 max-md:bottom-0 max-md:left-0 max-md:z-30">
             <div className="p-3">
               <div className="flex items-center gap-2 bg-white/10 rounded px-3 py-1.5 mb-3">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="opacity-50">
@@ -111,7 +104,7 @@ const AdminLayout = () => {
                     onClick={() => handleMenuClick(item.key, item.children[0])}
                   >
                     <span className="flex items-center gap-2">
-                      <span className="text-[14px]">📋</span>
+                      <span className="text-[14px]">{item.key === 'config' ? '⚙' : '📋'}</span>
                       {item.label}
                     </span>
                     {item.children.length > 0 && (
@@ -144,7 +137,7 @@ const AdminLayout = () => {
         )}
 
         {/* 右侧内容区 */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
           {/* 标签栏 */}
           <div className="flex items-center bg-white border-b border-gray-200 px-2 flex-shrink-0 overflow-x-auto">
             {tabs.map((tab) => (

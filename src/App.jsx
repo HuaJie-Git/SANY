@@ -5,6 +5,8 @@ import ContentAudit from './pages/Admin/ContentAudit';
 import ContentManagement from './pages/Admin/ContentManagement';
 import TopicManagement from './pages/Admin/TopicManagement';
 import CommentManagement from './pages/Admin/CommentManagement';
+import QuickLinkSettings from './pages/Admin/QuickLinkSettings';
+import RoleWorkbenchSettings from './pages/Admin/RoleWorkbenchSettings';
 
 function App() {
   return (
@@ -16,6 +18,8 @@ function App() {
           <Route path="content" element={<ContentManagement />} />
           <Route path="audit" element={<ContentAudit />} />
           <Route path="comments" element={<CommentManagement />} />
+          <Route path="quick-links" element={<QuickLinkSettings />} />
+          <Route path="role-workbench" element={<RoleWorkbenchSettings />} />
         </Route>
       </Routes>
     </HashRouter>
