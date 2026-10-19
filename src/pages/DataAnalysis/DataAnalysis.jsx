@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import IconFont from '../../components/IconFont/IconFont';
+import ElectricDataAnalysis from '../ElectricWidebody/ElectricDataAnalysis';
+import { isElectricWidebody } from '../ElectricWidebody/electricWidebodyData';
 
 const Icon = ({ type, size = 22 }) => {
   const iconMap = { behavior: 'chart', fuel: 'fuel', back: null, left: null, right: null };
@@ -71,6 +73,17 @@ const BehaviorDetail = ({ onBack }) => <div className="min-h-full bg-[#f1f3f7]">
 
 const FuelDetail = ({ onBack }) => <div className="min-h-full bg-[#f1f3f7]"><Header title="油耗分析" onBack={onBack} /><main className="space-y-3 px-3 pb-8 pt-3"><section className="rounded-[14px] bg-white p-4 shadow-sm"><h2 className="text-[15px] font-semibold">油位变动分析</h2><DatePicker date="2026-09-03" onPrev={() => {}} onNext={() => {}} /><div className="mt-5 grid grid-cols-2 gap-5"><div><div className="text-[23px]">0.01<span className="ml-1 text-[12px]">h</span></div><div className="mt-1 text-[11px] text-[#7a8290]">当日总工时</div></div><div><div className="text-[23px]">0.01<span className="ml-1 text-[12px]">h</span></div><div className="mt-1 text-[11px] text-[#7a8290]">当日无动作工时</div></div></div><DailyTimeline /><div className="mt-5 text-[11px] text-[#9198a4]">油位/L</div><FuelLevel /></section><section className="rounded-[14px] bg-white p-4 shadow-sm"><h2 className="text-[15px] font-semibold">档位用时分布</h2><Donut /></section></main></div>;
 
-const DataAnalysis = ({ onBack, initialView = null }) => { const [view, setView] = useState(initialView); const page = useMemo(() => view === 'behavior' ? <BehaviorDetail onBack={() => setView(null)} /> : view === 'fuel' ? <FuelDetail onBack={() => setView(null)} /> : <AnalysisHome onBack={onBack} onOpen={setView} />, [view, onBack]); return page; };
+const DataAnalysisInner = ({ onBack, initialView = null }) => {
+  const [view, setView] = useState(initialView);
+  const page = useMemo(() => view === 'behavior' ? <BehaviorDetail onBack={() => setView(null)} /> : view === 'fuel' ? <FuelDetail onBack={() => setView(null)} /> : <AnalysisHome onBack={onBack} onOpen={setView} />, [view, onBack]);
+  return page;
+};
+
+const DataAnalysis = (props) => {
+  if (isElectricWidebody(props.device)) {
+    return <ElectricDataAnalysis {...props} />;
+  }
+  return <DataAnalysisInner {...props} />;
+};
 
 export default DataAnalysis;

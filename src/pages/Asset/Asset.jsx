@@ -20,6 +20,26 @@ const Asset = ({ onDeviceClick, onUnavailable, navigationContext, demoMode = fal
   // 设备列表数据
   const baseDevices = [
     {
+      id: 21,
+      name: '电动宽体车',
+      code: 'POPJ0841016452',
+      powerType: 'electric',
+      modelType: 'electric_widebody',
+      image: '/sany-skt105e-electric.png',
+      status: 'online',
+      statusText: '工作',
+      statusColor: 'text-green-500'
+    },
+    {
+      id: 20,
+      name: '燃油宽体车',
+      code: 'KT090AE20208',
+      image: 'images/img_dumptruck.jpg',
+      status: 'online',
+      statusText: '工作',
+      statusColor: 'text-green-500'
+    },
+    {
       id: 9,
       name: '三一平地机',
       code: 'SMG200-3009',

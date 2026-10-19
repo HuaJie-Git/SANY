@@ -3,6 +3,9 @@ import FuelLevelChart from '../../components/FuelLevelChart/FuelLevelChart';
 import WorkStatusTimeline from '../../components/WorkStatusTimeline/WorkStatusTimeline';
 import IconFont from '../../components/IconFont/IconFont';
 import EscEventPage from '../EscEvent/EscEventPage';
+import ElectricWorkConditionDetail from '../ElectricWidebody/ElectricWorkConditionDetail';
+import { isElectricWidebody } from '../ElectricWidebody/electricWidebodyData';
+import { getDailyWorkDistribution } from '../ElectricWidebody/fuelWidebodyData';
 
 const PURE_ELECTRIC_MIXER_DATA = {
   supportsTrajectory: true,
@@ -33,6 +36,33 @@ const PURE_ELECTRIC_MIXER_DATA = {
     ['累计搅拌方量', '2760', 'm³'],
     ['总工时', '1750', 'h'],
   ],
+};
+
+/**
+ * 机器利用率计算函数 (FUEL-R02 / DEC-016)
+ * 口径：运行小时 / 工作小时 * 100；缺失/非数值/工作小时<=0 显示 '—'；零运行且正工时保留 '0'
+ */
+const formatMachineUtilization = (runningHours, workingHours) => {
+  if (
+    runningHours === null ||
+    runningHours === undefined ||
+    workingHours === null ||
+    workingHours === undefined ||
+    runningHours === '' ||
+    workingHours === ''
+  ) {
+    return '—';
+  }
+  const run = Number(runningHours);
+  const work = Number(workingHours);
+  if (!Number.isFinite(run) || !Number.isFinite(work) || work <= 0) {
+    return '—';
+  }
+  if (run === 0) {
+    return '0';
+  }
+  const rate = (run / work) * 100;
+  return Number.isInteger(rate) ? String(rate) : rate.toFixed(1);
 };
 
 const MACHINE_DATA = {
@@ -231,7 +261,45 @@ const MACHINE_DATA = {
     ],
   },
 
-  // 4. 矿用宽体自卸车
+  // 4. 燃油宽体车 / 矿用宽体自卸车
+  燃油宽体车: {
+    supportsTrajectory: false,
+    model: 'KT090AE',
+    code: 'KT090AE20208',
+    plate: '车牌号',
+    status: '工作',
+    reportTime: '2026-09-23 08:30 (UTC+8)',
+    location: '中国',
+    realtime: [
+      ['设备状态', '工作'],
+      ['车速', '6', 'km/h'],
+      ['运输重量', '-', 't'],
+      ['运载趟数', '0', '趟'],
+      ['油位', '74', '%'],
+      ['油门深度', '0', '%'],
+      ['齿轮模式', '2档'],
+    ],
+    today: [
+      ['里程', '2.4', 'km'],
+      ['能耗', '7', 'L'],
+      ['工时', '0.14', 'h'],
+      ['怠速工时', '0.16', 'h'],
+      ['运行时长', '0.3', 'h'],
+      ['最高车速', '43', 'km/h'],
+      ['运行燃油消耗', '6.2', 'L'],
+      ['怠速油耗', '0.8', 'L'],
+      ['机器利用率', formatMachineUtilization(0.3, 0.14), '%'],
+    ],
+    workDist: [],
+    detailedSegments: getDailyWorkDistribution('2023-11-23'),
+    cumulative: [
+      ['总工作时间', '2484.25', 'h'],
+      ['运载趟数', '0', '趟'],
+      ['总运输重量', '0', 't'],
+      ['总里程', '165066.96', 'km'],
+      ['总能耗', '61200.5', 'L'],
+    ],
+  },
   矿用宽体自卸车: {
     supportsTrajectory: false,
     model: 'KT090AE',
@@ -243,26 +311,31 @@ const MACHINE_DATA = {
     realtime: [
       ['设备状态', '工作'],
       ['车速', '6', 'km/h'],
-      ['运输重量', '-', 'T'],
-      ['运载趟数', '0', 'trips'],
+      ['运输重量', '-', 't'],
+      ['运载趟数', '0', '趟'],
       ['油位', '74', '%'],
       ['油门深度', '0', '%'],
+      ['齿轮模式', '2档'],
     ],
     today: [
       ['里程', '2.4', 'km'],
-      ['油耗', '7', 'L'],
+      ['能耗', '7', 'L'],
       ['工时', '0.14', 'h'],
       ['怠速工时', '0.16', 'h'],
       ['运行时长', '0.3', 'h'],
       ['最高车速', '43', 'km/h'],
+      ['运行燃油消耗', '6.2', 'L'],
+      ['怠速油耗', '0.8', 'L'],
+      ['机器利用率', formatMachineUtilization(0.3, 0.14), '%'],
     ],
-    workDist: [0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    workDist: [],
+    detailedSegments: getDailyWorkDistribution('2023-11-23'),
     cumulative: [
       ['总工作时间', '2484.25', 'h'],
-      ['运载趟数', '0', 'trips'],
-      ['总运输重量', '0', 'T'],
+      ['运载趟数', '0', '趟'],
+      ['总运输重量', '0', 't'],
       ['总里程', '165066.96', 'km'],
-      ['总油耗', '61200.5', 'L'],
+      ['总能耗', '61200.5', 'L'],
     ],
   },
   KT090AE20208: {
@@ -276,26 +349,31 @@ const MACHINE_DATA = {
     realtime: [
       ['设备状态', '工作'],
       ['车速', '6', 'km/h'],
-      ['运输重量', '-', 'T'],
-      ['运载趟数', '0', 'trips'],
+      ['运输重量', '-', 't'],
+      ['运载趟数', '0', '趟'],
       ['油位', '74', '%'],
       ['油门深度', '0', '%'],
+      ['齿轮模式', '2档'],
     ],
     today: [
       ['里程', '2.4', 'km'],
-      ['油耗', '7', 'L'],
+      ['能耗', '7', 'L'],
       ['工时', '0.14', 'h'],
       ['怠速工时', '0.16', 'h'],
       ['运行时长', '0.3', 'h'],
       ['最高车速', '43', 'km/h'],
+      ['运行燃油消耗', '6.2', 'L'],
+      ['怠速油耗', '0.8', 'L'],
+      ['机器利用率', formatMachineUtilization(0.3, 0.14), '%'],
     ],
-    workDist: [0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    workDist: [],
+    detailedSegments: getDailyWorkDistribution('2023-11-23'),
     cumulative: [
       ['总工作时间', '2484.25', 'h'],
-      ['运载趟数', '0', 'trips'],
-      ['总运输重量', '0', 'T'],
+      ['运载趟数', '0', '趟'],
+      ['总运输重量', '0', 't'],
       ['总里程', '165066.96', 'km'],
-      ['总油耗', '61200.5', 'L'],
+      ['总能耗', '61200.5', 'L'],
     ],
   },
 
@@ -669,7 +747,7 @@ const TrajectoryMap = ({ type }) => (
   </div>
 );
 
-const WorkConditionDetail = ({
+const WorkConditionDetailInner = ({
   device,
   escEvent,
   onBack,
@@ -708,7 +786,7 @@ const WorkConditionDetail = ({
   const isExcavator = ['挖掘机', '三一挖掘机', 'SY014CF', 'SY014CF0113D8'].includes(device?.name) || device?.code?.startsWith('SY014CF');
   const isCrane = ['汽车起重机', '三一起重机', 'AC0250CF', 'AC0250CF0056'].includes(device?.name) || device?.code?.startsWith('AC0250');
   const isMixer = ['搅拌车', '纯电搅拌车', 'HSGJ1051', 'HSGJ1051016142'].includes(device?.name) || device?.code?.startsWith('HSGJ') || device?.code?.startsWith('SYM5310BEV');
-  const _isMiningTruck = ['矿用宽体自卸车', '宽体车', 'KT090AE', 'KT090AE20208'].includes(device?.name) || device?.code?.startsWith('KT090AE');
+  const _isMiningTruck = ['燃油宽体车', '矿用宽体自卸车', '宽体车', 'KT090AE', 'KT090AE20208'].includes(device?.name) || device?.type === '燃油宽体车' || device?.code?.startsWith('KT090AE');
   const _isDumpTruck = ['自卸车', '自装卸车', 'HRZX2331', 'HRZX2331008983'].includes(device?.name) || device?.code?.startsWith('HRZX');
   const isLoader = ['电动装载机', '装载机', 'SW970EACG', 'SW970EACG0278'].includes(device?.name) || device?.code?.startsWith('SW970E');
 
@@ -850,7 +928,9 @@ const WorkConditionDetail = ({
             <button type="button" onClick={() => showHint('按自然日统计当日累计数据')} className="h-4 w-4 rounded-full bg-[#303640] text-center text-[10px] leading-4 text-white flex items-center justify-center cursor-pointer" aria-label="今日数据说明">?</button>
           </div>
           <div className={`mt-7 grid gap-6 ${data.today.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>{data.today.map((item) => <Metric key={item[0]} item={item} />)}</div>
-          {data.workDist && <WorkStatusTimeline segments={data.workDist} />}
+          {((data.detailedSegments && data.detailedSegments.length > 0) || (data.workDist && data.workDist.length > 0)) && (
+            <WorkStatusTimeline segments={data.workDist} detailedSegments={data.detailedSegments} />
+          )}
           {!data.electric && !isExcavator && !isCrane && !isLoader && <FuelLevelChart level={fuelLevel} />}
           {isLoader && <BatteryLevelChart level={72} />}
         </section>
@@ -905,6 +985,13 @@ const WorkConditionDetail = ({
       {hint && <div role="status" className="absolute left-1/2 top-[45%] z-50 -translate-x-1/2 rounded-lg bg-black/75 px-4 py-2 text-[12px] text-white">{hint}</div>}
     </div>
   );
+};
+
+const WorkConditionDetail = (props) => {
+  if (isElectricWidebody(props.device)) {
+    return <ElectricWorkConditionDetail {...props} />;
+  }
+  return <WorkConditionDetailInner {...props} />;
 };
 
 export default WorkConditionDetail;
