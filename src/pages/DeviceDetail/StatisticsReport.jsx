@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { buildDaySegments, getPrimaryWorkStatus, WORK_STATUS_COLORS } from './workStatusConfig';
+import WidebodyStatisticsReport from './WidebodyStatisticsReport';
+import { isWidebodyDevice } from '../../data/widebody';
 
 const PERIODS = [
   { key: 'daily', label: '日视图' },
@@ -341,7 +343,7 @@ function ListView({ rows, columns, onExport }) {
   return <div style={{ background: '#fff', borderRadius: 8, boxShadow: '0 1px 3px rgba(31,41,55,.06)', overflow: 'hidden' }}><div style={{ display: 'flex', justifyContent: 'flex-end', padding: '14px 16px 12px', gap: 8 }}><button type="button" onClick={onExport} style={{ border: 'none', borderRadius: 4, background: '#e60012', color: '#fff', padding: '7px 16px', fontSize: 12, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }}><Icon name="download" size={14} />导出</button></div><div style={{ overflowX: 'auto' }}><table style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse', fontSize: 13 }}><thead><tr style={{ background: '#f5f6f8' }}>{columns.map((column) => <th key={column.key} style={{ padding: '10px 16px', textAlign: 'left', color: '#68707d', fontWeight: 600, borderBottom: '1px solid #e4e7eb', whiteSpace: 'nowrap' }}>{column.label}<span style={{ marginLeft: 8, color: '#a0a6af' }}>↕</span></th>)}</tr></thead><tbody>{visibleRows.map((row, index) => <tr key={row.id} style={{ background: index % 2 ? '#fbfcfd' : '#fff' }}>{columns.map((column) => <td key={column.key} style={{ padding: '12px 16px', color: '#4b5563', borderBottom: '1px solid #eef0f3', whiteSpace: 'nowrap' }}>{row[column.key] ?? '--'}</td>)}</tr>)}</tbody></table></div><div style={{ padding: '18px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#68707d', fontSize: 12 }}><span>共 {total} 条数据</span><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><button type="button" onClick={() => setPage((value) => Math.max(1, value - 1))} style={{ border: 'none', background: 'transparent', color: '#88919e', cursor: 'pointer', transform: 'rotate(180deg)' }}><Icon name="chevron" size={14} /></button>{[1, 2, 3, 4, 5].map((item) => <button key={item} type="button" onClick={() => setPage(item)} style={{ minWidth: 28, height: 28, border: '1px solid #dfe3e8', borderRadius: 4, background: page === item ? '#e60012' : '#fff', color: page === item ? '#fff' : '#68707d', cursor: 'pointer' }}>{item}</button>)}<span>…</span><button type="button" onClick={() => setPage(totalPages)} style={{ minWidth: 28, height: 28, border: '1px solid #dfe3e8', borderRadius: 4, background: '#fff', color: '#68707d', cursor: 'pointer' }}>{totalPages}</button><button type="button" onClick={() => setPage((value) => Math.min(totalPages, value + 1))} style={{ border: 'none', background: 'transparent', color: '#88919e', cursor: 'pointer' }}><Icon name="chevron" size={14} /></button><span style={{ marginLeft: 12 }}>跳至</span><input value={page} onChange={(event) => setPage(Math.min(totalPages, Math.max(1, Number(event.target.value) || 1)))} style={{ width: 42, height: 28, border: '1px solid #dfe3e8', borderRadius: 4, textAlign: 'center', color: '#4b5563' }} /><span>/ {totalPages} 页</span></div></div></div>;
 }
 
-export default function StatisticsReport({ device }) {
+function StatisticsReportInner({ device }) {
   const [mode, setMode] = useState('chart');
   const [period, setPeriod] = useState('daily');
   const [dateOffset, setDateOffset] = useState(0);
@@ -397,4 +399,11 @@ export default function StatisticsReport({ device }) {
     </div> : <ListView rows={rows} columns={columns} onExport={() => showToast('报表导出任务已创建')} />}
     {toast && <div className="report-toast">{toast}</div>}
   </div>;
+}
+
+export default function StatisticsReport({ device }) {
+  if (isWidebodyDevice(device)) {
+    return <WidebodyStatisticsReport key={device?.code} device={device} />;
+  }
+  return <StatisticsReportInner device={device} />;
 }

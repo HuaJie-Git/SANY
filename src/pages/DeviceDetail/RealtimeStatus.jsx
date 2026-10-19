@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { buildDaySegments, getPrimaryWorkStatus, WORK_STATUS_COLORS } from './workStatusConfig';
+import WidebodyRealtimeStatus from './WidebodyRealtimeStatus';
+import { isWidebodyDevice } from '../../data/widebody';
 
 const isPaver = (device) => device?.type === '摊铺机';
 const formatHourTime = (hour) => {
@@ -86,7 +88,7 @@ function LocalMap({ device }) {
   );
 }
 
-export default function RealtimeStatus({ device }) {
+function RealtimeStatusInner({ device }) {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [countdown, setCountdown] = useState(8);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -127,4 +129,11 @@ export default function RealtimeStatus({ device }) {
       </div>
     </div>
   );
+}
+
+export default function RealtimeStatus({ device }) {
+  if (isWidebodyDevice(device)) {
+    return <WidebodyRealtimeStatus key={device?.code} device={device} />;
+  }
+  return <RealtimeStatusInner device={device} />;
 }

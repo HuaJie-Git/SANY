@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import WidebodyHistoryTrack from './WidebodyHistoryTrack';
+import { isWidebodyDevice } from '../../data/widebody';
 
 /* ═══════════════════ helpers ═══════════════════ */
 const isPaverDevice = (d) => {
@@ -41,7 +43,7 @@ const LocationSvg = () => <Svg d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.7
 const CrosshairSvg = () => <Svg d="M12 2v4M12 18v4M2 12h4M18 12h4" size={16} />;
 
 /* ═══════════════════ component ═══════════════════ */
-export default function HistoryTrack({ device }) {
+function HistoryTrackLegacy({ device }) {
   const deviceCode = device?.code || '—';
   const today = '2026-07-24';
   const [date, setDate] = useState(today);
@@ -334,4 +336,11 @@ export default function HistoryTrack({ device }) {
       </div>
     </div>
   );
+}
+
+export default function HistoryTrack({ device }) {
+  if (isWidebodyDevice(device)) {
+    return <WidebodyHistoryTrack device={device} />;
+  }
+  return <HistoryTrackLegacy device={device} />;
 }

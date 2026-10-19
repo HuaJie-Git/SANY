@@ -168,7 +168,7 @@ export default function DeviceList({ onSelectDevice, preset, onClearPreset }) {
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
-          style={{ ...inputStyle, cursor: 'pointer', minWidth: 100 }}
+          style={{ ...inputStyle, cursor: 'pointer', minWidth: 120 }}
         >
           <option value="">设备类型</option>
           <option value="平地机">平地机</option>
@@ -178,6 +178,8 @@ export default function DeviceList({ onSelectDevice, preset, onClearPreset }) {
           <option value="拖泵">拖泵</option>
           <option value="车载泵">车载泵</option>
           <option value="铣刨机">铣刨机</option>
+          <option value="电动宽体车">电动宽体车</option>
+          <option value="燃油宽体车">燃油宽体车</option>
         </select>
 
         {/* Status filter */}

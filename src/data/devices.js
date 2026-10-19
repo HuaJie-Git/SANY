@@ -1,3 +1,5 @@
+import { ELECTRIC_WIDEBODY_DEVICE, FUEL_WIDEBODY_DEVICE } from './widebody';
+
 // Monthly fuel trend data generators
 const ASSET_BASE = import.meta.env.BASE_URL;
 
@@ -841,4 +843,6 @@ export const DEVICES = [
     monthlyFuelTrend: genMonthlyFuel(23, 43),
     monthlyAmountTrend: genMonthlyAmount([2860, 3150, 2740, 2480, 3260]),
   },
+  ELECTRIC_WIDEBODY_DEVICE,
+  FUEL_WIDEBODY_DEVICE,
 ];
