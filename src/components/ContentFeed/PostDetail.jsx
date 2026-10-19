@@ -1272,22 +1272,27 @@ const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, tar
             aria-modal="true"
             aria-labelledby="share-page-title"
           >
-            {/* 顶栏只写“分享”并可关闭 */}
-            <div className="flex-shrink-0 flex items-center justify-between px-4 pt-4 pb-2.5 bg-white border-b border-gray-100">
-              <h2 id="share-page-title" className="text-[17px] font-semibold text-gray-900">分享</h2>
-              <button
-                type="button"
-                aria-label="关闭分享"
-                className="p-1.5 -mr-1 text-gray-500 hover:text-gray-900 active:text-gray-900 rounded-full transition-colors"
-                onClick={() => {
-                  setShowPosterPreview(false);
-                  setShareFailureInfo(null);
-                }}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
+            {/* 顶栏只写“分享”并可关闭（几何居中） */}
+            <div className="flex-shrink-0 grid grid-cols-[32px_minmax(0,1fr)_32px] items-center px-4 pt-4 pb-2.5 bg-white border-b border-gray-100">
+              <div className="w-8 h-8" aria-hidden="true" />
+              <h2 id="share-page-title" className="text-[17px] font-semibold text-gray-900 text-center min-w-0 break-words">
+                分享
+              </h2>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  aria-label="关闭分享"
+                  className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 active:text-gray-900 rounded-full transition-colors"
+                  onClick={() => {
+                    setShowPosterPreview(false);
+                    setShareFailureInfo(null);
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             {/* 复制失败或异常提示 */}
