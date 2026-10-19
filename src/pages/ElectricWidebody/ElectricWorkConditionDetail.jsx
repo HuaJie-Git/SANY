@@ -271,7 +271,7 @@ export default function ElectricWorkConditionDetail({
               <div className="flex flex-col items-end justify-between">
                 <div className="h-[43px] w-[64px] overflow-hidden rounded bg-[#eef0f2]">
                   <img
-                    src="/sany-skt105e-electric.png"
+                    src={`${(import.meta.env.BASE_URL || './').replace(/\/+$/, '')}/sany-skt105e-electric.png`}
                     alt="电动宽体车"
                     className="h-full w-full object-contain"
                     onError={(e) => {

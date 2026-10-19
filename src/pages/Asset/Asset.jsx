@@ -25,7 +25,7 @@ const Asset = ({ onDeviceClick, onUnavailable, navigationContext, demoMode = fal
       code: 'POPJ0841016452',
       powerType: 'electric',
       modelType: 'electric_widebody',
-      image: '/sany-skt105e-electric.png',
+      image: `${(import.meta.env.BASE_URL || './').replace(/\/+$/, '')}/sany-skt105e-electric.png`,
       status: 'online',
       statusText: '工作',
       statusColor: 'text-green-500'
