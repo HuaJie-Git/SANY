@@ -138,6 +138,12 @@ export const BASE_POSTS = [
     id: 101, authorId: 'user-001', topicId: 1,
     title: '分享下我的操作经验，新手们必看', content: '作为一名5年经验的挖掘机操作手，我想分享一些实用的操作技巧。首先是起步前的检查流程，其次是日常操作中的注意事项，最后是收工后的保养要点。希望对新手朋友们有所帮助。',
     image: 'images/机手社区/三一起重机/三一起重机_03.jpg',
+    images: [
+      'images/机手社区/三一起重机/三一起重机_03.jpg',
+      'images/机手社区/三一起重机/三一起重机_01.jpg',
+      'images/机手社区/三一起重机/三一起重机_02.jpg',
+      'images/机手社区/三一起重机/三一起重机_06.jpg',
+    ],
     views: 1280, likes: 156, date: '2026-07-10', type: 'image', auditStatus: 'approved', isLiked: false,
   },
   {
@@ -409,6 +415,12 @@ export const GUEST_POSTS = [
     id: 101, authorId: 'user-001', topicId: 1,
     title: '分享下我的操作经验，新手们必看', content: '作为一名5年经验的挖掘机操作手，我想分享一些实用的操作技巧。首先是起步前的检查流程，其次是日常操作中的注意事项，最后是收工后的保养要点。希望对新手朋友们有所帮助。',
     image: 'images/机手社区/三一起重机/三一起重机_03.jpg',
+    images: [
+      'images/机手社区/三一起重机/三一起重机_03.jpg',
+      'images/机手社区/三一起重机/三一起重机_01.jpg',
+      'images/机手社区/三一起重机/三一起重机_02.jpg',
+      'images/机手社区/三一起重机/三一起重机_06.jpg',
+    ],
     views: 1280, likes: 156, date: '2026-07-10', type: 'image', auditStatus: 'approved', isLiked: false,
   },
   {

@@ -10,7 +10,7 @@ const PhoneFrame = ({ topNav, bottomNav, children, hideGradient = false, headerB
         {/* 手机外壳 */}
         <div className="w-[393px] h-[852px] bg-black rounded-[55px] p-[12px] shadow-2xl">
           {/* 屏幕 */}
-          <div className="w-full h-full bg-white rounded-[43px] overflow-hidden relative flex flex-col [transform:translateZ(0)]">
+          <div data-phone-screen className="w-full h-full bg-white rounded-[43px] overflow-hidden relative flex flex-col [transform:translateZ(0)]">
             {/* 顶部区域 - 整体渐变：底部红色往上渐变成黑色 */}
             <div className="flex-shrink-0 relative z-20" style={hideGradient ? (headerBackground ? { background: headerBackground } : {}) : { background: headerBackground || 'linear-gradient(180deg, #000000 0%, #BC000F 100%)' }}>
               {/* 状态栏 */}

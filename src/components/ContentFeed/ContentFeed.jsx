@@ -2,11 +2,37 @@ import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } f
 import CommunityPublish from '../CommunityPublish/CommunityPublish';
 import ContentDetail from '../ContentDetail/ContentDetail';
 import CommunityTab from './CommunityTab';
-import PostDetail from './PostDetail';
+import PostDetail, { parsePostIdFromUrl, syncPostIdToUrl, clearPostIdFromUrl } from './PostDetail';
 import TopicDetailPage from './TopicDetailPage';
 import ViewCountBadge from './ViewCountBadge';
 import { deletePost, getTopicById, posts as allPosts } from './communityData';
 import { trackLeadIntent } from '../../utils/tracking';
+
+const getShareLinkError = (post) => {
+  if (!post) return '这条帖子不存在或已下架';
+  if (post.status === 'deleted' || post.auditStatus === 'deleted') return '这条帖子已被删除';
+  if (post.auditStatus === 'pending') return '这条帖子仍在审核中';
+  if (post.auditStatus === 'rejected') return '这条帖子未通过审核';
+  if (post.isPublic === false || post.visibility === 'private' || post.visibility === 'hidden') return '这条帖子暂不公开';
+  return '';
+};
+
+const UnavailablePost = ({ message, onBack }) => (
+  <div className="flex min-h-[520px] flex-col bg-white" role="alert">
+    <div className="flex h-11 items-center border-b border-gray-100 px-4">
+      <button type="button" onClick={onBack} className="mr-3 text-gray-700" aria-label="返回社区">‹</button>
+      <span className="text-[14px] font-semibold text-gray-900">帖子详情</span>
+    </div>
+    <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
+      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 text-gray-400" aria-hidden="true">
+        <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0-7.07 7.07l1.71-1.71" /><path d="m4 4 16 16" /></svg>
+      </span>
+      <h2 className="mt-4 text-[16px] font-semibold text-gray-900">帖子暂不可查看</h2>
+      <p className="mt-2 text-[13px] leading-5 text-gray-500">{message}</p>
+      <button type="button" onClick={onBack} className="mt-6 rounded-full bg-brand-red px-5 py-2 text-[13px] font-medium text-white">返回社区</button>
+    </div>
+  </div>
+);
 
 // ─── 游客模式组件（b5ded1b：无外层Tab，直出社区二级Tab） ───
 const GuestContentFeed = forwardRef(({
@@ -24,6 +50,30 @@ const GuestContentFeed = forwardRef(({
   const [topicDetail, setTopicDetail] = useState(null);
   const [communitySubTab, setCommunitySubTab] = useState('故障求助');
   const [communityTabKey, setCommunityTabKey] = useState(0);
+  const [linkError, setLinkError] = useState('');
+
+  useEffect(() => {
+    const handleUrlCheck = () => {
+      const postId = parsePostIdFromUrl();
+      if (!postId) {
+        setLinkError('');
+        return;
+      }
+      const target = allPosts.find((item) => String(item.id) === String(postId));
+      const error = getShareLinkError(target);
+      if (error) {
+        setSelectedPost(null);
+        setLinkError(error);
+        return;
+      }
+      setLinkError('');
+      setSelectedPost(target);
+    };
+
+    handleUrlCheck();
+    window.addEventListener('popstate', handleUrlCheck);
+    return () => window.removeEventListener('popstate', handleUrlCheck);
+  }, []);
 
   const handlePublishClick = () => {
     setShowPublishPage(true);
@@ -34,6 +84,7 @@ const GuestContentFeed = forwardRef(({
     setSelectedPost(latestPost);
     setSelectedCommentId(interactionContext?.commentId || null);
     setInteractionTargetStatus(interactionContext?.targetStatus || null);
+    syncPostIdToUrl(latestPost.id);
   };
 
   const handlePostDelete = (postId) => {
@@ -45,6 +96,7 @@ const GuestContentFeed = forwardRef(({
     setTopicDetail(null);
     setCommunitySubTab('我的');
     setCommunityTabKey((key) => key + 1);
+    clearPostIdFromUrl();
   };
 
   const handleTopicClick = (topicName, source = 'communityTab') => {
@@ -83,6 +135,10 @@ const GuestContentFeed = forwardRef(({
     return <CommunityPublish onClose={() => setShowPublishPage(false)} />;
   }
 
+  if (linkError) {
+    return <UnavailablePost message={linkError} onBack={() => { setLinkError(''); clearPostIdFromUrl(); }} />;
+  }
+
   if (topicDetail) {
     return (
       <TopicDetailPage
@@ -107,9 +163,11 @@ const GuestContentFeed = forwardRef(({
           setSelectedPost(null);
           setSelectedCommentId(null);
           setInteractionTargetStatus(null);
+          clearPostIdFromUrl();
         }}
         onTopicClick={(topicName) => {
           setSelectedPost(null);
+          clearPostIdFromUrl();
           handleTopicClick(topicName, 'postDetail');
         }}
         onDelete={handlePostDelete}
@@ -128,6 +186,7 @@ const GuestContentFeed = forwardRef(({
         setCommunitySubTab={setCommunitySubTab}
         setViewportActive={setIsCommunityPublishViewportActive}
       />
+
     </div>
   );
 });
@@ -153,6 +212,31 @@ const BaselineContentFeed = forwardRef(({
   const [topicDetail, setTopicDetail] = useState(null);
   const [communitySubTab, setCommunitySubTab] = useState('我的');
   const [communityTabKey, setCommunityTabKey] = useState(0);
+  const [linkError, setLinkError] = useState('');
+
+  useEffect(() => {
+    const handleUrlCheck = () => {
+      const postId = parsePostIdFromUrl();
+      if (!postId) {
+        setLinkError('');
+        return;
+      }
+      const target = allPosts.find((item) => String(item.id) === String(postId));
+      const error = getShareLinkError(target);
+      if (error) {
+        setSelectedPost(null);
+        setLinkError(error);
+        return;
+      }
+      setLinkError('');
+      setSelectedPost(target);
+    };
+
+    handleUrlCheck();
+    window.addEventListener('popstate', handleUrlCheck);
+    return () => window.removeEventListener('popstate', handleUrlCheck);
+  }, []);
+
   const tabContainerRef = useRef(null);
   const [communityItems, setCommunityItems] = useState([
     { id: 101, type: 'community', topicId: 1, image: 'images/机手社区/挖掘机/挖掘机_03.jpg', title: '今天在工地拍到的SANY挖掘机，太帅...', author: '机手小王', date: '2026-04-13', likes: 128, comments: 23, views: 1280, isLiked: false, isCollected: false },
@@ -214,6 +298,7 @@ const BaselineContentFeed = forwardRef(({
     setSelectedPost(latestPost);
     setSelectedCommentId(interactionContext?.commentId || null);
     setInteractionTargetStatus(interactionContext?.targetStatus || null);
+    syncPostIdToUrl(latestPost.id);
   };
 
   const handlePostDelete = (postId) => {
@@ -227,6 +312,7 @@ const BaselineContentFeed = forwardRef(({
     setActiveTab('社区');
     setCommunitySubTab('我的');
     setCommunityTabKey((key) => key + 1);
+    clearPostIdFromUrl();
   };
 
   const handleTopicClick = (topicName, source = 'communityTab') => {
@@ -461,6 +547,10 @@ const BaselineContentFeed = forwardRef(({
     return <CommunityPublish onClose={() => setShowPublishPage(false)} />;
   }
 
+  if (linkError) {
+    return <UnavailablePost message={linkError} onBack={() => { setLinkError(''); clearPostIdFromUrl(); }} />;
+  }
+
   if (topicDetail) {
     return (
       <TopicDetailPage
@@ -483,9 +573,11 @@ const BaselineContentFeed = forwardRef(({
           setSelectedPost(null);
           setSelectedCommentId(null);
           setInteractionTargetStatus(null);
+          clearPostIdFromUrl();
         }}
         onTopicClick={(topicName) => {
           setSelectedPost(null);
+          clearPostIdFromUrl();
           handleTopicClick(topicName, 'postDetail');
         }}
         onDelete={handlePostDelete}
@@ -677,6 +769,7 @@ const BaselineContentFeed = forwardRef(({
       <div className="text-center py-6 text-[12px] text-gray-400">
         — 已经到底了，看看其他版块的信息吧 —
       </div>
+
     </div>
   );
 });
