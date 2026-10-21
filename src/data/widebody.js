@@ -425,7 +425,11 @@ export function getFuelDayStats(dateInput) {
  */
 export function getPeriodicElectricData(period, baseDateInput) {
   const dates = getPeriodDates(period, baseDateInput);
-  const rows = dates.map((dateStr) => getElectricDayStats(dateStr)).filter(Boolean);
+  const rows = dates.map((dateStr) => getElectricDayStats(dateStr)).filter(Boolean).map((row) => ({
+    ...row,
+    runningPower: safeSum([row.runningPower], 1),
+    idlePower: safeSum([row.idlePower], 1),
+  }));
 
   const totalMileage = safeSum(rows.map((r) => r.mileage), 1);
   const totalEnergy = safeSum(rows.map((r) => r.energy), 1);
@@ -446,6 +450,8 @@ export function getPeriodicElectricData(period, baseDateInput) {
     summary: {
       mileage: totalMileage,
       energy: totalEnergy,
+      runningPower: safeSum(rows.map((row) => row.runningPower), 1),
+      idlePower: safeSum(rows.map((row) => row.idlePower), 1),
       trips: totalTrips,
       avgEnergy,
       chargeDuration: totalChargeDuration,

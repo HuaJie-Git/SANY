@@ -490,6 +490,32 @@
   gap: 12px 0;
 }
 
+.widebody-electric-summary-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.widebody-electric-summary-grid .widebody-metric-summary-item {
+  min-width: 0;
+}
+
+.widebody-electric-summary-grid .widebody-metric-summary-item small {
+  overflow-wrap: anywhere;
+}
+
+.widebody-electric-summary-grid .widebody-metric-summary-item:nth-child(4n) {
+  border-inline-end: 0;
+}
+
+@media (max-width: 900px) {
+  .widebody-electric-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .widebody-electric-summary-grid .widebody-metric-summary-item:nth-child(2n) {
+    border-inline-end: 0;
+  }
+}
+
 .widebody-metric-summary-item {
   padding: 2px 14px;
   border-right: 1px solid #f0f1f2;

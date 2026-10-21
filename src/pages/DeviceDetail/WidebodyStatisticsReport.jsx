@@ -882,6 +882,8 @@ function WidebodyDataReport({ device, reportSelector }) {
       return [
         { label: '里程', value: summary.mileage ?? '—', unit: 'km' },
         { label: '电耗', value: summary.energy ?? '—', unit: 'kWh' },
+        { label: '运行功耗', value: summary.runningPower ?? '—', unit: 'kWh' },
+        { label: '空闲功耗', value: summary.idlePower ?? '—', unit: 'kWh' },
         { label: '运载趟数', value: summary.trips ?? '—', unit: '趟' },
         { label: '平均电耗', value: summary.avgEnergy ?? '—', unit: 'kWh/km' },
         { label: '充电时长', value: summary.chargeDuration ?? '—', unit: 'h' },
@@ -903,6 +905,8 @@ function WidebodyDataReport({ device, reportSelector }) {
         { key: 'date', label: '日期' },
         { key: 'mileage', label: '里程 (km)' },
         { key: 'energy', label: '电耗 (kWh)' },
+        { key: 'runningPower', label: '运行功耗 (kWh)' },
+        { key: 'idlePower', label: '空闲功耗 (kWh)' },
         { key: 'trips', label: '运载趟数 (趟)' },
         { key: 'avgEnergy', label: '平均电耗 (kWh/km)' },
         { key: 'chargeDuration', label: '充电时长 (h)' },
@@ -1179,7 +1183,7 @@ function WidebodyDataReport({ device, reportSelector }) {
                 <strong>指标概览</strong>
               </div>
             </div>
-            <div className="widebody-metric-summary-grid">
+            <div className={`widebody-metric-summary-grid${isElectric ? ' widebody-electric-summary-grid' : ''}`}>
               {summaryMetrics.map((m) => (
                 <div className="widebody-metric-summary-item" key={m.label}>
                   <strong title={`${m.value} ${m.unit}`}>
