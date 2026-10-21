@@ -185,17 +185,17 @@ export default function ElectricDataReport({ device, onBack }) {
             {/* 日报分支 */}
             {tab === 'daily' && (
               <>
-                {/* 6 大指标白卡 (STYLE-FUEL-002/004: 22px normal / 12px unit / 11px label, 自然高度, 删强制留白) */}
+                {/* 8 项指标白卡 (STYLE-FUEL-002/004: 22px normal / 12px unit / 11px label, 自然高度, 删强制留白) */}
                 <div className="rounded-[14px] bg-white p-4 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
                   <div className="text-[15px] font-semibold text-[#252b33] mb-4">今日数据</div>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-5">
                     {reportData.kpis.map((kpi, idx) => (
-                      <div key={idx}>
+                      <div key={idx} className="min-w-0">
                         <div className="flex items-baseline gap-1">
                           <span className="text-[22px] font-normal text-[#252b33]">{kpi.value}</span>
                           {kpi.unit && <span className="text-[12px] text-[#666]">{kpi.unit}</span>}
                         </div>
-                        <div className="text-[11px] text-[#999] mt-1">{kpi.label}</div>
+                        <div className="text-[11px] text-[#999] mt-1 break-words">{kpi.label}</div>
                       </div>
                     ))}
                   </div>
@@ -262,7 +262,7 @@ export default function ElectricDataReport({ device, onBack }) {
             {/* 周报分支 */}
             {tab === 'weekly' && (
               <>
-                {/* 6 大指标白卡 (STYLE-FUEL-002/004: 对比上周, 自然高度, 删强制留白) */}
+                {/* 8 项指标白卡 (STYLE-FUEL-002/004: 对比上周, 自然高度, 删强制留白) */}
                 <div className="rounded-[14px] bg-white p-4 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-[15px] font-semibold text-[#252b33]">运营数据</span>
@@ -270,7 +270,7 @@ export default function ElectricDataReport({ device, onBack }) {
                   </div>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-5">
                     {reportData.summary.map((item, idx) => (
-                      <div key={idx}>
+                      <div key={idx} className="min-w-0">
                         <div className="flex items-baseline gap-1">
                           <span className="text-[22px] font-normal text-[#252b33]">{item.value}</span>
                           {item.unit && <span className="text-[12px] text-[#666]">{item.unit}</span>}
@@ -288,7 +288,7 @@ export default function ElectricDataReport({ device, onBack }) {
                             </span>
                           )}
                         </div>
-                        <div className="text-[11px] text-[#999] mt-1">{item.label}</div>
+                        <div className="text-[11px] text-[#999] mt-1 break-words">{item.label}</div>
                       </div>
                     ))}
                   </div>
@@ -372,7 +372,7 @@ export default function ElectricDataReport({ device, onBack }) {
             {/* 月报分支 */}
             {tab === 'monthly' && (
               <>
-                {/* 6 大指标白卡 (STYLE-FUEL-002/004: 对比上月, 自然高度, 删强制留白) */}
+                {/* 8 项指标白卡 (STYLE-FUEL-002/004: 对比上月, 自然高度, 删强制留白) */}
                 <div className="rounded-[14px] bg-white p-4 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-[15px] font-semibold text-[#252b33]">月度运营数据</span>
@@ -380,7 +380,7 @@ export default function ElectricDataReport({ device, onBack }) {
                   </div>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-5">
                     {reportData.summary.map((item, idx) => (
-                      <div key={idx}>
+                      <div key={idx} className="min-w-0">
                         <div className="flex items-baseline gap-1">
                           <span className="text-[22px] font-normal text-[#252b33]">{item.value}</span>
                           {item.unit && <span className="text-[12px] text-[#666]">{item.unit}</span>}
@@ -398,7 +398,7 @@ export default function ElectricDataReport({ device, onBack }) {
                             </span>
                           )}
                         </div>
-                        <div className="text-[11px] text-[#999] mt-1">{item.label}</div>
+                        <div className="text-[11px] text-[#999] mt-1 break-words">{item.label}</div>
                       </div>
                     ))}
                   </div>

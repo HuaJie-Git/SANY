@@ -246,6 +246,22 @@ export const ELECTRIC_CUMULATIVE_METRICS = [
  * 支持日报/周报/月报联动，跨月、跨年、大小月及闰年自洽
  * 周/月汇总严格由日历实际求和得出，未计算基期则环比显示「—」
  */
+// 功耗沿用独立日数据；未知值传播到周期汇总，合法零值保持为零。
+export function sumReportEnergy(values) {
+  if (!Array.isArray(values) || values.length === 0) return null;
+  const numbers = values.map((value) => (
+    value === null || value === undefined || (typeof value === 'string' && value.trim() === '')
+      ? NaN : Number(value)
+  ));
+  if (numbers.some((value) => !Number.isFinite(value))) return null;
+  return Number(numbers.reduce((total, value) => total + value, 0).toFixed(1));
+}
+
+export function formatReportEnergy(value) {
+  const energy = sumReportEnergy([value]);
+  return energy === null ? '—' : energy.toFixed(1);
+}
+
 export function getReportDataByDate(dateObj, tab) {
   const year = dateObj.getFullYear();
   const month = dateObj.getMonth(); // 0-11
@@ -261,6 +277,8 @@ export function getReportDataByDate(dateObj, tab) {
       kpis: [
         { label: '里程', value: dailyStat.mileage.toFixed(1), unit: 'km' },
         { label: '电耗', value: dailyStat.energy.toFixed(1), unit: 'kWh' },
+        { label: '运行功耗', value: formatReportEnergy(dailyStat.drivingEnergy), unit: 'kWh' },
+        { label: '空闲功耗', value: formatReportEnergy(dailyStat.idleEnergy), unit: 'kWh' },
         { label: '运载趟数', value: String(dailyStat.trips), unit: '趟' },
         { label: '平均电耗', value: dailyStat.avgEnergy.toFixed(2), unit: 'kWh/km' },
         { label: '充电时长', value: dailyStat.chargeDuration.toFixed(1), unit: 'h' },
@@ -311,6 +329,8 @@ export function getReportDataByDate(dateObj, tab) {
         trips: dailyStat.trips,
         mileage: dailyStat.mileage,
         energy: dailyStat.energy,
+        drivingEnergy: dailyStat.drivingEnergy,
+        idleEnergy: dailyStat.idleEnergy,
         chargeDuration: dailyStat.chargeDuration,
         recovery: dailyStat.recoveryEnergy,
         recoveryEnergy: dailyStat.recoveryEnergy,
@@ -333,6 +353,8 @@ export function getReportDataByDate(dateObj, tab) {
       summary: [
         { label: '总里程', value: totalMileage.toFixed(1), unit: 'km', wow: '—', isUp: null },
         { label: '总电耗', value: totalEnergy.toFixed(1), unit: 'kWh', wow: '—', isUp: null },
+        { label: '运行功耗', value: formatReportEnergy(sumReportEnergy(weekDays.map((d) => d.drivingEnergy))), unit: 'kWh', wow: '—', isUp: null },
+        { label: '空闲功耗', value: formatReportEnergy(sumReportEnergy(weekDays.map((d) => d.idleEnergy))), unit: 'kWh', wow: '—', isUp: null },
         { label: '运载趟数', value: String(totalTrips), unit: '趟', wow: '—', isUp: null },
         { label: '平均电耗', value: avgWeeklyEnergy, unit: 'kWh/km', wow: '—', isUp: null },
         { label: '充电时长', value: totalCharge.toFixed(1), unit: 'h', wow: '—', isUp: null },
@@ -386,6 +408,8 @@ export function getReportDataByDate(dateObj, tab) {
       trips: dailyStat.trips,
       mileage: dailyStat.mileage,
       energy: dailyStat.energy,
+      drivingEnergy: dailyStat.drivingEnergy,
+      idleEnergy: dailyStat.idleEnergy,
       chargeDuration: dailyStat.chargeDuration,
       recovery: dailyStat.recoveryEnergy,
       recoveryEnergy: dailyStat.recoveryEnergy,
@@ -409,6 +433,8 @@ export function getReportDataByDate(dateObj, tab) {
     summary: [
       { label: '总里程', value: totalMileage.toFixed(1), unit: 'km', mom: '—', isUp: null },
       { label: '总电耗', value: totalEnergy.toFixed(1), unit: 'kWh', mom: '—', isUp: null },
+      { label: '运行功耗', value: formatReportEnergy(sumReportEnergy(monthDays.map((d) => d.drivingEnergy))), unit: 'kWh', mom: '—', isUp: null },
+      { label: '空闲功耗', value: formatReportEnergy(sumReportEnergy(monthDays.map((d) => d.idleEnergy))), unit: 'kWh', mom: '—', isUp: null },
       { label: '运载趟数', value: String(totalTrips), unit: '趟', mom: '—', isUp: null },
       { label: '平均电耗', value: avgMonthlyEnergy, unit: 'kWh/km', mom: '—', isUp: null },
       { label: '充电时长', value: totalCharge.toFixed(1), unit: 'h', mom: '—', isUp: null },
