@@ -177,6 +177,9 @@
 }
 
 .widebody-energy-card { grid-area: energy; }
+.widebody-realtime-layout.is-electric {
+  grid-template-areas: "today location" "energy energy";
+}
 .widebody-gear-card { grid-area: gear; }
 .widebody-gear-chart {
   flex: 1;
@@ -808,6 +811,9 @@
   .widebody-realtime-layout {
     grid-template-columns: 1fr;
     grid-template-areas: "today" "location" "energy" "gear";
+  }
+  .widebody-realtime-layout.is-electric {
+    grid-template-areas: "today" "location" "energy";
   }
   .widebody-map-container {
     min-height: 280px;

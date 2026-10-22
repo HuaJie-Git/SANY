@@ -480,7 +480,7 @@ export default function WidebodyRealtimeStatus({ device }) {
   }, [autoRefresh]);
 
   const gearData = useMemo(() => {
-    if (!device) return null;
+    if (!device || isElectricWidebody(device)) return null;
     void refreshKey;
     const base = device.gearData || device.gearDistribution || getDailyGearDistribution('2023-11-23');
     return base ? { ...base } : null;
@@ -651,8 +651,8 @@ export default function WidebodyRealtimeStatus({ device }) {
         </div>
       </section>
 
-      {/* 两行网格：工时/行驶与位置，能耗曲线与档位分布 */}
-      <div className="widebody-realtime-layout">
+      {/* 两行网格：工时/行驶与位置，电车能耗曲线通栏、燃油保留档位分布 */}
+      <div className={`widebody-realtime-layout${isElectric ? ' is-electric' : ''}`}>
         {/* Today Top Row: Side-by-side Work (wider) and Travel (narrower) */}
         <div className="widebody-today-top-row">
           {/* Block 1: 今日工时 (4项 + 24h开工分布) */}
@@ -732,13 +732,14 @@ export default function WidebodyRealtimeStatus({ device }) {
           </div>
         </section>
 
-        {/* Block 4: 档位分布 */}
-        <section className="widebody-card widebody-gear-card" aria-label="档位分布">
-          <div className="widebody-card-header">
-            <SectionTitle icon={<PieChartIcon />} title="档位分布" tone="orange" />
-          </div>
-          <div className="widebody-gear-chart"><WidebodyGearDistribution data={gearData} title="档位分布" /></div>
-        </section>
+        {!isElectric && (
+          <section className="widebody-card widebody-gear-card" aria-label="档位分布">
+            <div className="widebody-card-header">
+              <SectionTitle icon={<PieChartIcon />} title="档位分布" tone="orange" />
+            </div>
+            <div className="widebody-gear-chart"><WidebodyGearDistribution data={gearData} title="档位分布" /></div>
+          </section>
+        )}
       </div>
 
       {/* Bottom: 历史累计数据 (通栏) */}
