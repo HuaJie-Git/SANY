@@ -545,7 +545,7 @@ export default function WidebodyRealtimeStatus({ device }) {
         { label: '车速', value: formatValue(realtime['车速']) },
         { label: '油位', value: formatValue(realtime['油位']) },
         { label: '油门深度', value: formatValue(realtime['油门深度']) },
-        { label: '齿轮模式', value: formatValue(realtime['齿轮模式']) },
+        { label: '行驶档位', value: formatValue(realtime['齿轮模式']) },
       ];
 
   // 2. Today Groups (Review B: calculate machine utilization dynamically via formula, no hardcoding)
@@ -651,59 +651,17 @@ export default function WidebodyRealtimeStatus({ device }) {
         </div>
       </section>
 
-      {/* Middle Layout: Left Grouped Today Cards + Right Local Map */}
+      {/* 两行网格：工时/行驶与位置，能耗曲线与档位分布 */}
       <div className="widebody-realtime-layout">
-        <div className="widebody-realtime-left">
-          {/* Today Top Row: Side-by-side Work (wider) and Travel (narrower) */}
-          <div className="widebody-today-top-row">
-            {/* Block 1: 今日工时 (4项 + 24h开工分布) */}
-            <section className="widebody-card widebody-today-work-card" aria-label="今日工时">
-              <div className="widebody-card-header">
-                <SectionTitle icon={<ClockIcon />} title="今日工时" tone="purple" />
-              </div>
-              <div className="widebody-metrics-row">
-                {todayWorkItems.map((item) => (
-                  <div className="widebody-metric-box" key={item.label}>
-                    <small title={item.label}>{item.label}</small>
-                    <strong title={item.value}>{item.value}</strong>
-                  </div>
-                ))}
-              </div>
-              <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid #f1f5f9' }}>
-                <div style={{ fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: 2 }}>
-                  当日开工分布
-                </div>
-                <Gantt24h segments={workSegments} />
-              </div>
-            </section>
-
-            {/* Block 2: 今日行驶 (2项) */}
-            <section className="widebody-card widebody-today-travel-card" aria-label="今日行驶">
-              <div className="widebody-card-header">
-                <SectionTitle icon={<TruckIcon />} title="今日行驶" tone="blue" />
-              </div>
-              <div className="widebody-metrics-row">
-                {todayTravelItems.map((item) => (
-                  <div className="widebody-metric-box" key={item.label}>
-                    <small title={item.label}>{item.label}</small>
-                    <strong title={item.value}>{item.value}</strong>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
-
-          {/* Block 3: 今日电耗 / 今日能耗 (5项/3项 + %剩余量曲线) */}
-          <section className="widebody-card" aria-label={isElectric ? '今日电耗' : '今日能耗'}>
+        {/* Today Top Row: Side-by-side Work (wider) and Travel (narrower) */}
+        <div className="widebody-today-top-row">
+          {/* Block 1: 今日工时 (4项 + 24h开工分布) */}
+          <section className="widebody-card widebody-today-work-card" aria-label="今日工时">
             <div className="widebody-card-header">
-              <SectionTitle
-                icon={isElectric ? <ZapIcon /> : <FlameIcon />}
-                title={isElectric ? '今日电耗' : '今日能耗'}
-                tone={isElectric ? 'blue' : 'orange'}
-              />
+              <SectionTitle icon={<ClockIcon />} title="今日工时" tone="purple" />
             </div>
             <div className="widebody-metrics-row">
-              {todayEnergyItems.map((item) => (
+              {todayWorkItems.map((item) => (
                 <div className="widebody-metric-box" key={item.label}>
                   <small title={item.label}>{item.label}</small>
                   <strong title={item.value}>{item.value}</strong>
@@ -711,37 +669,76 @@ export default function WidebodyRealtimeStatus({ device }) {
               ))}
             </div>
             <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid #f1f5f9' }}>
-              {isElectric ? (
-                <SvgCurveChart
-                  points={socData?.points}
-                  unit="%"
-                  title="电量曲线"
-                  strokeColor="#2563eb"
-                  fillColor="rgba(37,99,235,0.12)"
-                />
-              ) : (
-                <SvgCurveChart
-                  points={fuelData?.points}
-                  unit="%"
-                  title="油位曲线"
-                  strokeColor="#ff7500"
-                  fillColor="rgba(255,117,0,0.12)"
-                />
-              )}
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: 2 }}>
+                当日开工分布
+              </div>
+              <Gantt24h segments={workSegments} />
             </div>
           </section>
 
-          {/* Block 4: 档位分布 */}
-          <section className="widebody-card widebody-gear-card" aria-label="档位分布">
+          {/* Block 2: 今日行驶 (2项) */}
+          <section className="widebody-card widebody-today-travel-card" aria-label="今日行驶">
             <div className="widebody-card-header">
-              <SectionTitle icon={<PieChartIcon />} title="档位分布" tone="orange" />
+              <SectionTitle icon={<TruckIcon />} title="今日行驶" tone="blue" />
             </div>
-            <WidebodyGearDistribution data={gearData} title="档位分布" />
+            <div className="widebody-metrics-row">
+              {todayTravelItems.map((item) => (
+                <div className="widebody-metric-box" key={item.label}>
+                  <small title={item.label}>{item.label}</small>
+                  <strong title={item.value}>{item.value}</strong>
+                </div>
+              ))}
+            </div>
           </section>
         </div>
 
-        {/* Right: Local Map */}
         <LocalMap device={device} locationName={locationName} />
+
+        {/* Block 3: 今日电耗 / 今日能耗 (5项/3项 + %剩余量曲线) */}
+        <section className="widebody-card widebody-energy-card" aria-label={isElectric ? '今日电耗' : '今日能耗'}>
+          <div className="widebody-card-header">
+            <SectionTitle
+              icon={isElectric ? <ZapIcon /> : <FlameIcon />}
+              title={isElectric ? '今日电耗' : '今日能耗'}
+              tone={isElectric ? 'blue' : 'orange'}
+            />
+          </div>
+          <div className="widebody-metrics-row">
+            {todayEnergyItems.map((item) => (
+              <div className="widebody-metric-box" key={item.label}>
+                <small title={item.label}>{item.label}</small>
+                <strong title={item.value}>{item.value}</strong>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid #f1f5f9' }}>
+            {isElectric ? (
+              <SvgCurveChart
+                points={socData?.points}
+                unit="%"
+                title="电量曲线"
+                strokeColor="#2563eb"
+                fillColor="rgba(37,99,235,0.12)"
+              />
+            ) : (
+              <SvgCurveChart
+                points={fuelData?.points}
+                unit="%"
+                title="油位曲线"
+                strokeColor="#ff7500"
+                fillColor="rgba(255,117,0,0.12)"
+              />
+            )}
+          </div>
+        </section>
+
+        {/* Block 4: 档位分布 */}
+        <section className="widebody-card widebody-gear-card" aria-label="档位分布">
+          <div className="widebody-card-header">
+            <SectionTitle icon={<PieChartIcon />} title="档位分布" tone="orange" />
+          </div>
+          <div className="widebody-gear-chart"><WidebodyGearDistribution data={gearData} title="档位分布" /></div>
+        </section>
       </div>
 
       {/* Bottom: 历史累计数据 (通栏) */}
