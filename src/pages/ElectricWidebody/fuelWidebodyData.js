@@ -179,6 +179,7 @@ export function getFuelDayStats(dateInput) {
       idleFuel: 0.8,
       utilizationRate: 214.3,
       fuelLevel: 74,
+      weight: null,
     };
   }
 
@@ -206,6 +207,7 @@ export function getFuelDayStats(dateInput) {
     idleFuel,
     utilizationRate,
     fuelLevel,
+    weight: null,
   };
 }
 
@@ -217,10 +219,13 @@ export function getPeriodicFuelData(period, baseDateInput) {
   const rows = dates.map((dateStr) => getFuelDayStats(dateStr)).filter(Boolean);
 
   const totalFuel = safeSum(rows.map((r) => r.fuel), 1);
+  const totalRunningFuel = safeSum(rows.map((r) => r.runningFuel), 1);
+  const totalIdleFuel = safeSum(rows.map((r) => r.idleFuel), 1);
   const totalWorkHours = safeSum(rows.map((r) => r.workHours), 2);
   const totalIdleHours = safeSum(rows.map((r) => r.idleHours), 2);
   const totalRunningHours = safeSum(rows.map((r) => r.runningHours), 2);
   const totalMileage = safeSum(rows.map((r) => r.mileage), 1);
+  const totalWeight = safeSum(rows.map((r) => r.weight), 1);
 
   const avgHourlyFuel = safeAvg(totalFuel, totalWorkHours, 1);
   const utilizationRate = getMachineUtilization(totalRunningHours, totalWorkHours);
@@ -231,11 +236,14 @@ export function getPeriodicFuelData(period, baseDateInput) {
     rows,
     summary: {
       fuel: totalFuel,
+      runningFuel: totalRunningFuel,
+      idleFuel: totalIdleFuel,
       avgHourlyFuel,
       workHours: totalWorkHours,
       idleHours: totalIdleHours,
       runningHours: totalRunningHours,
       mileage: totalMileage,
+      weight: totalWeight,
       utilizationRate,
     },
   };
@@ -273,6 +281,14 @@ export function getDailyWorkDistribution(dateInput) {
   return segments;
 }
 
+export function formatWeight(val) {
+  if (val === null || val === undefined || val === '') return '—';
+  const n = Number(val);
+  if (!Number.isFinite(n) || n < 0) return '—';
+  if (n === 0) return '0';
+  return n.toFixed(1);
+}
+
 /**
  * 兼容旧组件的默认静态数据引用（基于 2023-11-23 基准日）
  */
@@ -287,9 +303,12 @@ export const FUEL_WIDEBODY_DATA = {
     fuelLevel: String(defaultDayStat.fuelLevel),
     summary: [
       ['能耗', String(defaultDayStat.fuel.toFixed(1)), 'L'],
+      ['运行功耗', String(defaultDayStat.runningFuel.toFixed(1)), 'L'],
+      ['空闲功耗', String(defaultDayStat.idleFuel.toFixed(1)), 'L'],
       ['平均每小时能耗', String(defaultDayStat.avgHourlyFuel.toFixed(1)), 'L/h'],
       ['工时', String(defaultDayStat.workHours.toFixed(2)), 'h'],
       ['怠速工时', String(defaultDayStat.idleHours.toFixed(2)), 'h'],
+      ['运输重量', formatWeight(defaultDayStat.weight), 't'],
     ],
     detailedSegments: getDailyWorkDistribution(defaultBaseDate),
     workDist: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -297,9 +316,12 @@ export const FUEL_WIDEBODY_DATA = {
   weekly: {
     summary: [
       ['能耗', String(defaultWeekData.summary.fuel), 'L'],
+      ['运行功耗', String(defaultWeekData.summary.runningFuel ?? '35.0'), 'L'],
+      ['空闲功耗', String(defaultWeekData.summary.idleFuel ?? '4.5'), 'L'],
       ['平均每小时能耗', String(defaultWeekData.summary.avgHourlyFuel), 'L/h'],
       ['工时', String(defaultWeekData.summary.workHours), 'h'],
       ['怠速工时', String(defaultWeekData.summary.idleHours), 'h'],
+      ['总运输重量', formatWeight(defaultWeekData.summary.weight), 't'],
     ],
     calDays: defaultWeekData.rows.map((r, i) => ({
       d: r?.date ? parseInt(r.date.split('-')[2], 10) : (i + 1),
@@ -313,12 +335,17 @@ export const FUEL_WIDEBODY_DATA = {
   monthly: {
     summary: [
       ['能耗', String(defaultMonthData.summary.fuel), 'L'],
+      ['运行功耗', String(defaultMonthData.summary.runningFuel ?? '140.0'), 'L'],
+      ['空闲功耗', String(defaultMonthData.summary.idleFuel ?? '18.0'), 'L'],
       ['平均每小时能耗', String(defaultMonthData.summary.avgHourlyFuel), 'L/h'],
       ['工时', String(defaultMonthData.summary.workHours), 'h'],
       ['怠速工时', String(defaultMonthData.summary.idleHours), 'h'],
+      ['总运输重量', formatWeight(defaultMonthData.summary.weight), 't'],
     ],
     fuelTrend: defaultMonthData.rows.map((r) => r.fuel),
     workH: defaultMonthData.rows.map((r) => r.workHours),
     idleH: defaultMonthData.rows.map((r) => r.idleHours),
   },
 };
+
+export const FUEL_REPORT_DATA = FUEL_WIDEBODY_DATA;

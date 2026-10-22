@@ -11,6 +11,7 @@ import {
   getDailyWorkDistribution,
   getPeriodDates,
   normalizeDateStr,
+  formatWeight,
 } from '../ElectricWidebody/fuelWidebodyData';
 
 const shiftDate = (date, days) => {
@@ -653,9 +654,12 @@ const DailyView = ({ deviceName, isFuelWidebody, currentDateStr }) => {
           fuelLevel: String(stat.fuelLevel),
           summary: [
             ['能耗', String(stat.fuel.toFixed(1)), 'L'],
+            ['运行功耗', String(stat.runningFuel.toFixed(1)), 'L'],
+            ['空闲功耗', String(stat.idleFuel.toFixed(1)), 'L'],
             ['平均每小时能耗', stat.avgHourlyFuel != null ? String(stat.avgHourlyFuel.toFixed(1)) : '—', 'L/h'],
             ['工时', String(stat.workHours.toFixed(2)), 'h'],
             ['怠速工时', String(stat.idleHours.toFixed(2)), 'h'],
+            ['运输重量', formatWeight(stat.weight), 't'],
           ],
           detailedSegments: getDailyWorkDistribution(currentDateStr || '2023-11-23'),
           workDist: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -713,9 +717,12 @@ const WeeklyView = ({ deviceName, baseDate, isFuelWidebody }) => {
         return {
           summary: [
             ['能耗', String(periodic.summary.fuel ?? '—'), 'L'],
+            ['运行功耗', String(periodic.summary.runningFuel ?? '—'), 'L'],
+            ['空闲功耗', String(periodic.summary.idleFuel ?? '—'), 'L'],
             ['平均每小时能耗', String(periodic.summary.avgHourlyFuel ?? '—'), 'L/h'],
             ['工时', String(periodic.summary.workHours ?? '—'), 'h'],
             ['怠速工时', String(periodic.summary.idleHours ?? '—'), 'h'],
+            ['总运输重量', formatWeight(periodic.summary.weight), 't'],
           ],
           calDays: periodic.rows.map((r, i) => {
             const dayNum = r?.date ? parseInt(r.date.split('-')[2], 10) : (i + 1);
@@ -788,9 +795,12 @@ const MonthlyView = ({ deviceName, baseDate, isFuelWidebody }) => {
         return {
           summary: [
             ['能耗', String(periodic.summary.fuel ?? '—'), 'L'],
+            ['运行功耗', String(periodic.summary.runningFuel ?? '—'), 'L'],
+            ['空闲功耗', String(periodic.summary.idleFuel ?? '—'), 'L'],
             ['平均每小时能耗', String(periodic.summary.avgHourlyFuel ?? '—'), 'L/h'],
             ['工时', String(periodic.summary.workHours ?? '—'), 'h'],
             ['怠速工时', String(periodic.summary.idleHours ?? '—'), 'h'],
+            ['总运输重量', formatWeight(periodic.summary.weight), 't'],
           ],
           fuelTrend: periodic.rows.map((r) => r.fuel),
           workH: periodic.rows.map((r) => r.workHours),
