@@ -265,9 +265,6 @@ export function ElectricDualAxisChart({
     return idx === 0 || idx === 9 || idx === 19 || idx === count - 1;
   });
 
-  const selP1 = selectedIndex !== null && points1[selectedIndex] ? points1[selectedIndex] : null;
-  const selP2 = selectedIndex !== null && points2[selectedIndex] ? points2[selectedIndex] : null;
-
   return (
     <section className="rounded-[14px] bg-white p-4 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
       <h2 className="sr-only">{title}</h2>
@@ -394,7 +391,7 @@ export function ElectricDualAxisChart({
         </div>
       </div>
 
-      {/* 底部图例与点选反馈 */}
+      {/* 底部图例 */}
       <div className="mt-3 pt-2 border-t border-gray-100">
         <div className="flex flex-wrap items-center justify-between gap-2 min-w-0 text-[11px]">
           <div className="flex flex-wrap items-center gap-3">
@@ -415,18 +412,6 @@ export function ElectricDualAxisChart({
               <span>{series2.name}({series2.unit})</span>
             </span>
           </div>
-
-          {selP1 && selP2 && (
-            <div className="flex flex-wrap items-center gap-2 text-[10px]">
-              <span className="font-semibold text-[#252b33]">{selP1.label}:</span>
-              <span className="text-[#2377f3] font-medium">
-                {Number(selP1.val).toFixed(1)}{series1.unit}
-              </span>
-              <span className="text-[#b45309] font-medium">
-                {Number(selP2.val).toFixed(1)}{series2.unit}
-              </span>
-            </div>
-          )}
         </div>
       </div>
     </section>
