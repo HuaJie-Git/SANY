@@ -6,7 +6,6 @@ import {
 import { useWidebodyState } from './useWidebodyState';
 import { ElectricSingleLineChart, ElectricDualAxisChart } from './ElectricTrendChart';
 import ElectricSocChart from './ElectricSocChart';
-import ElectricGearChart from './ElectricGearChart';
 
 export default function ElectricDataReport({ device, onBack }) {
   const [tab, setTab] = useState('daily'); // 'daily' | 'weekly' | 'monthly'
@@ -254,8 +253,6 @@ export default function ElectricDataReport({ device, onBack }) {
                 {/* 电量曲线 (V2-R02 / DEC-011 / DEC-015) */}
                 <ElectricSocChart key={`soc-${tab}-${reportData.dateLabel}`} mode="daily" data={reportData.socCurve} />
 
-                {/* 档位使用情况 (V2-R02 / DEC-015) */}
-                <ElectricGearChart data={reportData.gearDistribution} />
               </>
             )}
 
