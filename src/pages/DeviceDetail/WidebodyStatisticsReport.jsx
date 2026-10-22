@@ -9,9 +9,6 @@ import {
   formatDateSlash,
   getPeriodicElectricData,
   getPeriodicFuelData,
-  getDailySocCurve,
-  getDailyFuelCurve,
-  getDailyGearDistribution,
   getDailyWorkDistribution,
   downloadCsv,
 } from '../../data/widebody';
@@ -74,31 +71,6 @@ function ClockIcon() {
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10" />
       <polyline points="12 6 12 12 16 14" />
-    </svg>
-  );
-}
-
-function ZapIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-    </svg>
-  );
-}
-
-function FlameIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
-    </svg>
-  );
-}
-
-function PieChartIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
-      <path d="M22 12A10 10 0 0 0 12 2v10z" />
     </svg>
   );
 }
@@ -193,340 +165,6 @@ function GanttTimeline({ segments }) {
           <i className="widebody-legend-color" style={{ background: '#f59e0b' }} />
           怠速
         </span>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Solid Pie Chart for Gear Distribution (Review E: 100% circle & keyboard support) ─── */
-function GearPieChart({ data, title = '档位分布' }) {
-  const [selectedGear, setSelectedGear] = useState(null);
-
-  useEffect(() => {
-    setSelectedGear(null);
-  }, [data]);
-
-  const GEAR_COLORS = {
-    '1档': '#2563eb',
-    '2档': '#10b981',
-    '3档': '#f59e0b',
-    '4档': '#8b5cf6',
-    'R档': '#ef4444',
-  };
-
-  const gears = data?.gears || [];
-  const positiveGears = gears.filter((g) => g.percent > 0);
-
-  if (!data || gears.length === 0 || positiveGears.length === 0 || data.totalHours <= 0) {
-    return <div style={{ padding: 24, textAlign: 'center', color: '#9ca3af', fontSize: 11 }}>暂无档位数据</div>;
-  }
-
-  const size = 160;
-  const center = size / 2;
-  const radius = 60;
-
-  // Single 100% slice check (Review E: use circle instead of arc)
-  const isSingle100 = positiveGears.length === 1 && positiveGears[0].percent >= 99.9;
-
-  let currentAngle = -Math.PI / 2;
-  const slices = positiveGears.map((g) => {
-    const fraction = g.percent / 100;
-    const startAngle = currentAngle;
-    const endAngle = currentAngle + fraction * 2 * Math.PI;
-    currentAngle = endAngle;
-
-    const isLargeArc = fraction > 0.5 ? 1 : 0;
-    const x1 = center + radius * Math.cos(startAngle);
-    const y1 = center + radius * Math.sin(startAngle);
-    const x2 = center + radius * Math.cos(endAngle);
-    const y2 = center + radius * Math.sin(endAngle);
-
-    const pathD = `M ${center} ${center} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${radius} ${radius} 0 ${isLargeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
-
-    return {
-      ...g,
-      color: GEAR_COLORS[g.name] || '#6b7280',
-      pathD,
-    };
-  });
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Escape') {
-      setSelectedGear(null);
-    } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-      e.preventDefault();
-      const currIdx = gears.findIndex((g) => g.name === selectedGear);
-      const nextIdx = (currIdx + 1) % gears.length;
-      setSelectedGear(gears[nextIdx].name);
-    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      const currIdx = gears.findIndex((g) => g.name === selectedGear);
-      const prevIdx = (currIdx - 1 + gears.length) % gears.length;
-      setSelectedGear(gears[prevIdx].name);
-    }
-  };
-
-  return (
-    <div
-      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', outline: 'none' }}
-      aria-label={`${title}图表`}
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
-    >
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible' }}>
-        {isSingle100 ? (
-          <circle
-            cx={center}
-            cy={center}
-            r={radius}
-            fill={slices[0].color}
-            stroke="#fff"
-            strokeWidth={selectedGear === slices[0].name ? 2.5 : 1}
-            style={{ cursor: 'pointer' }}
-            onClick={() => setSelectedGear(selectedGear === slices[0].name ? null : slices[0].name)}
-          />
-        ) : (
-          slices.map((slice) => {
-            const isSelected = selectedGear === slice.name;
-            const hasSelection = Boolean(selectedGear);
-            const opacity = !hasSelection || isSelected ? 1 : 0.35;
-            return (
-              <path
-                key={slice.name}
-                d={slice.pathD}
-                fill={slice.color}
-                fillOpacity={opacity}
-                stroke="#fff"
-                strokeWidth={isSelected ? 2.5 : 1}
-                role="button"
-                tabIndex={0}
-                aria-label={`${slice.name} 占比 ${slice.percent}%`}
-                style={{ cursor: 'pointer', transition: 'fill-opacity 0.2s', outline: 'none' }}
-                onClick={() => setSelectedGear(isSelected ? null : slice.name)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    setSelectedGear(isSelected ? null : slice.name);
-                  }
-                }}
-              />
-            );
-          })
-        )}
-      </svg>
-      {/* Legend showing gear name + percent */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px 12px', marginTop: 12 }}>
-        {gears.map((g) => {
-          const isSelected = selectedGear === g.name;
-          const color = GEAR_COLORS[g.name] || '#6b7280';
-          return (
-            <button
-              type="button"
-              key={g.name}
-              onClick={() => setSelectedGear(isSelected ? null : g.name)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                fontSize: '11px',
-                padding: '3px 8px',
-                borderRadius: 4,
-                border: 'none',
-                background: isSelected ? '#f1f5f9' : 'transparent',
-                color: isSelected ? '#1e293b' : '#4b5563',
-                cursor: 'pointer',
-              }}
-              aria-label={`${g.name} 占比 ${g.percent}%`}
-            >
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block' }} />
-              <span>{g.name}: {g.percent}%</span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-/* ─── Interactive SVG Daily Curve (SOC / Fuel Level, Review E) ─── */
-function DailyCurve({ points, unit = '%', title = '曲线', strokeColor = '#2563eb', fillColor = 'rgba(37,99,235,0.1)' }) {
-  const [selectedIdx, setSelectedIdx] = useState(null);
-
-  useEffect(() => {
-    setSelectedIdx(null);
-  }, [points]);
-
-  const totalCount = (points || []).length;
-  const validEntries = (points || []).map((p, sourceIndex) => {
-    if (!p) return null;
-    const val = p.soc !== undefined ? p.soc : p.level;
-    if (val === null || val === undefined || !Number.isFinite(val)) return null;
-    return {
-      sourceIndex,
-      val,
-      time: p.time,
-    };
-  }).filter(Boolean);
-
-  if (validEntries.length === 0) {
-    return <div style={{ padding: 24, textAlign: 'center', color: '#9ca3af', fontSize: 11 }}>暂无{title}数据</div>;
-  }
-
-  const svgW = 560;
-  const svgH = 180;
-  const padL = 40;
-  const padR = 16;
-  const padT = 16;
-  const padB = 24;
-  const plotW = svgW - padL - padR;
-  const plotH = svgH - padT - padB;
-
-  const getX = (sourceIndex) => {
-    if (totalCount <= 1) return padL + plotW / 2;
-    return padL + (sourceIndex / (totalCount - 1)) * plotW;
-  };
-  const getY = (val) => padT + ((100 - Math.min(100, Math.max(0, val))) / 100) * plotH;
-
-  const coords = validEntries.map((item, coordIndex) => ({
-    coordIndex,
-    sourceIndex: item.sourceIndex,
-    x: getX(item.sourceIndex),
-    y: getY(item.val),
-    val: item.val,
-    time: item.time,
-  }));
-
-  let hasGap = false;
-  let lineD = '';
-  for (let i = 0; i < coords.length; i++) {
-    const pt = coords[i];
-    if (i === 0) {
-      lineD += `M ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`;
-    } else {
-      const isConsecutive = pt.sourceIndex === coords[i - 1].sourceIndex + 1;
-      if (isConsecutive) {
-        lineD += ` L ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`;
-      } else {
-        hasGap = true;
-        lineD += ` M ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`;
-      }
-    }
-  }
-
-  const areaD = (!hasGap && coords.length > 1)
-    ? `${lineD} L ${coords[coords.length - 1].x.toFixed(1)} ${(padT + plotH).toFixed(1)} L ${coords[0].x.toFixed(1)} ${(padT + plotH).toFixed(1)} Z`
-    : '';
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Escape') {
-      setSelectedIdx(null);
-    } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-      e.preventDefault();
-      setSelectedIdx((prev) => (prev === null ? 0 : (prev + 1) % coords.length));
-    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      setSelectedIdx((prev) => (prev === null ? coords.length - 1 : (prev - 1 + coords.length) % coords.length));
-    }
-  };
-
-  const activePoint = selectedIdx !== null ? coords[selectedIdx] : null;
-
-  return (
-    <div
-      className="widebody-curve-container"
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
-      aria-label={`${title}图表`}
-      style={{ outline: 'none' }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#64748b', marginBottom: 6 }}>
-        <span style={{ fontWeight: 600, color: '#1e293b' }}>
-          {title}
-          <span className="widebody-sub-badge" style={{ marginLeft: 6 }}>剩余量(%)</span>
-        </span>
-        <span>单位: {unit}</span>
-      </div>
-      <div
-        style={{
-          position: 'relative',
-          width: '100%',
-          maxWidth: '622px',
-          aspectRatio: `${svgW} / ${svgH}`,
-          margin: '0 auto',
-        }}
-      >
-        <svg viewBox={`0 0 ${svgW} ${svgH}`} style={{ width: '100%', height: '100%', display: 'block', direction: 'ltr' }}>
-          {[100, 75, 50, 25, 0].map((v) => {
-            const y = getY(v);
-            return (
-              <g key={v}>
-                <line x1={padL} y1={y} x2={svgW - padR} y2={y} stroke="#f1f5f9" strokeWidth="1" />
-                <text x={padL - 8} y={y + 4} textAnchor="end" fontSize="11" fill="#64748b">{v}</text>
-              </g>
-            );
-          })}
-          {areaD && <path d={areaD} fill={fillColor} />}
-          {lineD && <path d={lineD} fill="none" stroke={strokeColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
-          {coords.map((pt, coordIndex) => {
-            const isSelected = selectedIdx === coordIndex;
-            return (
-              <circle
-                key={pt.sourceIndex}
-                cx={pt.x}
-                cy={pt.y}
-                r={isSelected ? 6 : 3.5}
-                fill="#fff"
-                stroke={strokeColor}
-                strokeWidth={isSelected ? 2.5 : 1.8}
-                role="button"
-                tabIndex={0}
-                aria-label={`${pt.time}: ${pt.val}${unit}`}
-                style={{ cursor: 'pointer', transition: 'r 0.15s' }}
-                onClick={() => setSelectedIdx(isSelected ? null : coordIndex)}
-                onMouseEnter={() => setSelectedIdx(coordIndex)}
-                onFocus={() => setSelectedIdx(coordIndex)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    setSelectedIdx(isSelected ? null : coordIndex);
-                  }
-                }}
-              />
-            );
-          })}
-          {coords.map((pt, i) => {
-            const step = Math.ceil(coords.length / 7) || 1;
-            if (i % step === 0 || i === coords.length - 1) {
-              return (
-                <text key={pt.sourceIndex} x={pt.x} y={svgH - 6} textAnchor="middle" fontSize="11" fill="#64748b">
-                  {pt.time}
-                </text>
-              );
-            }
-            return null;
-          })}
-        </svg>
-        {activePoint && (
-          <div
-            style={{
-              position: 'absolute',
-              top: `${(activePoint.y / svgH) * 100}%`,
-              left: `${(activePoint.x / svgW) * 100}%`,
-              transform: 'translate(-50%, -120%)',
-              background: '#1f2937',
-              color: '#fff',
-              padding: '4px 8px',
-              borderRadius: '4px',
-              fontSize: '10px',
-              pointerEvents: 'none',
-              whiteSpace: 'nowrap',
-              zIndex: 10,
-              boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-            }}
-          >
-            {activePoint.time}: {activePoint.val}{unit}
-          </div>
-        )}
       </div>
     </div>
   );
@@ -885,6 +523,7 @@ function WidebodyDataReport({ device, reportSelector }) {
         { label: '运行功耗', value: summary.runningPower ?? '—', unit: 'kWh' },
         { label: '空闲功耗', value: summary.idlePower ?? '—', unit: 'kWh' },
         { label: '运载趟数', value: summary.trips ?? '—', unit: '趟' },
+        { label: '运输重量', value: summary.weight ?? '—', unit: 't' },
         { label: '平均电耗', value: summary.avgEnergy ?? '—', unit: 'kWh/km' },
         { label: '充电时长', value: summary.chargeDuration ?? '—', unit: 'h' },
         { label: '回收电量', value: summary.recoveryEnergy ?? '—', unit: 'kWh' },
@@ -892,9 +531,23 @@ function WidebodyDataReport({ device, reportSelector }) {
     }
     return [
       { label: '能耗', value: summary.fuel ?? '—', unit: 'L' },
+      { label: '运行功耗', value: summary.runningFuel ?? summary.runningPower ?? '—', unit: 'L' },
+      { label: '空闲功耗', value: summary.idleFuel ?? summary.idlePower ?? '—', unit: 'L' },
       { label: '平均每小时能耗', value: summary.avgHourlyFuel ?? '—', unit: 'L/h' },
       { label: '工时', value: summary.workHours ?? '—', unit: 'h' },
       { label: '怠速工时', value: summary.idleHours ?? '—', unit: 'h' },
+      {
+        label: '运输重量',
+        value:
+          summary.weight !== null &&
+          summary.weight !== undefined &&
+          summary.weight !== '' &&
+          Number.isFinite(Number(summary.weight)) &&
+          Number(summary.weight) >= 0
+            ? (Number(summary.weight) === 0 ? '0' : Number(summary.weight).toFixed(1))
+            : '—',
+        unit: 't',
+      },
     ];
   }, [isElectric, summary]);
 
@@ -908,6 +561,7 @@ function WidebodyDataReport({ device, reportSelector }) {
         { key: 'runningPower', label: '运行功耗 (kWh)' },
         { key: 'idlePower', label: '空闲功耗 (kWh)' },
         { key: 'trips', label: '运载趟数 (趟)' },
+        { key: 'weight', label: '运输重量 (t)' },
         { key: 'avgEnergy', label: '平均电耗 (kWh/km)' },
         { key: 'chargeDuration', label: '充电时长 (h)' },
         { key: 'recoveryEnergy', label: '回收电量 (kWh)' },
@@ -916,9 +570,12 @@ function WidebodyDataReport({ device, reportSelector }) {
     return [
       { key: 'date', label: '日期' },
       { key: 'fuel', label: '能耗 (L)' },
+      { key: 'runningFuel', label: '运行功耗 (L)' },
+      { key: 'idleFuel', label: '空闲功耗 (L)' },
       { key: 'avgHourlyFuel', label: '平均每小时能耗 (L/h)' },
       { key: 'workHours', label: '工时 (h)' },
       { key: 'idleHours', label: '怠速工时 (h)' },
+      { key: 'weight', label: '运输重量 (t)' },
     ];
   }, [isElectric]);
 
@@ -932,27 +589,6 @@ function WidebodyDataReport({ device, reportSelector }) {
   const dailyWorkSegments = useMemo(() => {
     return getDailyWorkDistribution(device?.type, currentDateStr);
   }, [device?.type, currentDateStr]);
-
-  const dailySocData = useMemo(() => {
-    if (isElectric && period === 'daily') {
-      return getDailySocCurve(currentDateStr);
-    }
-    return null;
-  }, [isElectric, period, currentDateStr]);
-
-  const dailyFuelData = useMemo(() => {
-    if (!isElectric && period === 'daily') {
-      return getDailyFuelCurve(currentDateStr);
-    }
-    return null;
-  }, [isElectric, period, currentDateStr]);
-
-  const dailyGearData = useMemo(() => {
-    if (period === 'daily') {
-      return getDailyGearDistribution(currentDateStr);
-    }
-    return null;
-  }, [period, currentDateStr]);
 
   const isDraftValid = Boolean(normalizeDateStr(draftDateStr));
 
@@ -1211,50 +847,6 @@ function WidebodyDataReport({ device, reportSelector }) {
                 <GanttTimeline segments={dailyWorkSegments} />
               </section>
 
-              {/* 2-column equal-width grid: Curve + Gear Distribution */}
-              <div className="widebody-daily-two-col">
-                {/* Col 1: Curve (Electric SOC% or Fuel Level%) */}
-                <section className="widebody-card" aria-label={isElectric ? '电量曲线' : '油位曲线'}>
-                  <div className="widebody-card-header">
-                    <div className="widebody-card-title">
-                      <span className={`widebody-icon-badge ${isElectric ? 'blue' : 'orange'}`}>
-                        {isElectric ? <ZapIcon /> : <FlameIcon />}
-                      </span>
-                      <strong>{isElectric ? '电量曲线' : '油位曲线'}</strong>
-                    </div>
-                  </div>
-                  {isElectric ? (
-                    <DailyCurve
-                      points={dailySocData?.points}
-                      unit="%"
-                      title="电量曲线"
-                      strokeColor="#2563eb"
-                      fillColor="rgba(37,99,235,0.12)"
-                    />
-                  ) : (
-                    <DailyCurve
-                      points={dailyFuelData?.points}
-                      unit="%"
-                      title="油位曲线"
-                      strokeColor="#ff7500"
-                      fillColor="rgba(255,117,0,0.12)"
-                    />
-                  )}
-                </section>
-
-                {/* Col 2: Gear distribution solid pie chart */}
-                <section className="widebody-card" aria-label="档位分布">
-                  <div className="widebody-card-header">
-                    <div className="widebody-card-title">
-                      <span className="widebody-icon-badge orange">
-                        <PieChartIcon />
-                      </span>
-                      <strong>档位分布</strong>
-                    </div>
-                  </div>
-                  <GearPieChart data={dailyGearData} title="档位分布" />
-                </section>
-              </div>
             </div>
           )}
 

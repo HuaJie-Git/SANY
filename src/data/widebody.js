@@ -319,6 +319,7 @@ export function getElectricDayStats(dateInput) {
       mileage: 48.6,
       energy: 186.4,
       trips: 6,
+      weight: 72.5,
       avgEnergy: 3.84,
       chargeDuration: 1.2,
       recoveryEnergy: 24.5,
@@ -336,6 +337,7 @@ export function getElectricDayStats(dateInput) {
   const mileage = parseFloat((36 + (seed % 20) + (seed % 10) * 0.1).toFixed(1));
   const energy = parseFloat((140 + (seed % 60) + (seed % 7) * 0.1).toFixed(1));
   const trips = 4 + (seed % 5);
+  const weight = parseFloat((trips * 12 + (seed % 10) * 0.5).toFixed(1));
   const avgEnergy = mileage > 0 ? parseFloat((energy / mileage).toFixed(2)) : null;
   const chargeDuration = parseFloat((0.8 + (seed % 8) * 0.1).toFixed(1));
   const recoveryEnergy = parseFloat((16 + (seed % 12) + (seed % 5) * 0.1).toFixed(1));
@@ -352,6 +354,7 @@ export function getElectricDayStats(dateInput) {
     mileage,
     energy,
     trips,
+    weight,
     avgEnergy,
     chargeDuration,
     recoveryEnergy,
@@ -388,6 +391,7 @@ export function getFuelDayStats(dateInput) {
       idleFuel: 0.8,
       utilizationRate: 214.3,
       fuelLevel: 74,
+      weight: null,
     };
   }
 
@@ -416,6 +420,7 @@ export function getFuelDayStats(dateInput) {
     idleFuel,
     utilizationRate,
     fuelLevel,
+    weight: null,
   };
 }
 
@@ -434,6 +439,7 @@ export function getPeriodicElectricData(period, baseDateInput) {
   const totalMileage = safeSum(rows.map((r) => r.mileage), 1);
   const totalEnergy = safeSum(rows.map((r) => r.energy), 1);
   const totalTrips = safeSum(rows.map((r) => r.trips), 0);
+  const totalWeight = safeSum(rows.map((r) => r.weight), 1);
   const totalChargeDuration = safeSum(rows.map((r) => r.chargeDuration), 1);
   const totalRecoveryEnergy = safeSum(rows.map((r) => r.recoveryEnergy), 1);
   const totalWorkHours = safeSum(rows.map((r) => r.workHours), 1);
@@ -453,6 +459,7 @@ export function getPeriodicElectricData(period, baseDateInput) {
       runningPower: safeSum(rows.map((row) => row.runningPower), 1),
       idlePower: safeSum(rows.map((row) => row.idlePower), 1),
       trips: totalTrips,
+      weight: totalWeight,
       avgEnergy,
       chargeDuration: totalChargeDuration,
       recoveryEnergy: totalRecoveryEnergy,
@@ -473,10 +480,13 @@ export function getPeriodicFuelData(period, baseDateInput) {
   const rows = dates.map((dateStr) => getFuelDayStats(dateStr)).filter(Boolean);
 
   const totalFuel = safeSum(rows.map((r) => r.fuel), 1);
+  const totalRunningFuel = safeSum(rows.map((r) => r.runningFuel), 1);
+  const totalIdleFuel = safeSum(rows.map((r) => r.idleFuel), 1);
   const totalWorkHours = safeSum(rows.map((r) => r.workHours), 2);
   const totalIdleHours = safeSum(rows.map((r) => r.idleHours), 2);
   const totalRunningHours = safeSum(rows.map((r) => r.runningHours), 2);
   const totalMileage = safeSum(rows.map((r) => r.mileage), 1);
+  const totalWeight = safeSum(rows.map((r) => r.weight), 1);
 
   const avgHourlyFuel = safeAvg(totalFuel, totalWorkHours, 1);
   const utilizationRate = getMachineUtilization(totalRunningHours, totalWorkHours);
@@ -487,11 +497,16 @@ export function getPeriodicFuelData(period, baseDateInput) {
     rows,
     summary: {
       fuel: totalFuel,
+      runningFuel: totalRunningFuel,
+      idleFuel: totalIdleFuel,
+      runningPower: totalRunningFuel,
+      idlePower: totalIdleFuel,
       avgHourlyFuel,
       workHours: totalWorkHours,
       idleHours: totalIdleHours,
       runningHours: totalRunningHours,
       mileage: totalMileage,
+      weight: totalWeight,
       utilizationRate,
     },
   };

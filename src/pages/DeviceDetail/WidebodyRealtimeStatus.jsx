@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './widebody.css';
+import WidebodyGearDistribution from './WidebodyGearDistribution';
 import {
   isElectricWidebody,
   getDailySocCurve,
   getDailyFuelCurve,
   getDailyWorkDistribution,
+  getDailyGearDistribution,
   getMachineUtilization,
 } from '../../data/widebody';
 
@@ -76,6 +78,15 @@ function MapPinIcon() {
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
       <circle cx="12" cy="10" r="3" />
+    </svg>
+  );
+}
+
+function PieChartIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+      <path d="M22 12A10 10 0 0 0 12 2v10z" />
     </svg>
   );
 }
@@ -468,6 +479,13 @@ export default function WidebodyRealtimeStatus({ device }) {
     return () => clearInterval(timer);
   }, [autoRefresh]);
 
+  const gearData = useMemo(() => {
+    if (!device) return null;
+    void refreshKey;
+    const base = device.gearData || device.gearDistribution || getDailyGearDistribution('2023-11-23');
+    return base ? { ...base } : null;
+  }, [device, refreshKey]);
+
   // Lifecycle & device state handling (Review B: loading / error / empty / noPermission / deleted)
   const dataState = device?.reportState || device?.dataState;
   if (!device || dataState === 'empty') {
@@ -512,7 +530,7 @@ export default function WidebodyRealtimeStatus({ device }) {
   const today = device.today || {};
   const cumulative = device.cumulative || {};
 
-  // 1. Realtime Items (Top bar: Electric 8 items / Fuel 7 items, strictly no default fallback)
+  // 1. Realtime Items (Top bar: Electric 6 items / Fuel 5 items, strictly no default fallback)
   const realtimeItems = isElectric
     ? [
         { label: '设备状态', value: formatValue(realtime['设备状态']) },
@@ -521,14 +539,10 @@ export default function WidebodyRealtimeStatus({ device }) {
         { label: '车速', value: formatValue(realtime['车速']) },
         { label: '油门深度', value: formatValue(realtime['油门深度']) },
         { label: '制动深度', value: formatValue(realtime['制动深度']) },
-        { label: '运载趟数', value: formatValue(realtime['运载趟数']) },
-        { label: '运输重量', value: formatValue(realtime['运输重量']) },
       ]
     : [
         { label: '设备状态', value: formatValue(realtime['设备状态']) },
         { label: '车速', value: formatValue(realtime['车速']) },
-        { label: '运输重量', value: formatValue(realtime['运输重量']) },
-        { label: '运载趟数', value: formatValue(realtime['运载趟数']) },
         { label: '油位', value: formatValue(realtime['油位']) },
         { label: '油门深度', value: formatValue(realtime['油门深度']) },
         { label: '齿轮模式', value: formatValue(realtime['齿轮模式']) },
@@ -546,10 +560,12 @@ export default function WidebodyRealtimeStatus({ device }) {
     { label: '机器利用率', value: utilDisplay },
   ];
 
-  // Group B: 今日行驶 (2项)
+  // Group B: 今日行驶 (4项: 里程、最高车速、运载趟数、运输重量)
   const todayTravelItems = [
     { label: '里程', value: formatValue(today.mileage, 'km') },
     { label: '最高车速', value: formatValue(today.maxSpeed, 'km/h') },
+    { label: '运载趟数', value: formatValue(realtime['运载趟数']) },
+    { label: '运输重量', value: formatValue(realtime['运输重量']) },
   ];
 
   // Group C: 今日电耗 / 今日能耗 (Electric 5项 / Fuel 3项)
@@ -563,8 +579,8 @@ export default function WidebodyRealtimeStatus({ device }) {
       ]
     : [
         { label: '能耗', value: formatValue(today.fuel, 'L') },
-        { label: '运行燃油消耗', value: formatValue(today.runningFuel, 'L') },
-        { label: '怠速油耗', value: formatValue(today.idleFuel, 'L') },
+        { label: '运行功耗', value: formatValue(today.runningFuel, 'L') },
+        { label: '空闲功耗', value: formatValue(today.idleFuel, 'L') },
       ];
 
   // 3. Cumulative Items (Bottom separate card: Electric 6项 / Fuel 5项)
@@ -713,6 +729,14 @@ export default function WidebodyRealtimeStatus({ device }) {
                 />
               )}
             </div>
+          </section>
+
+          {/* Block 4: 档位分布 */}
+          <section className="widebody-card widebody-gear-card" aria-label="档位分布">
+            <div className="widebody-card-header">
+              <SectionTitle icon={<PieChartIcon />} title="档位分布" tone="orange" />
+            </div>
+            <WidebodyGearDistribution data={gearData} title="档位分布" />
           </section>
         </div>
 
