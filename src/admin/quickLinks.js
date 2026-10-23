@@ -1,10 +1,14 @@
+import { enterpriseScope, linkExtraFields } from './quickLinkRules';
+
 export const QUICK_LINKS_KEY = 'sanvist_pc_quick_links_catalog_v1';
 const LEGACY_URLS_KEY = 'sanvist_pc_quick_link_urls_v1';
 
 export const AUDIENCE_OPTIONS = [
   { value: 'all', label: '所有用户', description: '所有 PC 用户都可以看到' },
-  { value: 'enterprise', label: '企业用户', description: '选定企业租户下的用户可见' },
+  { value: 'enterprise', label: '企业用户', description: '全部或指定企业租户下的用户可见' },
   { value: 'users', label: '指定用户', description: '仅选中的用户可以看到' },
+  { value: 'roles', label: '指定角色', description: '所选业务角色的用户可见' },
+  { value: 'products', label: '指定产品组', description: '可访问所选产品组设备的用户可见' },
 ];
 
 export const PREVIEW_TENANTS = [
@@ -22,8 +26,13 @@ export const PREVIEW_USERS = [
 ];
 
 export function audienceLabel(row) {
-  if (row.audience === 'enterprise') return `企业用户 · ${PREVIEW_TENANTS.find((tenant) => tenant.id === row.tenantId)?.name || '租户已失效'}`;
+  if (row.audience === 'enterprise') {
+    const scope = enterpriseScope(row);
+    return scope.tenantMode === 'all' ? '全部企业用户' : `企业用户 · ${scope.tenantIds.map((id) => PREVIEW_TENANTS.find((tenant) => tenant.id === id)?.name || '企业已失效').join('、') || '未选择企业'}`;
+  }
   if (row.audience === 'users') return `指定用户 · ${row.userIds?.length || 0} 人`;
+  if (row.audience === 'roles') return '指定角色';
+  if (row.audience === 'products') return '指定产品组';
   if (row.audience === 'none') return '未配置';
   return '所有用户';
 }
@@ -44,25 +53,31 @@ export const TONES = [
   { value: 'purple', label: '紫色' },
 ];
 export const DEFAULT_LINKS = [
-  { id: 'map-monitor', name: '地图监控', url: 'https://mysany.sanygroup.com/pc/map-monitor', sort: 10, enabled: true, audience: 'all', tenantId: '', userIds: [], tone: 'blue', icon: 'link', iconData: '', action: 'map-monitor', builtIn: true, createdAt: '2026-08-01 09:30:00' },
-  { id: 'warning-center', name: '预警中心', url: 'https://mysany.sanygroup.com/pc/warning-center', sort: 20, enabled: true, audience: 'all', tenantId: '', userIds: [], tone: 'orange', icon: 'link', iconData: '', action: 'warning-center', builtIn: true, createdAt: '2026-08-01 09:35:00' },
-  { id: 'maintenance-navigation', name: '设备保养', url: 'https://mysany.sanygroup.com/pc/maintenance', sort: 30, enabled: true, audience: 'all', tenantId: '', userIds: [], tone: 'green', icon: 'link', iconData: '', action: 'maintenance', builtIn: true, createdAt: '2026-08-01 09:40:00' },
-  { id: 'project-management', name: '项目管理', url: 'https://mysany.sanygroup.com/pc/project-management', sort: 40, enabled: true, audience: 'all', tenantId: '', userIds: [], tone: 'red', icon: 'link', iconData: '', action: 'projects', builtIn: true, createdAt: '2026-08-01 09:45:00' },
+  { id: 'map-monitor', name: '地图监控', url: 'https://mysany.sanygroup.com/pc/map-monitor', sort: 1, enabled: true, audience: 'all', tenantId: '', userIds: [], tone: 'blue', icon: 'link', iconData: '', action: 'map-monitor', builtIn: true, createdAt: '2026-08-01 09:30:00' },
+  { id: 'warning-center', name: '预警中心', url: 'https://mysany.sanygroup.com/pc/warning-center', sort: 2, enabled: true, audience: 'all', tenantId: '', userIds: [], tone: 'orange', icon: 'link', iconData: '', action: 'warning-center', builtIn: true, createdAt: '2026-08-01 09:35:00' },
+  { id: 'maintenance-navigation', name: '设备保养', url: 'https://mysany.sanygroup.com/pc/maintenance', sort: 3, enabled: true, audience: 'all', tenantId: '', userIds: [], tone: 'green', icon: 'link', iconData: '', action: 'maintenance', builtIn: true, createdAt: '2026-08-01 09:40:00' },
+  { id: 'project-management', name: '项目管理', url: 'https://mysany.sanygroup.com/pc/project-management', sort: 4, enabled: true, audience: 'all', tenantId: '', userIds: [], tone: 'red', icon: 'link', iconData: '', action: 'projects', builtIn: true, createdAt: '2026-08-01 09:45:00' },
 ];
 
-export const sortLinks = (rows) => [...rows].sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name, 'zh-CN'));
+export const sortLinks = (rows) => [...rows].sort((a, b) => a.sort - b.sort || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
 export function readQuickLinks() {
   const raw = window.localStorage.getItem(QUICK_LINKS_KEY);
   if (!raw) {
     let legacy = {};
     try { legacy = JSON.parse(window.localStorage.getItem(LEGACY_URLS_KEY) || 'null')?.urls || {}; } catch { /* 沿用预置入口 */ }
-    return { revision: null, links: DEFAULT_LINKS.map((row) => ({ ...row, url: typeof legacy[row.id] === 'string' && legacy[row.id] ? legacy[row.id] : row.url })) };
+    return { revision: null, links: DEFAULT_LINKS.map((row) => {
+      const item = { ...row, url: typeof legacy[row.id] === 'string' && legacy[row.id] ? legacy[row.id] : row.url };
+      const extra = linkExtraFields(item);
+      return { ...item, ...extra };
+    }) };
   }
   const value = JSON.parse(raw);
   if (!value || !Array.isArray(value.links)) throw new Error('配置格式错误');
   const seen = new Set();
   let needPersist = false;
+  // 旧预置数据按 10/20/30 留插入间隔；现已改为从 1 开始的紧凑序号，仅迁移这类旧模式，不动手动设置的排序值。
+  const legacySpacing = value.links.length > 0 && value.links.every((row) => Number.isInteger(row?.sort) && row.sort % 10 === 0);
   const links = value.links.filter((row) => row && typeof row.id === 'string' && !seen.has(row.id) && seen.add(row.id)).map((row) => {
     const original = DEFAULT_LINKS.find((item) => item.id === row.id);
     const defaultUrl = original?.url || '';
@@ -72,10 +87,12 @@ export function readQuickLinks() {
     if (row.url !== effectiveUrl || row.createdAt !== effectiveCreatedAt) {
       needPersist = true;
     }
+    const extra = linkExtraFields(row);
     return {
+      ...extra,
       id: row.id,
       name: typeof row.name === 'string' ? row.name : original?.name || '未命名链接',
-      url: effectiveUrl,
+      url: extra.url || effectiveUrl,
       sort: Number.isInteger(row.sort) ? row.sort : 999,
       enabled: row.enabled !== false,
       audience: row.audience === undefined ? 'all' : AUDIENCE_OPTIONS.some((option) => option.value === row.audience) ? row.audience : 'none',
@@ -89,12 +106,14 @@ export function readQuickLinks() {
       createdAt: effectiveCreatedAt,
     };
   });
-  if (needPersist) {
+  const ordered = sortLinks(links);
+  const result = legacySpacing ? ordered.map((row, index) => ({ ...row, sort: index + 1 })) : ordered;
+  if (legacySpacing || needPersist) {
     try {
-      window.localStorage.setItem(QUICK_LINKS_KEY, JSON.stringify({ revision: value.revision || null, links: sortLinks(links) }));
+      window.localStorage.setItem(QUICK_LINKS_KEY, JSON.stringify({ revision: value.revision || null, links: result }));
     } catch { /* ignore */ }
   }
-  return { revision: value.revision || null, links: sortLinks(links) };
+  return { revision: value.revision || null, links: result };
 }
 
 export function validateLinkUrl(value, required) {

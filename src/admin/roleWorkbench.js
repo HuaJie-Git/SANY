@@ -3,25 +3,61 @@ export const ROLE_WORKBENCH_PLATFORM_KEY = 'sanvist_role_workbench_platform_v2';
 export const ROLE_WORKBENCH_REVISION_KEY = 'sanvist_role_workbench_revision_v1';
 
 export const ADMIN_ROLES = [
-  { id: 'operator', name: '机手', desc: '关注设备开工、日常巡检、保养与快速报修' },
-  { id: 'owner', name: '机主', desc: '关注设备资产、出勤率、油耗与配件维保' },
-  { id: 'enterprise', name: '企业客户', desc: '关注机群总览、多机调度、能耗与事件审核' },
-  { id: 'engineer', name: '服务工程师', desc: '关注待办工单、现场召请、故障排查与配件' },
-  { id: 'admin', name: '管理员', desc: '关注安全审核、系统报表、全量资产与权限管理' },
+  { id: 'owner', name: '设备所有者', storageKey: '机主', desc: '关注设备资产、出勤率、油耗与配件维保' },
+  { id: 'admin', name: '设备管理员', storageKey: '管理员', desc: '关注安全审核、系统报表、全量资产与权限管理' },
+  { id: 'operator', name: '设备操作手', storageKey: '机手', desc: '关注设备开工、日常巡检、保养与快速报修' },
+  { id: 'dealer', name: '三一代理商', storageKey: '三一代理商', desc: '' },
+  { id: 'engineer', name: '设备维修员', storageKey: '服务工程师', desc: '关注待办工单、现场召请、故障排查与配件' },
+  { id: 'employee', name: '三一员工', storageKey: '三一员工', desc: '' },
+  { id: 'enterprise', name: '企业客户', storageKey: '企业客户', desc: '关注机群总览、多机调度、能耗与事件审核' },
+  { id: 'fleet_leader', name: '车队长', storageKey: '车队长', desc: '' },
 ];
+
+// 配置对象独立于业务角色，不能作为快链人群或资料适用角色。
+export const DEFAULT_USER_CONFIG_TARGET = {
+  id: 'default_user', name: '默认配置', storageKey: 'default_user',
+};
+export const WORKBENCH_CONFIG_TARGETS = [...ADMIN_ROLES, DEFAULT_USER_CONFIG_TARGET];
+
+export const getRoleStorageKey = (roleInput) => {
+  if (!roleInput) return roleInput;
+  if (typeof roleInput === 'object') {
+    return roleInput.storageKey || roleInput.name || roleInput.id || '';
+  }
+  if (typeof roleInput !== 'string') return roleInput;
+  if (roleInput === '默认用户（未选择角色）') return DEFAULT_USER_CONFIG_TARGET.storageKey;
+  const found = WORKBENCH_CONFIG_TARGETS.find(
+    (r) => r.storageKey === roleInput || r.name === roleInput || r.id === roleInput
+  );
+  return found ? (found.storageKey || found.name) : roleInput;
+};
+
+export const getRoleLabel = (roleInput) => {
+  if (!roleInput) return roleInput;
+  if (typeof roleInput === 'object') {
+    return roleInput.name || roleInput.storageKey || roleInput.id || '';
+  }
+  if (typeof roleInput !== 'string') return roleInput;
+  if (roleInput === '默认用户（未选择角色）') return DEFAULT_USER_CONFIG_TARGET.name;
+  const found = WORKBENCH_CONFIG_TARGETS.find(
+    (r) => r.storageKey === roleInput || r.name === roleInput || r.id === roleInput
+  );
+  return found ? found.name : roleInput;
+};
 
 export const PLATFORMS = [
   { id: 'app', name: 'APP 工作台', desc: '配置各角色在移动端 APP 的工作台功能入口' },
-  { id: 'pc', name: 'PC 工作台', desc: '配置各角色在 PC 端的页面模块与快速行动' },
+  { id: 'pc', name: 'PC 工作台', desc: '配置各角色在 PC 端的快速链接与页面模块' },
 ];
 
 export const PC_SECTIONS = [
+  { id: 'actions', name: '快速链接', desc: '配置 PC 首页快速链接的快捷功能入口' },
   { id: 'modules', name: '页面模块', desc: '配置 PC 首页主体模块的纳入、显隐与排序' },
-  { id: 'actions', name: '快速行动', desc: '配置 PC 首页快速行动栏的快捷功能入口' },
 ];
 
 export const APP_SECTIONS = [
   { id: 'workbench', name: '工作台入口', desc: '配置 APP 首页常用功能与工作台入口' },
+  { id: 'modules', name: '首页模块', desc: '配置 APP 首页主体模块的纳入、显隐与排序' },
 ];
 
 // APP 移动端功能目录 (20项)
@@ -46,6 +82,15 @@ export const CATALOG_FUNCTIONS = [
   { id: 'feedback', name: '客户心声', enName: 'Feedback', category: '服务', status: '正常', icon: '心声', color: '#d7bde2', pro: false },
   { id: 'survey', name: '调研问卷', enName: 'Survey', category: '服务', status: '正常', icon: '问卷', color: '#f8c471', pro: false },
   { id: 'attendance', name: '考勤打卡', enName: 'Attendance', category: '工作', status: '正常', icon: '考勤', color: '#bb8fce', pro: true },
+];
+
+// APP 端首页模块目录 (5项, 顺序取当前 APP Home.jsx 渲染顺序)
+export const APP_MODULES_CATALOG = [
+  { id: 'recent', name: '最近查看', enName: 'Recent Viewed', category: '记录', description: '最近查看卡片区域', status: '正常', color: '#e8f4fb' },
+  { id: 'tasks', name: '我的任务', enName: 'My Tasks', category: '工作', description: '任务概览卡片区域', status: '正常', color: '#f1edfb' },
+  { id: 'startup', name: '设备开机动态', enName: 'Device Startup', category: '数据', description: '设备运行动态卡片区域', status: '正常', color: '#ecf7f7' },
+  { id: 'audit', name: '审核事件', enName: 'Audit Events', category: '工作', description: '审核事件卡片区域', status: '正常', color: '#fff0f1' },
+  { id: 'content', name: '内容推荐', enName: 'Content Feed', category: '内容', description: '首页 ContentFeed 内容区整体', status: '正常', color: '#edf7f0' },
 ];
 
 // PC 端页面模块目录 (取自 HomeDashboard.jsx DEFAULT_MODULES, 6项)
@@ -93,6 +138,15 @@ export const DEFAULT_WORKBENCH_TEMPLATE = [
   { id: 'profile', isPinned: false, visible: true, defaultVisible: 'yes' },
 ];
 
+// APP 首页模块默认起点模板 (5项, 全部默认显示)
+export const DEFAULT_APP_MODULES_TEMPLATE = [
+  { id: 'recent', isPinned: false, visible: true, defaultVisible: 'yes' },
+  { id: 'tasks', isPinned: false, visible: true, defaultVisible: 'yes' },
+  { id: 'startup', isPinned: false, visible: true, defaultVisible: 'yes' },
+  { id: 'audit', isPinned: false, visible: true, defaultVisible: 'yes' },
+  { id: 'content', isPinned: false, visible: true, defaultVisible: 'yes' },
+];
+
 // PC 页面模块默认模板 (6项，保留 HomeDashboard 默认显隐：projects 默认隐藏)
 export const DEFAULT_PC_MODULES_TEMPLATE = [
   { id: 'maintenance', isPinned: false, visible: true, defaultVisible: 'yes' },
@@ -123,6 +177,9 @@ export const getDefaultTemplate = (platform, section) => {
   if (platform === 'pc') {
     return section === 'actions' ? DEFAULT_PC_ACTIONS_TEMPLATE : DEFAULT_PC_MODULES_TEMPLATE;
   }
+  if (platform === 'app' && section === 'modules') {
+    return DEFAULT_APP_MODULES_TEMPLATE;
+  }
   return DEFAULT_WORKBENCH_TEMPLATE;
 };
 
@@ -130,25 +187,29 @@ export const getCatalogForPlatform = (platform, section) => {
   if (platform === 'pc') {
     return section === 'actions' ? PC_ACTIONS_CATALOG : PC_MODULES_CATALOG;
   }
+  if (platform === 'app' && section === 'modules') {
+    return APP_MODULES_CATALOG;
+  }
   return CATALOG_FUNCTIONS;
 };
 
+// R-023：新老用户统一采用角色排序，不再维护独立的新用户规则。
 export const DEFAULT_WORKBENCH_RULES = {
-  userSort: 'manual', // 'manual' | 'auto_clicks'
-  autoPeriod: '30d',  // '7d' | '30d' | 'all'
-  newUserRule: 'manual', // 'manual' | 'clicks_rank' | 'system_default'
+  userSort: 'manual',
+  autoPeriod: '30d',
+  refreshSchedule: 'monthly',
 };
 
 export const sanitizeRules = (rules) => {
-  if (!rules || typeof rules !== 'object') {
-    return { ...DEFAULT_WORKBENCH_RULES };
+  if (!rules || typeof rules !== 'object') return { ...DEFAULT_WORKBENCH_RULES };
+  if (rules.refreshSchedule === 'monthly') {
+    return { userSort: rules.userSort === 'auto_clicks' ? 'auto_clicks' : 'manual', autoPeriod: ['7d', '30d', 'all'].includes(rules.autoPeriod) ? rules.autoPeriod : '30d', refreshSchedule: 'monthly' };
   }
+  // 旧记录保留原规则，避免保存一个角色时顺带改写其它角色；目标角色重新保存时才使用新规则。
   return {
     userSort: rules.userSort === 'auto_clicks' ? 'auto_clicks' : 'manual',
     autoPeriod: ['7d', '30d', 'all'].includes(rules.autoPeriod) ? rules.autoPeriod : '30d',
-    newUserRule: ['manual', 'clicks_rank', 'system_default'].includes(rules.newUserRule)
-      ? rules.newUserRule
-      : 'manual',
+    newUserRule: ['manual', 'clicks_rank', 'system_default'].includes(rules.newUserRule) ? rules.newUserRule : 'manual',
   };
 };
 
@@ -167,8 +228,9 @@ export const createInitialRoleConfig = (roleName, platform = 'app', section = 'w
 
 export const createInitialRoleGroup = (platform, section) => {
   const group = {};
-  ADMIN_ROLES.forEach((role) => {
-    group[role.name] = createInitialRoleConfig(role.name, platform, section);
+  WORKBENCH_CONFIG_TARGETS.forEach((role) => {
+    const key = role.storageKey || role.name;
+    group[key] = createInitialRoleConfig(key, platform, section);
   });
   return group;
 };
@@ -178,6 +240,7 @@ export const INITIAL_ADMIN_ROLE_CONFIGS = createInitialRoleGroup('app', 'workben
 export const INITIAL_PLATFORM_CONFIGS = {
   app: {
     workbench: createInitialRoleGroup('app', 'workbench'),
+    modules: createInitialRoleGroup('app', 'modules'),
   },
   pc: {
     modules: createInitialRoleGroup('pc', 'modules'),
@@ -199,8 +262,51 @@ const sanitizeItems = (items) => {
       visible: isVisible,
       defaultVisible: item.defaultVisible || (isVisible ? 'yes' : 'no'),
       custom: Boolean(item.custom),
+      ...(item.isRemoved === true ? { isRemoved: true, visible: false, defaultVisible: 'no', isPinned: false } : {}),
     };
   });
+};
+
+// 仅改变当前布局中的移除标识，完整保留公共资料及备用人工顺序。
+export const setRoleItemRemoved = (items, id, isRemoved) => {
+  const target = items.find((item) => item.id === id);
+  if (!target || Boolean(target.isRemoved) === isRemoved) return items;
+  return items.map((item) => item.id === id
+    ? { ...item, isRemoved, visible: false, defaultVisible: 'no', isPinned: false }
+    : item);
+};
+
+// 库中的资料与角色布局分离；初始及旧继承模板只作为编辑起点，不自动写盘。
+export const getEffectiveRoleItems = (saved, legacy, role, platform, section) => {
+  if (saved?.isConfigured && saved.useDefaultConfiguration !== true && Array.isArray(saved.items)) return saved.items;
+  if (role !== DEFAULT_USER_CONFIG_TARGET.storageKey && saved?.useDefaultConfiguration === true
+    && legacy?.isConfigured && Array.isArray(legacy.items)) return legacy.items;
+  return getDefaultTemplate(platform, section);
+};
+
+// 新选用/恢复项放在备用人工顺序末尾，保持原有项及未知字段。
+export const addRoleLibraryItems = (items, entries) => {
+  let next = items;
+  for (const entry of entries) {
+    const old = next.find((item) => item.id === entry.id);
+    if (old && !old.isRemoved) continue;
+    next = [...next.filter((item) => item.id !== entry.id), {
+      ...(old || { id: entry.id, custom: Boolean(entry.custom) }),
+      isRemoved: false, visible: false, defaultVisible: 'no', isPinned: false,
+    }];
+  }
+  return next;
+};
+
+// 上下移动只交换相邻有效项；移除项保留在原数组中供恢复。
+export const moveActiveRoleItem = (items, activeIndex, direction) => {
+  const positions = items.flatMap((item, index) => item.isRemoved ? [] : [index]);
+  const from = positions[activeIndex];
+  const to = positions[activeIndex + direction];
+  if (from === undefined || to === undefined || ![-1, 1].includes(direction)) return items;
+  const next = [...items];
+  [next[from], next[to]] = [next[to], next[from]];
+  return next;
 };
 
 export const readPlatformConfigsFromStorage = () => {
@@ -209,7 +315,10 @@ export const readPlatformConfigsFromStorage = () => {
     if (rawPlatform) {
       const savedPlatform = JSON.parse(rawPlatform);
       const merged = {
-        app: { workbench: createInitialRoleGroup('app', 'workbench') },
+        app: {
+          workbench: createInitialRoleGroup('app', 'workbench'),
+          modules: createInitialRoleGroup('app', 'modules'),
+        },
         pc: {
           modules: createInitialRoleGroup('pc', 'modules'),
           actions: createInitialRoleGroup('pc', 'actions'),
@@ -225,6 +334,20 @@ export const readPlatformConfigsFromStorage = () => {
               ...savedPlatform.app.workbench[roleKey],
               items: sanitizeItems(savedPlatform.app.workbench[roleKey].items),
               rules: sanitizeRules(savedPlatform.app.workbench[roleKey].rules),
+            };
+          }
+        });
+      }
+
+      // 填充 app.modules
+      if (savedPlatform?.app?.modules) {
+        Object.keys(merged.app.modules).forEach((roleKey) => {
+          if (savedPlatform.app.modules[roleKey]) {
+            merged.app.modules[roleKey] = {
+              ...merged.app.modules[roleKey],
+              ...savedPlatform.app.modules[roleKey],
+              items: sanitizeItems(savedPlatform.app.modules[roleKey].items),
+              rules: sanitizeRules(savedPlatform.app.modules[roleKey].rules),
             };
           }
         });
@@ -260,6 +383,8 @@ export const readPlatformConfigsFromStorage = () => {
 
       return {
         tree: merged,
+        // 保存只替换目标组合，未编辑的旧记录按原字节字段保留。
+        persistedTree: savedPlatform && typeof savedPlatform === 'object' && !Array.isArray(savedPlatform) ? savedPlatform : null,
         hasReadError: false,
       };
     }
@@ -267,7 +392,10 @@ export const readPlatformConfigsFromStorage = () => {
     // STATE-PLATFORM-003, AC-013: 若无多端键，检查旧 APP 单端键进行无损迁移
     const rawLegacyApp = window.localStorage.getItem(ROLE_WORKBENCH_ADMIN_KEY);
     const initialTree = {
-      app: { workbench: createInitialRoleGroup('app', 'workbench') },
+      app: {
+        workbench: createInitialRoleGroup('app', 'workbench'),
+        modules: createInitialRoleGroup('app', 'modules'),
+      },
       pc: {
         modules: createInitialRoleGroup('pc', 'modules'),
         actions: createInitialRoleGroup('pc', 'actions'),
@@ -296,7 +424,10 @@ export const readPlatformConfigsFromStorage = () => {
     // catch 不得静默回默认后允许覆盖；保留原数据并显式标记读取错误
     return {
       tree: {
-        app: { workbench: createInitialRoleGroup('app', 'workbench') },
+        app: {
+          workbench: createInitialRoleGroup('app', 'workbench'),
+          modules: createInitialRoleGroup('app', 'modules'),
+        },
         pc: {
           modules: createInitialRoleGroup('pc', 'modules'),
           actions: createInitialRoleGroup('pc', 'actions'),
@@ -325,7 +456,7 @@ export const savePlatformConfigsToStorage = (
   if (readRes.hasReadError) {
     throw new Error('检测到本地存储读取异常，为保护已有数据拒绝覆盖，请先重试读取');
   }
-  const latestTree = readRes.tree;
+  const latestTree = readRes.persistedTree || readRes.tree;
 
   // 2. 版本冲突校验：只要显式提供基准（含 '--'），就和最新目标 revision（未配置规范化为 '--'）比较；不同则拒绝
   const latestTargetRoleConf = latestTree?.[currentPlatform]?.[currentSection]?.[currentRoleKey];
@@ -359,6 +490,7 @@ export const savePlatformConfigsToStorage = (
     : `rev-${Date.now().toString(36)}`;
   const finalRoleConf = {
     ...targetRoleConf,
+    items: sanitizeItems(targetRoleConf.items),
     rules: sanitizeRules(targetRoleConf.rules),
     revision: comboRevision,
   };
@@ -376,9 +508,12 @@ export const savePlatformConfigsToStorage = (
   window.localStorage.setItem(ROLE_WORKBENCH_PLATFORM_KEY, JSON.stringify(latestTree));
 
   // 5. PC 保存绝对不双写旧 APP 键！仅在 APP 端工作台保存时双写旧键以保持向下兼容
-  if (currentPlatform === 'app' && currentSection === 'workbench') {
+  if (currentPlatform === 'app' && currentSection === 'workbench' && currentRoleKey !== DEFAULT_USER_CONFIG_TARGET.storageKey) {
     if (latestTree.app?.workbench) {
-      window.localStorage.setItem(ROLE_WORKBENCH_ADMIN_KEY, JSON.stringify(latestTree.app.workbench));
+      // 默认用户只存多端键，旧业务角色键仍保持原八角色口径。
+      const legacyRoles = Object.fromEntries(Object.entries(latestTree.app.workbench)
+        .filter(([key]) => key !== DEFAULT_USER_CONFIG_TARGET.storageKey));
+      window.localStorage.setItem(ROLE_WORKBENCH_ADMIN_KEY, JSON.stringify(legacyRoles));
     }
   }
 
@@ -421,6 +556,11 @@ export const ROLE_WORKBENCH_STATS_KEY = 'sanvist_role_workbench_stats_v1';
  * @param {string} period '7d' | '30d' | 'all'
  */
 export const readRoleEntryStatsFromStorage = (platform, section, roleName, period = '30d') => {
+  // 尚未接入默认用户的真实点击统计，不借用业务角色或生成演示量。
+  if (getRoleStorageKey(roleName) === DEFAULT_USER_CONFIG_TARGET.storageKey) {
+    return { hasData: false, source: 'none', isSample: false, records: [],
+      clicksMap: Object.create(null), offlineItems: [], updatedAt: '--', hasError: false };
+  }
   try {
     const raw = window.localStorage.getItem(ROLE_WORKBENCH_STATS_KEY);
     if (!raw) {
@@ -482,7 +622,7 @@ export const readRoleEntryStatsFromStorage = (platform, section, roleName, perio
     const startDate30d = getPastDateStr(29);
 
     // 作用域稳定角色 ID 映射
-    const roleDef = ADMIN_ROLES.find((r) => r.name === roleName || r.id === roleName);
+    const roleDef = ADMIN_ROLES.find((r) => r.name === roleName || r.id === roleName || r.storageKey === roleName);
     const targetRoleId = roleDef ? roleDef.id : roleName;
 
     // 行重复检测与冲突检测 (Map)
@@ -508,7 +648,7 @@ export const readRoleEntryStatsFromStorage = (platform, section, roleName, perio
         throw new Error(`第 ${idx + 1} 条统计记录缺少或包含非法的 platform: ${item.platform}`);
       }
       const isValidCombo =
-        (item.platform === 'app' && item.section === 'workbench') ||
+        (item.platform === 'app' && (item.section === 'workbench' || item.section === 'modules')) ||
         (item.platform === 'pc' && (item.section === 'modules' || item.section === 'actions'));
       if (!isValidCombo) {
         throw new Error(

@@ -10,141 +10,109 @@ function formatToChineseDate(isoStr) {
   return `${year}年${month}月${day}日`;
 }
 
-/**
- * 展示规则组件 (R-011-B: 位于入口配置列表前)
- */
-export function RoleWorkbenchRules({
-  rules,
-  onUpdateRules,
-}) {
-  const isClicksSortActive = rules.userSort === 'auto_clicks' || rules.newUserRule === 'clicks_rank';
-
+/** 排序方式与结果列表放在同一操作区。 */
+export function RoleWorkbenchRules({ rules, onUpdateRules, showDemoLabel = true }) {
+  const userSort = rules?.userSort === 'auto_clicks' ? 'auto_clicks' : 'manual';
+  const radioId = React.useId();
+  const autoPeriod = ['7d', '30d', 'all'].includes(rules?.autoPeriod) ? rules.autoPeriod : '30d';
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200/80 p-5 mb-5">
-      <div className="pb-3 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div>
-          <h2 className="text-[15px] font-bold text-gray-900">展示规则</h2>
-          <p className="text-[12px] text-gray-400 mt-0.5">
-            配置当前角色的入口排序方式及新用户初始规则
-          </p>
-        </div>
-        <div className="text-[12px] text-gray-500">
-          用户自行调整后保留个人顺序
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {/* 入口排序方式 */}
-        <div>
-          <label className="block text-[13px] font-semibold text-gray-800 mb-2">
-            入口排序方式
+    <div className="py-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+      <fieldset className="flex flex-wrap items-center gap-x-5 gap-y-2" aria-label="排序方式">
+        <legend className="sr-only">排序方式</legend>
+        <span aria-hidden="true" className="text-[12px] font-medium text-gray-600">排序方式</span>
+        {[
+          { value: 'manual', label: '人工配置' },
+          { value: 'auto_clicks', label: '按角色点击次数' },
+        ].map((option) => (
+          <label key={option.value} className="flex items-center gap-2 cursor-pointer text-[13px] text-gray-700">
+            <input type="radio" name={`userSort-${radioId}`} value={option.value}
+              checked={userSort === option.value}
+              onChange={() => onUpdateRules({ userSort: option.value })}
+              className="text-[#1890ff] focus:ring-0" />
+            {option.label}
           </label>
-          <div className="flex flex-wrap gap-4">
-            <label className="flex items-center gap-2 cursor-pointer text-[13px] text-gray-700">
-              <input
-                type="radio"
-                name="userSort"
-                value="manual"
-                checked={rules.userSort === 'manual'}
-                onChange={() => onUpdateRules({ userSort: 'manual' })}
-                className="text-[#1890ff] focus:ring-0 cursor-pointer"
-              />
-              <span>按手动顺序</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer text-[13px] text-gray-700">
-              <input
-                type="radio"
-                name="userSort"
-                value="auto_clicks"
-                checked={rules.userSort === 'auto_clicks'}
-                onChange={() => onUpdateRules({ userSort: 'auto_clicks' })}
-                className="text-[#1890ff] focus:ring-0 cursor-pointer"
-              />
-              <span>按角色点击次数</span>
-            </label>
-          </div>
-          <p className="text-[11px] text-gray-400 mt-1.5">
-            {rules.userSort === 'auto_clicks'
-              ? '置顶项固定在前；其余项按所选周期点击量排序，同次/无点击按手动顺序排列。'
-              : '置顶项固定在前；其余项完全按下方手动顺序排列。'}
-          </p>
-        </div>
-
-        {/* 新用户首次看到的顺序 */}
-        <div>
-          <label htmlFor="new-user-rule-select" className="block text-[13px] font-semibold text-gray-800 mb-2">
-            新用户首次看到的顺序
+        ))}
+      </fieldset>
+      {userSort === 'auto_clicks' && (
+        <div className="flex flex-wrap items-center gap-2 text-[12px] text-gray-500">
+          <label className="flex flex-wrap items-center gap-2 text-gray-700">
+            <span>排序统计范围</span>
+            <select value={autoPeriod} onChange={(event) => onUpdateRules({ autoPeriod: event.target.value })}
+              className="h-8 px-2 border border-gray-300 rounded-lg bg-white text-[12px] max-w-full">
+              <option value="7d">近7天</option>
+              <option value="30d">近30天</option>
+              <option value="all">累计</option>
+            </select>
           </label>
-          <select
-            id="new-user-rule-select"
-            value={rules.newUserRule}
-            onChange={(e) => onUpdateRules({ newUserRule: e.target.value })}
-            className="w-full h-8 px-3 border border-gray-300 rounded-lg text-[12px] text-gray-700 focus:outline-none focus:border-[#1890ff] bg-white"
-          >
-            <option value="manual">与本页手动顺序一致</option>
-            <option value="clicks_rank">按角色点击排行</option>
-            <option value="system_default">系统初始顺序</option>
-          </select>
-          <p className="text-[11px] text-gray-400 mt-1.5">
-            {rules.newUserRule === 'system_default'
-              ? '仅重排已添加的入口，自定义入口排在后面。'
-              : '仅影响新用户首次进入时的顺序。'}
-          </p>
+          <span>每月1日更新</span>
+          {showDemoLabel && <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[11px]">演示数据</span>}
         </div>
-
-        {/* 自动排序参考范围 (仅当常规或新用户任一选择按点击排序时展示) */}
-        {isClicksSortActive && (
-          <div className="bg-gray-50/80 p-3 rounded-lg border border-gray-200/80 flex flex-col justify-between">
-            <div>
-              <span className="block text-[12px] font-semibold text-gray-700 mb-1.5">
-                自动排序参考范围
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { id: '7d', label: '近7天' },
-                  { id: '30d', label: '近30天' },
-                  { id: 'all', label: '累计' },
-                ].map((period) => {
-                  const isActive = rules.autoPeriod === period.id;
-                  return (
-                    <button
-                      type="button"
-                      key={period.id}
-                      onClick={() => onUpdateRules({ autoPeriod: period.id })}
-                      className={`px-3 py-1 rounded text-[12px] font-medium transition ${
-                        isActive
-                          ? 'bg-[#1890ff] text-white shadow-sm'
-                          : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
-                      }`}
-                    >
-                      {period.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <p className="text-[11px] text-gray-400 mt-2">
-              点击排序以此周期的数据为参考基准。
-            </p>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
+}
+
+function getStableSeed(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h);
+}
+
+function getDemoClicksForEntry(entry, index, total, roleKey, plat, sec) {
+  if (total > 2 && index === total - 1) {
+    return { '7d': 0, '30d': 0, all: 0 };
+  }
+  const seed = getStableSeed(`${plat || ''}_${sec || ''}_${roleKey || ''}_${entry.id}`);
+  const bucket = (seed + index * 11) % 100;
+  let c7d;
+  if (bucket < 18) {
+    c7d = 0;
+  } else if (bucket < 50) {
+    c7d = 10 + (seed % 45);
+  } else if (bucket < 82) {
+    c7d = 60 + (seed % 240);
+  } else {
+    c7d = 320 + (seed % 680);
+  }
+
+  let c30d;
+  if (c7d === 0) {
+    c30d = (bucket < 9) ? 0 : 5 + (seed % 15);
+  } else {
+    const mult30 = 2 + (seed % 3);
+    c30d = c7d * mult30 + (seed % 20);
+  }
+
+  let cAll;
+  if (c30d === 0) {
+    cAll = (bucket < 4) ? 0 : 10 + (seed % 30);
+  } else {
+    const multAll = 3 + (seed % 4);
+    cAll = c30d * multAll + (seed % 50);
+  }
+
+  return { '7d': c7d, '30d': c30d, all: cAll };
 }
 
 /**
  * 点击统计组件 (R-011-B: 位于最下方，只读参考)
  */
 export function RoleWorkbenchStats({
+  platformLabel,
+  sectionLabel,
+  currentRoleKey,
   statsState,
-  statPeriod,
+  statPeriod = '30d',
   onStatPeriodChange,
   onRefreshStats,
   statsLoading,
   catalog = [],
   activeItems = [],
 }) {
+  const isDemo = !statsState?.hasData && !statsState?.hasError && (catalog.length > 0 || activeItems.length > 0);
+
   // 整理统计表格行数据：
   // 1. 当前端/区域的功能目录
   // 2. 当前配置中的自定义入口
@@ -192,15 +160,21 @@ export function RoleWorkbenchStats({
       });
     }
 
-    const withClicks = list.map((entry) => {
-      const clicks = statsState?.hasData ? (statsState.clicksMap[entry.id] ?? 0) : null;
+    const withClicks = list.map((entry, idx) => {
+      let clicks = null;
+      if (statsState?.hasData) {
+        clicks = statsState.clicksMap[entry.id] ?? 0;
+      } else if (isDemo) {
+        const demoObj = getDemoClicksForEntry(entry, idx, list.length, currentRoleKey, platformLabel, sectionLabel);
+        clicks = demoObj[statPeriod] ?? demoObj['30d'];
+      }
       return {
         ...entry,
         clicks,
       };
     });
 
-    if (statsState?.hasData) {
+    if (statsState?.hasData || isDemo) {
       return [...withClicks].sort((a, b) => {
         const bC = b.clicks ?? 0;
         const aC = a.clicks ?? 0;
@@ -209,7 +183,9 @@ export function RoleWorkbenchStats({
     }
 
     return withClicks;
-  }, [catalog, activeItems, statsState]);
+  }, [catalog, activeItems, statsState, isDemo, currentRoleKey, platformLabel, sectionLabel, statPeriod]);
+
+  const hasTableData = Boolean(statsState?.hasData || isDemo);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200/80 p-5 mb-5 flex flex-col">
@@ -218,11 +194,15 @@ export function RoleWorkbenchStats({
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-[15px] font-bold text-gray-900">点击统计</h2>
-            {statsState?.isSample && (
+            {isDemo ? (
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                演示数据
+              </span>
+            ) : statsState?.isSample ? (
               <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
                 示例数据
               </span>
-            )}
+            ) : null}
             {statsState?.isStale && (
               <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
                 数据未更新
@@ -297,14 +277,14 @@ export function RoleWorkbenchStats({
       )}
 
       {/* 无数据状态: 完全无数据且无错误时，只用一条暂无点击数据空状态，不铺20行未知值；失败且无缓存时仅展示上方错误提示与重试 */}
-      {!statsState?.hasData ? (
+      {!hasTableData ? (
         !statsState?.hasError && (
           <div className="my-8 py-12 text-center text-gray-400 text-[13px] bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
             暂无点击数据
           </div>
         )
       ) : (
-        /* 有可用数据（含有效最新数据或失败时保留的旧快照）时，展示两列表格与真实数值/0 */
+        /* 有可用数据（含有效最新数据或失败时保留的旧快照或演示数据）时，展示两列表格与数值/0 */
         <div className="max-h-[360px] overflow-y-auto overflow-x-auto py-1">
           <table className="w-full text-[12px]">
             <thead>
@@ -351,11 +331,15 @@ export function RoleWorkbenchStats({
         </div>
       )}
 
-      {/* 底部时间说明 (R-011-E: 底部无更新时间时不再重复「暂无点击数据」) */}
+      {/* 底部时间说明 (R-011-E: 底部无更新时间时不重复「暂无点击数据」) */}
       <div className="pt-3 border-t border-gray-100 text-[11px] text-gray-400 flex items-center justify-between shrink-0">
         {statsState?.hasData && statsState?.updatedAt ? (
           <span title={`完整时间: ${statsState.updatedAt}`}>
             数据更新时间: {formatToChineseDate(statsState.updatedAt)}
+          </span>
+        ) : isDemo ? (
+          <span title="固定演示快照时间">
+            数据更新时间: 2026年10月1日（演示快照）
           </span>
         ) : (
           <span />
