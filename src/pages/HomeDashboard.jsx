@@ -4,6 +4,7 @@ import { DEVICES } from '../data/devices';
 import { createMaintenanceRows, MAINTENANCE_GROUPS, maintenanceStatus } from '../data/maintenancePlan';
 import { CURRENT_USER } from '../data/session';
 import OperationsOverview from './OperationsOverview';
+import { matchesQuickLinkAudience, matchesQuickLinkConditions, quickLinkAddress, quickLinkExtraFields } from '../data/quickLinkAccess';
 import './home-dashboard.css';
 
 // v5 恢复“设备运行概览”模块为默认展示，并平滑迁移 v4 旧版排序与显隐偏好；用户仍可在设置抽屉中重新排序与隐藏。
@@ -142,16 +143,11 @@ function mergeLinkPreference(defaults, saved) {
 
 const linkPreferenceKey = (user) => user.id === CURRENT_USER.id ? LINKS_KEY : `${LINKS_KEY}:${user.id}`;
 
-function matchesQuickLinkAudience(link, user) {
-  if (link.audience === 'all') return true;
-  if (link.audience === 'enterprise') return user.tenantType === 'enterprise' && Boolean(link.tenantId) && link.tenantId === user.tenantId;
-  if (link.audience === 'users') return link.userIds.includes(user.id);
-  return false;
-}
-
 function readQuickLinkCatalog(user = CURRENT_USER) {
   try {
-    const config = JSON.parse(window.localStorage.getItem(LINK_CATALOG_KEY) || 'null');
+    const raw = window.localStorage.getItem(LINK_CATALOG_KEY);
+    const config = JSON.parse(raw || 'null');
+    if (raw && (!config || !Array.isArray(config.links))) return [];
     if (config && Array.isArray(config.links)) {
       const defaultMap = new Map(DEFAULT_LINKS.map((item) => [item.id, item]));
       const seen = new Set();
@@ -166,7 +162,7 @@ function readQuickLinkCatalog(user = CURRENT_USER) {
           action: original?.action || 'external',
           tone: ['blue', 'orange', 'green', 'red', 'purple'].includes(item.tone) ? item.tone : original?.tone || 'blue',
           icon: ['link', 'map', 'alert', 'calendar', 'project', 'asset', 'order', 'person'].includes(item.icon) ? item.icon : original?.icon || 'link',
-          iconData: typeof item.iconData === 'string' && /^data:image\/(png|jpeg|webp);base64,/.test(item.iconData) ? item.iconData : '',
+          iconData: [item.localeIcons?.zh, item.iconData].find((value) => typeof value === 'string' && /^data:image\/(png|jpeg|webp);base64,/.test(value)) || '',
           url,
           enabled: item.enabled !== false,
           visible: true,
@@ -174,25 +170,18 @@ function readQuickLinkCatalog(user = CURRENT_USER) {
           audience: item.audience === undefined ? 'all' : item.audience,
           tenantId: typeof item.tenantId === 'string' ? item.tenantId : '',
           userIds: Array.isArray(item.userIds) ? item.userIds : [],
+          ...quickLinkExtraFields(item),
         };
-      }).filter((item) => (item.action !== 'external' || Boolean(safeQuickLinkUrl(item.url))) && matchesQuickLinkAudience(item, user)).sort((a, b) => a.sort - b.sort);
+      }).filter((item) => Boolean(safeQuickLinkUrl(item.url, item.linkType === 'internal')) && matchesQuickLinkAudience(item, user) && matchesQuickLinkConditions(item, user)).sort((a, b) => a.sort - b.sort || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
     }
     const legacy = JSON.parse(window.localStorage.getItem(LINK_URLS_KEY) || 'null');
-    return DEFAULT_LINKS.map((item) => ({ ...item, url: typeof legacy?.urls?.[item.id] === 'string' ? legacy.urls[item.id] : '' }));
+    return DEFAULT_LINKS.map((item) => ({ ...item, ...quickLinkExtraFields({ ...item, name: item.label, url: typeof legacy?.urls?.[item.id] === 'string' ? legacy.urls[item.id] : '' }) }));
   } catch {
-    return DEFAULT_LINKS;
+    return [];
   }
 }
 
-function safeQuickLinkUrl(value) {
-  if (typeof value !== 'string' || !value.trim() || /\s/.test(value) || value.length > 2048) return '';
-  try {
-    const url = new URL(value.trim());
-    return ['http:', 'https:'].includes(url.protocol) && url.hostname && !url.username && !url.password ? url.href : '';
-  } catch {
-    return '';
-  }
-}
+const safeQuickLinkUrl = quickLinkAddress;
 
 // 工作流动作 → 我的任务条目的演示映射（本地演示状态）
 const WORKFLOW_TODO_META = {
@@ -677,16 +666,24 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
   const openQuickLink = (link) => {
     const latest = readQuickLinkCatalog(previewUser).find((item) => item.id === link.id);
     if (!latest || !latest.enabled) { setAuditNotice('该快速链接已停用或当前用户不可见，请刷新工作台。'); return; }
-    const configuredUrl = safeQuickLinkUrl(latest.url);
+    const configuredUrl = safeQuickLinkUrl(latest.url, latest.linkType === 'internal');
+    if (latest.linkType === 'internal' && configuredUrl.startsWith('#/')) {
+      window.location.hash = configuredUrl;
+      return;
+    }
+    if (latest.authEnabled && !configuredUrl.startsWith('https://')) {
+      setAuditNotice('需鉴权的网页须使用 HTTPS，请联系管理员更新配置。');
+      return;
+    }
     if (configuredUrl) {
-      window.open(configuredUrl, '_blank', 'noopener,noreferrer');
+      window.open(new URL(configuredUrl, window.location.href).href, '_blank', 'noopener,noreferrer');
       return;
     }
     if (latest.action === 'external') { setAuditNotice('链接地址暂不可用，请联系管理员更新配置。'); return; }
     if (link.action === 'map-monitor') return onOpenBusiness?.('map-monitor');
     if (link.action === 'warning-center') return onOpenBusiness?.('warning-center');
     if (link.action === 'devices') return openList('设备管理', DEVICES.map((item) => item.id));
-    if (link.action === 'projects') return openList('项目管理 · 全部项目设备', DEVICES.map((item) => item.id));
+    if (link.action === 'projects') return onOpenBusiness?.('projects');
     if (link.action === 'dashboard') return openList('数据大屏 · 运行设备', usage.activeIds);
     if (link.action === 'monitoring') return openList('监控中心 · 在线设备', usage.activeIds);
     if (link.action === 'maintenance') return onOpenBusiness?.('maintenance');
@@ -934,7 +931,7 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
     </ModuleCard>,
     operations: <OperationsOverview now={currentTime}/>,
     links: <ModuleCard title="快速链接" className="is-span-12 is-links">
-      <div className="quick-links">{links.filter((link) => link.visible && link.enabled).map((link) => <button type="button" key={link.id} title={safeQuickLinkUrl(link.url) ? `${link.label} · 新标签页打开` : link.label} onClick={() => openQuickLink(link)}><span className={link.tone}>{link.iconData ? <img src={link.iconData} alt=""/> : <Icon name={link.icon || 'link'}/>}</span><div><strong>{link.label}</strong></div><Icon name="arrow" size={14}/></button>)}{!links.some((link) => link.visible && link.enabled) && <p className="quick-links-empty">当前身份暂无可见的快速链接。</p>}</div>
+      <div className="quick-links">{links.filter((link) => link.visible && link.enabled).map((link) => <button type="button" key={link.id} title={link.linkType === 'internal' ? `${link.label} · 内部链接` : safeQuickLinkUrl(link.url) ? `${link.label} · ${link.authEnabled ? '需鉴权，新标签页打开' : '新标签页打开'}` : link.label} onClick={() => openQuickLink(link)}><span className={link.tone}>{link.iconData ? <img src={link.iconData} alt=""/> : <Icon name={link.icon || 'link'}/>}</span><div><strong>{link.label}{link.showBadge && <small className="quick-link-new">NEW</small>}</strong></div><Icon name="arrow" size={14}/></button>)}{!links.some((link) => link.visible && link.enabled) && <p className="quick-links-empty">当前身份暂无可见的快速链接。</p>}</div>
     </ModuleCard>,
     projects: <ModuleCard title="重点项目" subtitle="在场设备与项目运行状态" className="is-span-12" action={<span className="module-count">{PROJECTS.length} 个进行中</span>}>
       <div className="project-list">{PROJECTS.slice(0, 3).map((project) => <button type="button" key={project.id} title={`${project.name} · ${project.project?.address || '项目地址待补充'}`} onClick={() => openProject(project, false)}><span><Icon name="project"/></span><div><strong>{project.name}</strong><small>{project.project?.address || '项目地址待补充'}</small></div><b>{project.deviceIds.length} 台设备</b><Icon name="arrow" size={14}/></button>)}</div>

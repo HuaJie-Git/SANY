@@ -46,7 +46,6 @@ export default function OperationsOverview({ devices, timeZone = 'Asia/Shanghai'
         <div className="overview-statuses" aria-label="设备运行状态统计">
           {(data.statuses || []).map((item) => <div className={`overview-status is-${item.tone}`} key={item.label}><i aria-hidden="true"/><span>{item.label}</span><strong>{displayNumber(item.count)}</strong></div>)}
         </div>
-        <span className="overview-status-source">运行状态来源：设备管理</span>
       </div>
       <div className="overview-metrics">
         <div className="overview-metric"><div><strong>{displayNumber(data.totalHours)}</strong><span>h</span></div><p>总工时</p></div>

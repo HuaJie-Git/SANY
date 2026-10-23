@@ -89,11 +89,6 @@
   font-weight: 700;
   color: var(--overview-ink);
 }
-.operations-overview .overview-status-source {
-  color: var(--overview-muted);
-  font-size: 11px;
-  overflow-wrap: anywhere;
-}
 .operations-overview .overview-metrics {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

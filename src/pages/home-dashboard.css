@@ -802,3 +802,5 @@
 .operation-section-title small { font-size: 8px; }
 .fuel-distribution button > span, .fuel-distribution button > strong { font-size: 8px; }
 .recent-chip > span { font-size: 10px; }
+
+.quick-links .quick-link-new { margin-inline-start:5px; font-size:8px; color:#a17345; background:#fbf3e8; padding:1px 3px; border-radius:2px; }
