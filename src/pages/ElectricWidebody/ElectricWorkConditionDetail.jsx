@@ -11,6 +11,7 @@ import {
 import { useWidebodyState } from './useWidebodyState';
 import ElectricTrackPlayback from './ElectricTrackPlayback';
 import ElectricSocChart from './ElectricSocChart';
+import { BilingualLabel } from './WidebodyBilingual';
 
 const Icon = ({ type, size = 20 }) => {
   const iconMap = { report: 'report', behavior: 'chart', nav: 'navigation', grid: 'grid', parts: 'book', pin: 'location', clock: 'clock' };
@@ -35,10 +36,16 @@ const Metric = ({ item }) => {
   return (
     <div className="min-w-0">
       <div className={`flex items-baseline gap-1 ${isStatus ? 'text-[#252b33]' : 'text-[#303640]'}`}>
-        <span className="text-[23px] font-normal leading-none tracking-[-0.4px]">{value}</span>
+        {isStatus ? (
+          <BilingualLabel zh={value} size="lg" enWeight={700} zhWeight={500} />
+        ) : (
+          <span className="text-[23px] font-normal leading-none tracking-[-0.4px]">{value}</span>
+        )}
         {unit && <span className="text-[12px] font-medium text-[#7a8290]">{unit}</span>}
       </div>
-      <div className="mt-2 text-[12px] leading-[16px] text-[#7a8290]">{label}</div>
+      <div className="mt-2 text-[12px] leading-[16px] text-[#7a8290]">
+        <BilingualLabel zh={label} size="sm" />
+      </div>
     </div>
   );
 };
@@ -299,7 +306,7 @@ export default function ElectricWorkConditionDetail({
                 className="h-[76px] rounded-[12px] border border-[#aeb5bf] flex flex-col items-center justify-center gap-1.5 text-[#303640] active:bg-gray-50 cursor-pointer"
               >
                 <Icon type="report" size={20} />
-                <span className="text-[11px] text-[#68707d] leading-tight">数据报表</span>
+                <BilingualLabel zh="数据报表" size="xs" align="center" />
               </button>
               <button
                 type="button"
@@ -308,7 +315,7 @@ export default function ElectricWorkConditionDetail({
                 className="h-[76px] rounded-[12px] border border-[#aeb5bf] flex flex-col items-center justify-center gap-1.5 text-[#303640] active:bg-gray-50 cursor-pointer"
               >
                 <Icon type="behavior" size={20} />
-                <span className="text-[11px] text-[#68707d] leading-tight">数据分析</span>
+                <BilingualLabel zh="数据分析" size="xs" align="center" />
               </button>
               <button
                 type="button"
@@ -317,15 +324,17 @@ export default function ElectricWorkConditionDetail({
                 className="h-[76px] rounded-[12px] border border-[#aeb5bf] flex flex-col items-center justify-center gap-1.5 text-[#303640] active:bg-gray-50 cursor-pointer"
               >
                 <Icon type="parts" size={20} />
-                <span className="text-[11px] text-[#68707d] leading-tight">零部件图册</span>
+                <BilingualLabel zh="零部件图册" size="xs" align="center" />
               </button>
             </div>
           </section>
 
           {/* 实时工况白卡 (STYLE-FUEL-002: 16px semibold标题, 23px normal数值, 12px单位, 12px标签#7a8290, 去强制min-height) */}
           <section className="rounded-[16px] bg-white px-4 py-5 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
-            <h2 className="text-[16px] font-semibold text-[#252b33]">实时工况</h2>
-            <div className="mt-1 text-[11px] text-[#656d78]">{reportTimeText}</div>
+            <h2 className="text-[16px] font-semibold text-[#252b33]">
+              <BilingualLabel zh="实时工况" size="title" />
+            </h2>
+            <div className="mt-1 text-[11px] text-[#656d78] font-mono" dir="ltr">{reportTimeText}</div>
             <div className="mt-6 grid grid-cols-2 gap-x-6 gap-y-7">
               {realtimeMetricsList.map((item) => (
                 <Metric key={item.label} item={item} />
@@ -336,28 +345,36 @@ export default function ElectricWorkConditionDetail({
           {/* 行驶轨迹白卡 (STYLE-FUEL-003: 燃油卡片规范, TrajectoryMap, 起终点) */}
           <section className="rounded-[14px] bg-white px-4 py-5 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
             <div className="flex items-center justify-between">
-              <h2 className="text-[16px] font-semibold text-[#252b33]">行驶轨迹</h2>
+              <h2 className="text-[16px] font-semibold text-[#252b33]">
+                <BilingualLabel zh="行驶轨迹" size="title" />
+              </h2>
               <button
                 type="button"
                 onClick={() => setCurrentView('track')}
                 className="text-[12px] text-[#2377f3] active:opacity-70 cursor-pointer"
               >
-                查看详情
+                <BilingualLabel zh="查看详情" size="sm" />
               </button>
             </div>
 
             <TrajectoryMap onClick={() => setCurrentView('track')} />
 
             <div className="mt-3 space-y-1 text-[11px] text-[#666]">
-              <div className="break-words">起点位置：{ELECTRIC_WIDEBODY_INFO.startLocation}</div>
-              <div className="break-words">终点位置：{ELECTRIC_WIDEBODY_INFO.endLocation}</div>
+              <div className="break-words flex items-center gap-1">
+                <BilingualLabel zh="起点位置" size="xs" />: <span>{ELECTRIC_WIDEBODY_INFO.startLocation}</span>
+              </div>
+              <div className="break-words flex items-center gap-1">
+                <BilingualLabel zh="终点位置" size="xs" />: <span>{ELECTRIC_WIDEBODY_INFO.endLocation}</span>
+              </div>
             </div>
           </section>
 
           {/* 今日数据 (STYLE-FUEL-002/003: 燃油卡片规范, 23px normal数值, 24小时开工时段分布, 去强制min-height) */}
           <section className="rounded-[14px] bg-white px-4 py-5 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
             <div className="flex items-center gap-1.5">
-              <h2 className="text-[16px] font-semibold text-[#252b33]">今日数据</h2>
+              <h2 className="text-[16px] font-semibold text-[#252b33]">
+                <BilingualLabel zh="今日数据" size="title" />
+              </h2>
               <button
                 type="button"
                 onClick={() => showToast('按自然日统计当日累计数据；机器利用率按运行时长/工时×100%计算')}
@@ -410,10 +427,12 @@ export default function ElectricWorkConditionDetail({
 
               <div className="flex flex-wrap items-center justify-between text-[11px] text-[#666] mt-2">
                 <span className="flex items-center gap-1">
-                  <i className="h-2 w-2 rounded-sm bg-[#2377f3]"></i>工作
+                  <i className="h-2 w-2 rounded-sm bg-[#2377f3]"></i>
+                  <BilingualLabel zh="工作" size="xs" />
                 </span>
                 <span className="flex items-center gap-1">
-                  <i className="h-2 w-2 rounded-sm bg-[#f3c84b]"></i>怠速
+                  <i className="h-2 w-2 rounded-sm bg-[#f3c84b]"></i>
+                  <BilingualLabel zh="怠速" size="xs" />
                 </span>
               </div>
             </div>
@@ -425,7 +444,9 @@ export default function ElectricWorkConditionDetail({
           {/* 累计数据 (STYLE-FUEL-002/003: 燃油卡片规范, 23px normal数值, 去强制min-height) */}
           <section className="rounded-[14px] bg-white px-4 py-5 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
             <div className="flex items-center justify-between">
-              <h2 className="text-[16px] font-semibold text-[#252b33]">累计数据</h2>
+              <h2 className="text-[16px] font-semibold text-[#252b33]">
+                <BilingualLabel zh="累计数据" size="title" />
+              </h2>
               <button
                 type="button"
                 aria-expanded={isCumulativeExpanded}

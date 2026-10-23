@@ -3,6 +3,8 @@ import IconFont from '../../components/IconFont/IconFont';
 import { getOperationsData, validateDateRange } from './electricWidebodyData';
 import { useWidebodyState } from './useWidebodyState';
 import ElectricChargingData from './ElectricChargingData';
+import { isFuelWidebody, getFuelOperationsData } from './fuelWidebodyData';
+import { BilingualLabel } from './WidebodyBilingual';
 
 const Icon = ({ type, size = 22, className = '' }) => {
   const iconMap = { behavior: 'chart', fuel: 'fuel', back: null, left: null, right: null };
@@ -38,8 +40,10 @@ const Header = ({ title, onBack, subtitle }) => (
       <Icon type="back" size={22} />
     </button>
     <div className="min-w-0 flex-1 px-2 text-left">
-      <h1 className="text-[16px] font-medium text-[#252b33] break-words break-all">{title}</h1>
-      {subtitle && <p className="text-[10px] text-[#7a8290] leading-tight break-all">{subtitle}</p>}
+      <h1 className="text-[16px] font-medium text-[#252b33] break-words break-all">
+        {typeof title === 'string' ? <BilingualLabel zh={title} size="title" /> : title}
+      </h1>
+      {subtitle && <p className="text-[10px] text-[#7a8290] leading-tight break-all font-mono" dir="ltr">{subtitle}</p>}
     </div>
     <div className="w-9 shrink-0" />
   </header>
@@ -51,14 +55,14 @@ const Card = ({ icon, title, onClick }) => (
     onClick={onClick}
     className="flex w-full items-center rounded-[14px] bg-white px-4 py-4 text-left shadow-[0_1px_2px_rgba(31,41,55,0.05)] active:bg-gray-50 cursor-pointer"
   >
-    <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f0f1f3] text-[#252b33]">
+    <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f0f1f3] text-[#252b33] shrink-0">
       <Icon type={icon} size={24} />
     </span>
     <span className="ml-3 min-w-0 flex-1">
-      <span className="block text-[15px] font-medium text-[#252b33]">{title}</span>
+      <BilingualLabel zh={title} size="default" />
     </span>
-    <span className="rounded-full bg-[#f1f2f4] px-3 py-1.5 text-[11px] text-[#6d7480]">
-      开始分析
+    <span className="rounded-full bg-[#f1f2f4] px-3 py-1.5 shrink-0">
+      <BilingualLabel zh="开始分析" size="xs" align="center" />
     </span>
   </button>
 );
@@ -74,7 +78,9 @@ const SpeedGauge = ({ speed, title }) => {
 
   return (
     <div className="flex flex-col items-center">
-      <span className="text-[13px] text-[#6b7280] mb-2 font-medium">{title}</span>
+      <div className="mb-2">
+        <BilingualLabel zh={title} size="sm" align="center" />
+      </div>
       <div className="w-full max-w-[150px]">
         <svg viewBox="0 0 200 125" className="w-full h-auto overflow-visible" aria-hidden="true">
           <path d="M 25 105 A 75 75 0 0 1 42.55 56.79" fill="none" stroke="#dfe3e8" strokeWidth="16" />
@@ -97,6 +103,8 @@ const SpeedGauge = ({ speed, title }) => {
 };
 
 export default function ElectricDataAnalysis({ device, onBack }) {
+  const isFuel = isFuelWidebody(device);
+
   // DEC-012 / OPS-03: 仅保留 home, operations, charging 三个视图分支，删除 energy 与 behavior
   const [analysisView, setAnalysisView] = useState('home');
 
@@ -123,15 +131,18 @@ export default function ElectricDataAnalysis({ device, onBack }) {
     return validateDateRange(draftOpsStart, draftOpsEnd);
   }, [draftOpsStart, draftOpsEnd]);
 
-  // 获取当前已应用运营数据 (DEC-012: 同日调用 day, 多日调用 range)
+  // 获取当前已应用运营数据 (DEC-012 / FUEL-OPS-001)
   const opsData = useMemo(() => {
     const validation = validateDateRange(opsDateRange.startDate, opsDateRange.endDate);
     if (!validation.isValid) return null;
+    if (isFuel) {
+      return getFuelOperationsData(opsDateRange.startDate, opsDateRange.endDate);
+    }
     if (opsDateRange.startDate === opsDateRange.endDate) {
       return getOperationsData('day', opsDateRange.startDate);
     }
     return getOperationsData('range', opsDateRange.startDate, opsDateRange.endDate);
-  }, [opsDateRange.startDate, opsDateRange.endDate]);
+  }, [opsDateRange.startDate, opsDateRange.endDate, isFuel]);
 
   // 平均循环时长：现有 avgCycleTime 为分钟，展示除 60 转换为小时，最多 2 位小数 (DEC-012 OPS-02)
   const cycleTimeHours = useMemo(() => {
@@ -197,8 +208,8 @@ export default function ElectricDataAnalysis({ device, onBack }) {
         {/* 离线状态提示条 (F2-04) */}
         {isOffline && (
           <div className="px-3 py-1.5 bg-[#fffbeb] border-b border-[#fde68a] text-[11px] text-[#b45309] flex items-center justify-between">
-            <span>设备当前离线，以下为最后上报历史数据</span>
-            <span className="font-mono" dir="ltr">上报时间: 2023-11-23 07:45</span>
+            <BilingualLabel zh="设备当前离线，以下为最后上报历史数据" size="xs" />
+            <span className="font-mono text-[10px]" dir="ltr">2023-11-23 07:45</span>
           </div>
         )}
 
@@ -223,7 +234,9 @@ export default function ElectricDataAnalysis({ device, onBack }) {
               <form onSubmit={handleApplyOpsFilter} className="mt-3 pt-3 border-t border-gray-100 space-y-3">
                 <div className="grid grid-cols-2 gap-2 text-[12px]">
                   <div>
-                    <label htmlFor="ops-start-date" className="block text-[11px] text-[#7a8290] mb-1">开始日期</label>
+                    <label htmlFor="ops-start-date" className="block mb-1">
+                      <BilingualLabel zh="开始日期" size="xs" />
+                    </label>
                     <input
                       id="ops-start-date"
                       type="date"
@@ -234,7 +247,9 @@ export default function ElectricDataAnalysis({ device, onBack }) {
                     />
                   </div>
                   <div>
-                    <label htmlFor="ops-end-date" className="block text-[11px] text-[#7a8290] mb-1">结束日期</label>
+                    <label htmlFor="ops-end-date" className="block mb-1">
+                      <BilingualLabel zh="结束日期" size="xs" />
+                    </label>
                     <input
                       id="ops-end-date"
                       type="date"
@@ -258,16 +273,16 @@ export default function ElectricDataAnalysis({ device, onBack }) {
                   <button
                     type="button"
                     onClick={handleCancelOpsFilter}
-                    className="flex-1 py-1.5 text-[12px] font-medium text-[#6d7480] bg-[#f1f2f4] rounded-[8px] active:bg-gray-200 cursor-pointer"
+                    className="flex-1 py-1.5 text-[#6d7480] bg-[#f1f2f4] rounded-[8px] active:bg-gray-200 cursor-pointer flex items-center justify-center"
                   >
-                    取消
+                    <BilingualLabel zh="取消" size="sm" align="center" />
                   </button>
                   <button
                     type="submit"
                     disabled={!opsDraftValidation.isValid}
-                    className="flex-1 py-1.5 text-[12px] font-medium text-white bg-[#252b33] rounded-[8px] disabled:opacity-40 active:opacity-85 cursor-pointer"
+                    className="flex-1 py-1.5 text-white bg-[#252b33] rounded-[8px] disabled:opacity-40 active:opacity-85 cursor-pointer flex items-center justify-center"
                   >
-                    应用
+                    <BilingualLabel zh="应用" size="sm" align="center" style={{ color: 'white' }} />
                   </button>
                 </div>
               </form>
@@ -282,7 +297,9 @@ export default function ElectricDataAnalysis({ device, onBack }) {
                 <div className="grid grid-cols-2 gap-3">
                   {/* 1. 工作时长百分率 */}
                   <div className="rounded-[12px] bg-white/15 p-3 flex flex-col items-center justify-center min-h-[80px]">
-                    <div className="text-[13px] text-white/90 text-center mb-1.5 break-words">工作时长百分率</div>
+                    <div className="text-center mb-1.5 break-words">
+                      <BilingualLabel zh="工作时长百分率" size="sm" align="center" style={{ color: 'white' }} />
+                    </div>
                     <div className="flex items-baseline justify-center gap-1 leading-none" dir="ltr">
                       <span className="text-[24px] font-bold">
                         {typeof opsData.workPercentage === 'number' ? opsData.workPercentage : '—'}
@@ -293,7 +310,9 @@ export default function ElectricDataAnalysis({ device, onBack }) {
 
                   {/* 2. 怠速时长百分率 */}
                   <div className="rounded-[12px] bg-white/15 p-3 flex flex-col items-center justify-center min-h-[80px]">
-                    <div className="text-[13px] text-white/90 text-center mb-1.5 break-words">怠速时长百分率</div>
+                    <div className="text-center mb-1.5 break-words">
+                      <BilingualLabel zh="怠速时长百分率" size="sm" align="center" style={{ color: 'white' }} />
+                    </div>
                     <div className="flex items-baseline justify-center gap-1 leading-none" dir="ltr">
                       <span className="text-[24px] font-bold">
                         {typeof opsData.idlePercentage === 'number' ? opsData.idlePercentage : '—'}
@@ -304,7 +323,9 @@ export default function ElectricDataAnalysis({ device, onBack }) {
 
                   {/* 3. 重载平均车速 */}
                   <div className="rounded-[12px] bg-white/15 p-3 flex flex-col items-center justify-center min-h-[80px]">
-                    <div className="text-[13px] text-white/90 text-center mb-1.5 break-words">重载平均车速</div>
+                    <div className="text-center mb-1.5 break-words">
+                      <BilingualLabel zh="重载平均车速" size="sm" align="center" style={{ color: 'white' }} />
+                    </div>
                     <div className="flex items-baseline justify-center gap-1 leading-none" dir="ltr">
                       <span className="text-[24px] font-bold">
                         {typeof opsData.loadedAvgSpeed === 'number' ? opsData.loadedAvgSpeed : '—'}
@@ -315,7 +336,9 @@ export default function ElectricDataAnalysis({ device, onBack }) {
 
                   {/* 4. 空载平均车速 */}
                   <div className="rounded-[12px] bg-white/15 p-3 flex flex-col items-center justify-center min-h-[80px]">
-                    <div className="text-[13px] text-white/90 text-center mb-1.5 break-words">空载平均车速</div>
+                    <div className="text-center mb-1.5 break-words">
+                      <BilingualLabel zh="空载平均车速" size="sm" align="center" style={{ color: 'white' }} />
+                    </div>
                     <div className="flex items-baseline justify-center gap-1 leading-none" dir="ltr">
                       <span className="text-[24px] font-bold">
                         {typeof opsData.emptyAvgSpeed === 'number' ? opsData.emptyAvgSpeed : '—'}
@@ -326,7 +349,9 @@ export default function ElectricDataAnalysis({ device, onBack }) {
 
                   {/* 5. 平均循环时长 (分钟除以 60 换成小时，最多 2 位小数) */}
                   <div className="rounded-[12px] bg-white/15 p-3 flex flex-col items-center justify-center min-h-[80px]">
-                    <div className="text-[13px] text-white/90 text-center mb-1.5 break-words">平均循环时长</div>
+                    <div className="text-center mb-1.5 break-words">
+                      <BilingualLabel zh="平均循环时长" size="sm" align="center" style={{ color: 'white' }} />
+                    </div>
                     <div className="flex items-baseline justify-center gap-1 leading-none" dir="ltr">
                       <span className="text-[24px] font-bold">{cycleTimeHours}</span>
                       <span className="text-[13px] font-normal text-white/85">h</span>
@@ -335,7 +360,9 @@ export default function ElectricDataAnalysis({ device, onBack }) {
 
                   {/* 6. 平均单趟有效载荷 */}
                   <div className="rounded-[12px] bg-white/15 p-3 flex flex-col items-center justify-center min-h-[80px]">
-                    <div className="text-[13px] text-white/90 text-center mb-1.5 break-words">平均单趟有效载荷</div>
+                    <div className="text-center mb-1.5 break-words">
+                      <BilingualLabel zh="平均单趟有效载荷" size="sm" align="center" style={{ color: 'white' }} />
+                    </div>
                     <div className="flex items-baseline justify-center gap-1 leading-none" dir="ltr">
                       <span className="text-[24px] font-bold">
                         {typeof opsData.avgPayload === 'number' ? opsData.avgPayload : '—'}
@@ -348,7 +375,9 @@ export default function ElectricDataAnalysis({ device, onBack }) {
 
               {/* 2. 设备车速分析：左右两列 180 度半圆仪表，空载左、重载右 (DEC-012 OPS-02) */}
               <section className="rounded-[14px] bg-white p-4 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
-                <h2 className="text-[16px] font-semibold text-[#252b33] mb-4">设备车速分析</h2>
+                <div className="mb-4">
+                  <BilingualLabel zh="设备车速分析" size="title" />
+                </div>
                 <div className="grid grid-cols-2 gap-3 text-center">
                   <SpeedGauge speed={opsData.emptyAvgSpeed} title="空载平均车速" />
                   <SpeedGauge speed={opsData.loadedAvgSpeed} title="重载平均车速" />
@@ -357,7 +386,9 @@ export default function ElectricDataAnalysis({ device, onBack }) {
 
               {/* 3. 设备运行分析：顶部共享 0~100 刻度与两条独立矩形条 (DEC-012 OPS-02) */}
               <section className="rounded-[14px] bg-white p-4 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
-                <h2 className="text-[16px] font-semibold text-[#252b33] mb-3">设备运行分析</h2>
+                <div className="mb-3">
+                  <BilingualLabel zh="设备运行分析" size="title" />
+                </div>
 
                 {/* 顶部单一共享刻度 0 ~ 100 (按实际百分率绝对定位，端点对齐，OPS-REVIEW-2 省略 96) */}
                 <div className="text-[10px] text-[#7a8290] font-mono select-none">
@@ -386,8 +417,8 @@ export default function ElectricDataAnalysis({ device, onBack }) {
                 {/* 工作时长与怠速时长两条独立矩形条 */}
                 <div className="space-y-3 pt-1">
                   <div>
-                    <div className="flex items-center justify-between text-[12px] text-[#4b5563] mb-1">
-                      <span>工作时长百分率</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <BilingualLabel zh="工作时长百分率" size="sm" />
                       <span className="font-semibold text-[#2563eb]" dir="ltr">
                         {typeof opsData.workPercentage === 'number' ? `${opsData.workPercentage}%` : '—'}
                       </span>
@@ -403,8 +434,8 @@ export default function ElectricDataAnalysis({ device, onBack }) {
                   </div>
 
                   <div>
-                    <div className="flex items-center justify-between text-[12px] text-[#4b5563] mb-1">
-                      <span>怠速时长百分率</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <BilingualLabel zh="怠速时长百分率" size="sm" />
                       <span className="font-semibold text-[#d97706]" dir="ltr">
                         {typeof opsData.idlePercentage === 'number' ? `${opsData.idlePercentage}%` : '—'}
                       </span>
@@ -422,8 +453,8 @@ export default function ElectricDataAnalysis({ device, onBack }) {
               </section>
             </>
           ) : (
-            <div className="rounded-[14px] bg-white p-8 shadow-[0_1px_2px_rgba(31,41,55,0.035)] text-center text-[#7a8290]">
-              暂无运营分析数据
+            <div className="rounded-[14px] bg-white p-8 shadow-[0_1px_2px_rgba(31,41,55,0.035)] text-center text-[#7a8290] flex flex-col items-center">
+              <BilingualLabel zh="暂无运营分析数据" size="default" align="center" />
             </div>
           )}
         </main>
@@ -443,7 +474,7 @@ export default function ElectricDataAnalysis({ device, onBack }) {
     );
   }
 
-  // Screen 6: 数据分析入口主页 (DEC-012 OPS-03: 仅保留设备运营分析与充电数据两卡片，删除电耗分析与驾驶行为分析)
+  // Screen 6: 数据分析入口主页 (DEC-012 OPS-03: 电车2卡片，燃油1卡片)
   return (
     <div className="min-h-full bg-[#f1f3f7] text-[#252b33]" dir="auto">
       {/* 顶部导航 */}
@@ -452,23 +483,25 @@ export default function ElectricDataAnalysis({ device, onBack }) {
       {/* 离线状态提示条 (F2-04) */}
       {isOffline && (
         <div className="px-3 py-1.5 bg-[#fffbeb] border-b border-[#fde68a] text-[11px] text-[#b45309] flex items-center justify-between">
-          <span>设备当前离线，以下为最后上报历史数据</span>
-          <span className="font-mono" dir="ltr">上报时间: 2023-11-23 07:45</span>
+          <BilingualLabel zh="设备当前离线，以下为最后上报历史数据" size="xs" />
+          <span className="font-mono text-[10px]" dir="ltr">2023-11-23 07:45</span>
         </div>
       )}
 
-      {/* 2 张入口卡片 (DEC-012 OPS-03) */}
+      {/* 入口卡片 (FUEL-OPS-001: 燃油车仅1个运营入口，电车2个) */}
       <main className="space-y-3 px-3 pb-8 pt-3">
         <Card
           icon="ops"
           title="设备运营分析"
           onClick={() => setAnalysisView('operations')}
         />
-        <Card
-          icon="charging"
-          title="充电数据"
-          onClick={() => setAnalysisView('charging')}
-        />
+        {!isFuel && (
+          <Card
+            icon="charging"
+            title="充电数据"
+            onClick={() => setAnalysisView('charging')}
+          />
+        )}
       </main>
     </div>
   );

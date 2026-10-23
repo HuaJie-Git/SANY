@@ -18,6 +18,23 @@ export const FUEL_WIDEBODY_DEVICE_INFO = {
   reportTime: '2023-11-23 15:30:00 (UTC+8)',
 };
 
+/**
+ * 判断是否为燃油宽体车
+ */
+export function isFuelWidebody(device) {
+  if (!device) return false;
+  const name = device.name || '';
+  const type = device.type || device.deviceType || '';
+  const code = device.code || '';
+  const model = device.model || '';
+  return (
+    ['燃油宽体车', '矿用宽体自卸车', '宽体车', 'KT090AE', 'KT090AE20208'].includes(name) ||
+    ['燃油宽体车', 'fuel_widebody'].includes(type) ||
+    code.startsWith('KT090AE') ||
+    model.startsWith('KT090')
+  );
+}
+
 // 确定性字符串哈希，与 PC widebody.js 保持完全一致
 export function hashDateString(str) {
   let hash = 0;
@@ -349,3 +366,68 @@ export const FUEL_WIDEBODY_DATA = {
 };
 
 export const FUEL_REPORT_DATA = FUEL_WIDEBODY_DATA;
+
+/**
+ * 燃油宽体车运营分析数据
+ * 6指标：工作时长百分率、怠速时长百分率、重载平均车速、空载平均车速、平均循环时长、平均单趟有效载荷
+ * 占比取本车型各日工时汇总，分母0/缺失为—；燃油其余运营量如无现有来源以—展示
+ * 基准日 2023-11-23 工时 0.14h, 怠速 0.16h -> 47% / 53%
+ */
+export function getFuelOperationsData(startDateStr, endDateStr) {
+  const normStart = normalizeDateStr(startDateStr);
+  const normEnd = normalizeDateStr(endDateStr || startDateStr);
+  if (!normStart || !normEnd) {
+    return null;
+  }
+
+  const [y1, m1, d1] = normStart.split('-').map(Number);
+  const [y2, m2, d2] = normEnd.split('-').map(Number);
+  const curr = new Date(Date.UTC(y1, m1 - 1, d1));
+  const endUtc = new Date(Date.UTC(y2, m2 - 1, d2));
+
+  let totalWork = 0;
+  let totalIdle = 0;
+  let hasUnknown = false;
+
+  while (curr <= endUtc) {
+    const dStr = curr.toISOString().slice(0, 10);
+    const stat = getFuelDayStats(dStr);
+    if (
+      !stat ||
+      typeof stat.workHours !== 'number' ||
+      !Number.isFinite(stat.workHours) ||
+      stat.workHours < 0 ||
+      typeof stat.idleHours !== 'number' ||
+      !Number.isFinite(stat.idleHours) ||
+      stat.idleHours < 0
+    ) {
+      hasUnknown = true;
+    } else {
+      totalWork += stat.workHours;
+      totalIdle += stat.idleHours;
+    }
+    curr.setUTCDate(curr.getUTCDate() + 1);
+  }
+
+  let workPercentage = null;
+  let idlePercentage = null;
+
+  if (!hasUnknown) {
+    const total = totalWork + totalIdle;
+    if (Number.isFinite(total) && total > 0) {
+      workPercentage = Math.round((totalWork / total) * 100);
+      idlePercentage = 100 - workPercentage;
+    }
+  }
+
+  return {
+    startDate: normStart,
+    endDate: normEnd,
+    workPercentage,
+    idlePercentage,
+    loadedAvgSpeed: null,
+    emptyAvgSpeed: null,
+    avgCycleTime: null,
+    avgPayload: null,
+  };
+}

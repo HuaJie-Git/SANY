@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import IconFont from '../../components/IconFont/IconFont';
 import ElectricDataAnalysis from '../ElectricWidebody/ElectricDataAnalysis';
 import { isElectricWidebody } from '../ElectricWidebody/electricWidebodyData';
+import { isFuelWidebody } from '../ElectricWidebody/fuelWidebodyData';
 
 const Icon = ({ type, size = 22 }) => {
   const iconMap = { behavior: 'chart', fuel: 'fuel', back: null, left: null, right: null };
@@ -80,7 +81,7 @@ const DataAnalysisInner = ({ onBack, initialView = null }) => {
 };
 
 const DataAnalysis = (props) => {
-  if (isElectricWidebody(props.device)) {
+  if (isElectricWidebody(props.device) || isFuelWidebody(props.device)) {
     return <ElectricDataAnalysis {...props} />;
   }
   return <DataAnalysisInner {...props} />;

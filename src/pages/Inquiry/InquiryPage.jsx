@@ -201,6 +201,10 @@ const InquiryPage = ({ onBack, context = {}, onSubmit, mockFailure }) => {
       setInquiryError('请填写手机号码');
       return;
     }
+    if (!inquiryForm.email.trim()) {
+      setInquiryError('请输入邮箱');
+      return;
+    }
     setInquiryError('');
     setIsSubmitting(true);
 
@@ -360,17 +364,19 @@ const InquiryPage = ({ onBack, context = {}, onSubmit, mockFailure }) => {
           </div>
         </div>
 
-        {/* 字段 4：邮箱 (非必填) */}
+        {/* 字段 4：邮箱 (必填) */}
         <div className="rounded-xl bg-[#F3F4F6] p-3.5">
           <div className="flex items-center text-[13px] text-gray-600">
-            邮箱
+            <span className="mr-0.5 text-red-500">*</span>邮箱
           </div>
           <div className="mt-1 flex items-center justify-between">
             <input
               type="text"
+              aria-required="true"
               value={inquiryForm.email}
               onChange={(e) => setInquiryForm({ ...inquiryForm, email: e.target.value })}
               className="w-full bg-transparent text-[16px] font-medium text-gray-900 outline-none"
+              dir="auto"
             />
             {inquiryForm.email && (
               <button
