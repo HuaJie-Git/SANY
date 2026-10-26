@@ -198,6 +198,20 @@
   gap: 6px;
   direction: ltr;
 }
+.operations-overview .overview-consumption-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+.operations-overview .overview-consumption-label > span {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
+}
+.operations-overview .overview-consumption-label .overview-consumption-coverage {
+  font-size: 11px;
+}
 .operations-overview .overview-consumption strong {
   font-size: 26px;
   line-height: 1.2;
@@ -223,6 +237,26 @@
 .operations-overview .overview-energy-distribution + .overview-energy-distribution {
   padding-inline-start: 12px;
   border-inline-start: 1px solid var(--overview-line);
+}
+.operations-overview .overview-energy-heading {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-block-end: 14px;
+}
+.operations-overview .overview-energy-heading > .overview-panel-title {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  margin: 0;
+}
+.operations-overview .overview-energy-total {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  color: var(--overview-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 .operations-overview .overview-energy-row {
   --range-color: #c25f69;

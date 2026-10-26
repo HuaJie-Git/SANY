@@ -24,6 +24,7 @@ export function summarizeOperations(devices = [], { now = new Date(), timeZone =
     totalHours: 0, idleHours: 0, runningHours: 0,
     idlePercent: 0, runningPercent: 0,
     totalFuel: 0, totalElectricity: 0,
+    fuelDeviceCount: 0, electricityDeviceCount: 0,
     fuelCounts: [0, 0, 0, 0], electricityCounts: [0, 0, 0, 0],
   };
 
@@ -39,8 +40,14 @@ export function summarizeOperations(devices = [], { now = new Date(), timeZone =
       summary.totalHours += amount(daily.totalHours);
       summary.idleHours += amount(daily.idleHours);
       summary.runningHours += amount(daily.workHours) + amount(daily.drivingHours);
-      if (device.energyType === 'diesel') summary.totalFuel += amount(daily.fuelLitres);
-      if (device.energyType === 'electricity') summary.totalElectricity += amount(daily.electricityKwh);
+      if (device.energyType === 'diesel') {
+        summary.totalFuel += amount(daily.fuelLitres);
+        if (Number.isFinite(daily.fuelLitres) && daily.fuelLitres >= 0) summary.fuelDeviceCount += 1;
+      }
+      if (device.energyType === 'electricity') {
+        summary.totalElectricity += amount(daily.electricityKwh);
+        if (Number.isFinite(daily.electricityKwh) && daily.electricityKwh >= 0) summary.electricityDeviceCount += 1;
+      }
     }
 
     const field = device.energyType === 'diesel' ? 'fuelPercent' : device.energyType === 'electricity' ? 'batteryPercent' : null;

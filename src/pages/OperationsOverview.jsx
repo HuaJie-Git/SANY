@@ -10,10 +10,17 @@ function PanelTitle({ children, id }) {
   return <h2 id={id} className="overview-panel-title">{children}</h2>;
 }
 
-function EnergyDistribution({ label, counts }) {
-  const total = (counts || []).reduce((sum, count) => sum + (Number.isFinite(count) && count > 0 ? count : 0), 0);
+function EnergyDistribution({ label, counts, message }) {
+  const total = ENERGY_RANGES.reduce((sum, _range, index) => {
+    const count = counts?.[index];
+    return sum + (Number.isFinite(count) && count > 0 ? count : 0);
+  }, 0);
   return <div className="overview-energy-distribution" aria-label={`${label}分布`}>
-    {ENERGY_RANGES.map((range, index) => {
+    <div className="overview-energy-heading">
+      <PanelTitle>剩余{label}</PanelTitle>
+      {!message && <span className="overview-energy-total">共 <bdi>{total}</bdi> 台</span>}
+    </div>
+    {message ? <div className="overview-state"><p>{message}</p></div> : ENERGY_RANGES.map((range, index) => {
       const count = counts?.[index];
       const percent = total > 0 && Number.isFinite(count) ? barPercent(count / total * 100) : 0;
       return <div className={`overview-energy-row range-${index}`} key={range}>
@@ -35,7 +42,7 @@ export default function OperationsOverview({ devices, timeZone = 'Asia/Shanghai'
     return <section className="operations-overview overview-unavailable" aria-label="设备运行概览" aria-busy={status === 'loading'}>
       <div className="overview-panel"><PanelTitle>运行概览</PanelTitle><div className="overview-state" role="status"><p>{message}</p>{status === 'error' && onRetry && <button type="button" onClick={onRetry}>重试</button>}</div></div>
       <div className="overview-panel"><PanelTitle>能耗概览</PanelTitle><div className="overview-state"><p>{message}</p></div></div>
-      <div className="overview-panel overview-energy-panel"><PanelTitle>能耗使用</PanelTitle><div className="overview-state"><p>{message}</p></div></div>
+      <div className="overview-panel overview-energy-panel"><div className="overview-energy-columns"><EnergyDistribution label="油量" message={message}/><EnergyDistribution label="电量" message={message}/></div></div>
     </section>;
   }
 
@@ -58,12 +65,11 @@ export default function OperationsOverview({ devices, timeZone = 'Asia/Shanghai'
 
     <section className="overview-panel overview-consumption-panel" aria-labelledby="overview-consumption-title">
       <PanelTitle id="overview-consumption-title">能耗概览</PanelTitle>
-      <div className="overview-consumption is-fuel"><p>总油耗</p><div><strong>{displayNumber(data.totalFuel)}</strong><span>L</span></div></div>
-      <div className="overview-consumption is-electricity"><p>总电耗</p><div><strong>{displayNumber(data.totalElectricity)}</strong><span>kWh</span></div></div>
+      <div className="overview-consumption is-fuel"><p className="overview-consumption-label"><span>总油耗</span><span className="overview-consumption-coverage">纳入统计 <bdi>{displayNumber(data.fuelDeviceCount)}</bdi> 台</span></p><div><strong>{displayNumber(data.totalFuel)}</strong><span>L</span></div></div>
+      <div className="overview-consumption is-electricity"><p className="overview-consumption-label"><span>总电耗</span><span className="overview-consumption-coverage">纳入统计 <bdi>{displayNumber(data.electricityDeviceCount)}</bdi> 台</span></p><div><strong>{displayNumber(data.totalElectricity)}</strong><span>kWh</span></div></div>
     </section>
 
-    <section className="overview-panel overview-energy-panel" aria-labelledby="overview-energy-title">
-      <PanelTitle id="overview-energy-title">能耗使用</PanelTitle>
+    <section className="overview-panel overview-energy-panel" aria-label="剩余量分布">
       <div className="overview-energy-columns"><EnergyDistribution label="油量" counts={data.fuelCounts}/><EnergyDistribution label="电量" counts={data.electricityCounts}/></div>
     </section>
   </section>;
