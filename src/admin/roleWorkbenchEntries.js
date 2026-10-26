@@ -169,6 +169,7 @@ export const sanitizeSharedEntry = (entry) => {
   delete clean.isShared;
   delete clean.visible;
   delete clean.isPinned;
+  delete clean.pinnedOrder;
   delete clean.isRemoved;
   delete clean.sortNum;
   delete clean.clicks;
@@ -222,11 +223,21 @@ export const sanitizeSharedEntry = (entry) => {
     pro: Boolean(entry.pro),
     showBadge: Boolean(entry.showBadge),
     category: entry.category || '其他',
-    defaultVisible: entry.defaultVisible === 'no' ? 'no' : 'yes',
-    sort: Number.isFinite(Number(entry.sort)) ? Number(entry.sort) : 10,
     custom: Boolean(entry.custom),
     updatedAt: Date.now(),
   };
+
+  // 旧字段只作兼容，缺失不偷偷补写造成布局变更 (R-056 / DEC-056-1)
+  if (entry.defaultVisible !== undefined) {
+    sanitized.defaultVisible = entry.defaultVisible === 'no' ? 'no' : 'yes';
+  } else {
+    delete sanitized.defaultVisible;
+  }
+  if (entry.sort !== undefined) {
+    sanitized.sort = Number.isFinite(Number(entry.sort)) ? Number(entry.sort) : 10;
+  } else {
+    delete sanitized.sort;
+  }
 
   // 保证中文翻译有值
   if (!sanitized.translations.zh && sanitized.name) {
@@ -454,6 +465,7 @@ const normalizeSourceData = (item, baseStatic, id) => {
   };
   delete res.visible;
   delete res.isPinned;
+  delete res.pinnedOrder;
   delete res.isRemoved;
   return res;
 };
@@ -665,6 +677,7 @@ export const resolveItemWithShared = (item, sharedEntriesMap = {}, staticCatalog
       // 保持角色自身设置
       id: item.id,
       isPinned: Boolean(item.isPinned),
+      pinnedOrder: item.pinnedOrder,
       visible: Boolean(item.visible),
       defaultVisible: item.defaultVisible || shared.defaultVisible || 'yes',
     };

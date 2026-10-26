@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ADMIN_ROLES, getRoleStorageKey } from '../../admin/roleWorkbench';
 
 const DIALOG_LANGUAGES = [
   { code: 'zh', label: '中文', isRequired: true },
@@ -22,6 +21,14 @@ const JUMP_TYPE_LABELS = {
   internal: '原生',
   h5: 'H5',
   external: '外部链接',
+};
+
+const PRODUCT_GROUP_LABELS = {
+  all: '全部产品组',
+  excavator: '挖掘机械',
+  crane: '起重机械',
+  concrete: '混凝土机械',
+  truck: '重卡物流',
 };
 
 const isImageValue = (val) => {
@@ -54,9 +61,6 @@ export default function RoleWorkbenchDialog({
   const isCustom = Boolean(record?.custom || !record?.id);
   const isModules = (platform === 'pc' || platform === 'app') && section === 'modules';
 
-  // defaultVisible 只读统一资料的 defaultVisible，不受角色 item.visible 影响 (R-014-D)
-  const initialDefaultVisible = record?.defaultVisible === 'no' ? 'no' : 'yes';
-
   // 中文名称：优先回读 translations.zh，缺失则回退原 name
   const initialZhName =
     record?.translations?.zh !== undefined && record?.translations?.zh !== ''
@@ -68,12 +72,20 @@ export default function RoleWorkbenchDialog({
     enName: record?.enName || '',
     jumpType: record?.jumpType || 'internal',
     jumpUrl: record?.jumpUrl || '',
-    defaultVisible: initialDefaultVisible,
-    productGroup: record?.productGroup || 'all',
-    roleTarget: record?.roleTarget || 'all',
-    pro: record?.pro ? 'yes' : 'no',
+    productGroup: record?.productGroup !== undefined ? record.productGroup : undefined,
+    roleTarget:
+      record?.roleTarget !== undefined
+        ? record.roleTarget
+        : isCustom && !record?.id
+          ? 'all'
+          : undefined,
+    pro:
+      record?.pro !== undefined
+        ? record.pro
+        : isCustom && !record?.id
+          ? false
+          : undefined,
     showBadge: Boolean(record?.showBadge),
-    sort: record?.sort !== undefined ? record.sort : 10,
     icon: record?.icon || '',
     iconFileName:
       record?.iconFileName ||
@@ -152,9 +164,9 @@ export default function RoleWorkbenchDialog({
       localeIconFileNames: { ...(srcData.localeIconFileNames || {}) },
       jumpType: srcData.jumpType || 'internal',
       jumpUrl: srcData.jumpUrl !== undefined ? srcData.jumpUrl : '',
-      productGroup: srcData.productGroup || 'all',
-      roleTarget: srcData.roleTarget || 'all',
-      pro: srcData.pro ? 'yes' : 'no',
+      productGroup: srcData.productGroup !== undefined ? srcData.productGroup : undefined,
+      roleTarget: srcData.roleTarget !== undefined ? srcData.roleTarget : undefined,
+      pro: srcData.pro !== undefined ? srcData.pro : undefined,
       showBadge: Boolean(srcData.showBadge),
       category: srcData.category || prev.category || '其他',
     }));
@@ -369,21 +381,6 @@ export default function RoleWorkbenchDialog({
       return;
     }
 
-    const isVisible = form.defaultVisible === 'yes';
-
-    // 保留合法排序号 0，不使用 Number(value) || 10
-    const trimmedSort =
-      typeof form.sort === 'string' ? form.sort.trim() : form.sort;
-    const parsedSort =
-      trimmedSort === '' || trimmedSort === null || trimmedSort === undefined
-        ? NaN
-        : Number(trimmedSort);
-    const finalSort = Number.isFinite(parsedSort)
-      ? parsedSort
-      : Number.isFinite(Number(record?.sort))
-      ? Number(record.sort)
-      : 10;
-
     // 提交以当前 form 翻译为准（zh 必填），选源切换后不复活旧来源语言，未切源时保留原有未知语言 (R-014-E)
     const nextTranslations = {
       ...(selectedDiffSourceIndex === null ? (record?.translations || {}) : {}),
@@ -398,30 +395,64 @@ export default function RoleWorkbenchDialog({
       delete nextTranslations.en;
     }
 
+    const nextData = {
+      ...record,
+      ...form,
+      name: zhName,
+      enName: form.enName || '',
+      translations: nextTranslations,
+      // 提交以当前 map 为准，含已删除的语言图标，不被旧 record 恢复
+      localeIcons: { ...form.localeIcons },
+      localeIconFileNames: { ...form.localeIconFileNames },
+      icon: form.icon || '',
+      iconFileName: form.icon ? form.iconFileName || '' : '',
+      showBadge: Boolean(form.showBadge),
+      jumpType: form.jumpType,
+      jumpUrl: form.jumpUrl,
+      // 既有资格原值与选源值一致保存，缺失值不通过 all/no 伪装已确认；公共存储沿用既有兼容机制 (FIX056-1)
+    };
+
+    if (form.roleTarget !== undefined && form.roleTarget !== '') {
+      nextData.roleTarget = form.roleTarget;
+    } else if (isCustom && !record?.id) {
+      nextData.roleTarget = 'all';
+    } else {
+      delete nextData.roleTarget;
+    }
+
+    if (form.productGroup !== undefined && form.productGroup !== '') {
+      nextData.productGroup = form.productGroup;
+    } else {
+      delete nextData.productGroup;
+    }
+
+    if (form.pro !== undefined && form.pro !== null && form.pro !== '') {
+      nextData.pro = form.pro === true || form.pro === 'yes';
+    } else {
+      delete nextData.pro;
+    }
+
+    // 彻底不写角色 visible / isPinned (R-056 / DEC-056-1)
+    delete nextData.visible;
+    delete nextData.isPinned;
+
+    // 旧字段只作兼容，缺失不偷偷补写造成布局变更
+    if (record?.defaultVisible !== undefined) {
+      nextData.defaultVisible = record.defaultVisible;
+    } else {
+      delete nextData.defaultVisible;
+    }
+
+    if (record?.sort !== undefined) {
+      nextData.sort = record.sort;
+    } else {
+      delete nextData.sort;
+    }
+
     try {
       setIsSaving(true);
       setSaveError('');
-      await onSave({
-        ...record,
-        ...form,
-        name: zhName,
-        enName: form.enName || '',
-        translations: nextTranslations,
-        // 提交以当前 map 为准，含已删除的语言图标，不被旧 record 恢复
-        localeIcons: { ...form.localeIcons },
-        localeIconFileNames: { ...form.localeIconFileNames },
-        icon: form.icon || '',
-        iconFileName: form.icon ? form.iconFileName || '' : '',
-        sort: finalSort,
-        roleTarget: form.roleTarget || 'all',
-        productGroup: form.productGroup || 'all',
-        pro: form.pro === 'yes',
-        showBadge: Boolean(form.showBadge),
-        visible: isVisible,
-        defaultVisible: form.defaultVisible,
-        jumpType: form.jumpType,
-        jumpUrl: form.jumpUrl,
-      });
+      await onSave(nextData);
     } catch (err) {
       setSaveError(err.message || '保存失败，请重试');
     } finally {
@@ -543,6 +574,7 @@ export default function RoleWorkbenchDialog({
               </div>
             )}
 
+
             {/* 基础配置区 (IMG-004 三列排版) */}
             <div>
               <h3 className="text-[15px] font-bold text-gray-900 mb-4">
@@ -550,7 +582,7 @@ export default function RoleWorkbenchDialog({
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4">
-                {/* 行 1 列 1: 英文名称（默认） */}
+                {/* 英文名称（默认） */}
                 <div>
                   <label
                     htmlFor="dialog-en-name"
@@ -581,7 +613,7 @@ export default function RoleWorkbenchDialog({
                   )}
                 </div>
 
-                {/* 行 1 列 2: 图标 */}
+                {/* 图标 */}
                 <div>
                   <label className="block text-[13px] text-gray-700 mb-1.5">
                     图标
@@ -674,27 +706,28 @@ export default function RoleWorkbenchDialog({
                   ) : null}
                 </div>
 
-                {/* 行 1 列 3: 默认排序序号 */}
+                {/* 是否展示角标 */}
                 <div>
                   <label
-                    htmlFor="dialog-sort"
+                    htmlFor="dialog-badge"
                     className="block text-[13px] text-gray-700 mb-1.5"
                   >
-                    默认排序序号
+                    是否展示角标
                   </label>
-                  <input
-                    id="dialog-sort"
-                    type="number"
-                    disabled={layoutFieldsReadOnly}
-                    value={form.sort !== undefined && form.sort !== null ? form.sort : ''}
+                  <select
+                    id="dialog-badge"
+                    value={form.showBadge ? 'yes' : 'no'}
                     onChange={(e) =>
-                      setForm({ ...form, sort: e.target.value })
+                      setForm({ ...form, showBadge: e.target.value === 'yes' })
                     }
-                    className="w-full h-9 px-3 border border-gray-300 rounded text-[13px] text-gray-900 focus:outline-none focus:border-[#13c2c2] bg-white disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
-                  />
+                    className="w-full h-9 px-3 border border-gray-300 rounded text-[13px] text-gray-700 focus:outline-none focus:border-[#13c2c2] bg-white"
+                  >
+                    <option value="no">不展示</option>
+                    <option value="yes">展示</option>
+                  </select>
                 </div>
 
-                {/* 行 2 列 1 & 2: 跳转类型与跳转链接 (仅在非模块展示) */}
+                {/* 跳转类型与跳转链接 (仅在非模块展示) */}
                 {!isModules ? (
                   <>
                     <div>
@@ -765,25 +798,24 @@ export default function RoleWorkbenchDialog({
                   </>
                 ) : null}
 
-                {/* 默认显示 */}
+                {/* Pro功能 */}
                 <div>
                   <label
-                    htmlFor="dialog-visible"
+                    htmlFor="dialog-pro"
                     className="block text-[13px] text-gray-700 mb-1.5"
                   >
-                    默认显示
+                    Pro功能
                   </label>
                   <select
-                    id="dialog-visible"
-                    disabled={layoutFieldsReadOnly}
-                    value={form.defaultVisible}
+                    id="dialog-pro"
+                    value={form.pro === true || form.pro === 'yes' ? 'yes' : 'no'}
                     onChange={(e) =>
-                      setForm({ ...form, defaultVisible: e.target.value })
+                      setForm({ ...form, pro: e.target.value === 'yes' })
                     }
-                    className="w-full h-9 px-3 border border-gray-300 rounded text-[13px] text-gray-700 focus:outline-none focus:border-[#13c2c2] bg-white disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                    className="w-full h-9 px-3 border border-gray-300 rounded text-[13px] text-gray-700 focus:outline-none focus:border-[#13c2c2] bg-white"
                   >
-                    <option value="yes">显示</option>
-                    <option value="no">隐藏</option>
+                    <option value="no">否</option>
+                    <option value="yes">是</option>
                   </select>
                 </div>
 
@@ -797,101 +829,27 @@ export default function RoleWorkbenchDialog({
                   </label>
                   <select
                     id="dialog-product-group"
-                    value={form.productGroup}
+                    value={form.productGroup ?? ''}
                     onChange={(e) =>
                       setForm({ ...form, productGroup: e.target.value })
                     }
                     className="w-full h-9 px-3 border border-gray-300 rounded text-[13px] text-gray-700 focus:outline-none focus:border-[#13c2c2] bg-white"
                   >
-                    <option value="all">全部产品组</option>
-                    <option value="excavator">挖掘机械</option>
-                    <option value="crane">起重机械</option>
-                    <option value="concrete">混凝土机械</option>
-                    <option value="truck">重卡物流</option>
-                  </select>
-                </div>
-
-                {/* 适用角色 */}
-                <div>
-                  <label
-                    htmlFor="dialog-role-target"
-                    className="block text-[13px] text-gray-700 mb-1.5"
-                  >
-                    适用角色
-                  </label>
-                  <select
-                    id="dialog-role-target"
-                    value={getRoleStorageKey(form.roleTarget) || 'all'}
-                    onChange={(e) =>
-                      setForm({ ...form, roleTarget: e.target.value })
-                    }
-                    className="w-full h-9 px-3 border border-gray-300 rounded text-[13px] text-gray-700 focus:outline-none focus:border-[#13c2c2] bg-white"
-                  >
-                    <option value="all">全部</option>
-                    {ADMIN_ROLES.map((role) => (
-                      <option key={role.id} value={role.storageKey}>
-                        {role.name}
+                    <option value="">未配置</option>
+                    {Object.entries(PRODUCT_GROUP_LABELS).map(([key, label]) => (
+                      <option key={key} value={key}>
+                        {label}
                       </option>
                     ))}
-                    {form.roleTarget &&
-                      form.roleTarget !== 'all' &&
-                      !ADMIN_ROLES.some(
-                        (r) =>
-                          r.storageKey === form.roleTarget ||
-                          r.name === form.roleTarget ||
-                          r.id === form.roleTarget
-                      ) && (
-                        <option value={form.roleTarget}>{form.roleTarget}</option>
+                    {form.productGroup &&
+                      !Object.hasOwn(PRODUCT_GROUP_LABELS, form.productGroup) && (
+                        <option value={form.productGroup}>
+                          {form.productGroup}
+                        </option>
                       )}
                   </select>
                 </div>
-
-                {/* Pro功能 */}
-                <div>
-                  <label
-                    htmlFor="dialog-pro"
-                    className="block text-[13px] text-gray-700 mb-1.5"
-                  >
-                    Pro功能
-                  </label>
-                  <select
-                    id="dialog-pro"
-                    value={form.pro}
-                    onChange={(e) =>
-                      setForm({ ...form, pro: e.target.value })
-                    }
-                    className="w-full h-9 px-3 border border-gray-300 rounded text-[13px] text-gray-700 focus:outline-none focus:border-[#13c2c2] bg-white"
-                  >
-                    <option value="no">否</option>
-                    <option value="yes">是</option>
-                  </select>
-                </div>
-
-                {/* 是否展示角标 */}
-                <div>
-                  <label
-                    htmlFor="dialog-badge"
-                    className="block text-[13px] text-gray-700 mb-1.5"
-                  >
-                    是否展示角标
-                  </label>
-                  <select
-                    id="dialog-badge"
-                    value={form.showBadge ? 'yes' : 'no'}
-                    onChange={(e) =>
-                      setForm({ ...form, showBadge: e.target.value === 'yes' })
-                    }
-                    className="w-full h-9 px-3 border border-gray-300 rounded text-[13px] text-gray-700 focus:outline-none focus:border-[#13c2c2] bg-white"
-                  >
-                    <option value="no">不展示</option>
-                    <option value="yes">展示</option>
-                  </select>
-                </div>
               </div>
-
-              <p className="text-[12px] text-gray-500 mt-3 bg-gray-50 border border-gray-200/60 rounded px-3 py-1.5">
-                ℹ️ 显示、置顶和顺序请在角色配置中设置，新分配入口默认关闭；适用角色仅限制可选范围，不代表已分配。
-              </p>
             </div>
 
             {/* 各语言组直排 (IMG-004 三列直排) */}

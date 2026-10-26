@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { DEFAULT_USER_CONFIG_TARGET, getRoleLabel, getRoleStorageKey } from '../../admin/roleWorkbench';
+import { DEFAULT_USER_CONFIG_TARGET, getRoleLabel, getRoleStorageKey, formatProductGroupLabel } from '../../admin/roleWorkbench';
 
 // 各统计范围的演示快照，不读写真实统计。
 const DEMO_CLICKS = {
@@ -54,7 +54,7 @@ export default function RoleWorkbenchArea({
   canSaveRoleConfig = hasRoleDraftChanges,
   onSaveRoleConfig,
   onCancelRoleChanges,
-  onRemoveRoleItem,
+  _onRemoveRoleItem,
   _onRestoreRoleItem,
   _undoRemoval,
   _onUndoRemoval,
@@ -62,8 +62,8 @@ export default function RoleWorkbenchArea({
   saveFeedback,
   highlightedEntryId,
   isOverlayOpen = false,
-  showDetails = false,
-  onShowDetailsChange,
+  _showDetails = false,
+  _onShowDetailsChange,
 
   // Public entries
   currentCatalog = [],
@@ -124,12 +124,51 @@ export default function RoleWorkbenchArea({
         && !detail.hasRoleDifferences && detail.globalEnabled !== false;
       return { item, manualIndex, clicks: isDefaultUser ? null : demoClicks[item.id] ?? 0, participates };
     });
-    if (!isAutoSort) return rows;
-    return rows.sort((a, b) => Number(b.participates) - Number(a.participates)
-      || (!a.participates ? a.manualIndex - b.manualIndex
-        : Number(Boolean(b.item.isPinned)) - Number(Boolean(a.item.isPinned))
-          || (a.item.isPinned ? a.manualIndex - b.manualIndex : b.clicks - a.clicks || a.manualIndex - b.manualIndex)));
+    const comparePinnedItems = (a, b) => {
+      const aOrder = typeof a.item.pinnedOrder === 'number' ? a.item.pinnedOrder : null;
+      const bOrder = typeof b.item.pinnedOrder === 'number' ? b.item.pinnedOrder : null;
+      if (aOrder !== null && bOrder !== null) {
+        if (aOrder !== bOrder) return aOrder - bOrder;
+        return a.manualIndex - b.manualIndex;
+      }
+      if (aOrder === null && bOrder === null) {
+        return a.manualIndex - b.manualIndex;
+      }
+      return aOrder === null ? -1 : 1;
+    };
+
+    if (!isAutoSort) {
+      const pinned = [];
+      const nonPinned = [];
+      for (const row of rows) {
+        if (row.item.isPinned) {
+          pinned.push(row);
+        } else {
+          nonPinned.push(row);
+        }
+      }
+      pinned.sort(comparePinnedItems);
+      return [...pinned, ...nonPinned];
+    }
+
+    return rows.sort((a, b) => {
+      const partDiff = Number(b.participates) - Number(a.participates);
+      if (partDiff !== 0) return partDiff;
+      if (!a.participates) {
+        return a.manualIndex - b.manualIndex;
+      }
+      const pinDiff = Number(Boolean(b.item.isPinned)) - Number(Boolean(a.item.isPinned));
+      if (pinDiff !== 0) return pinDiff;
+      if (a.item.isPinned) {
+        return comparePinnedItems(a, b);
+      }
+      return (b.clicks - a.clicks) || (a.manualIndex - b.manualIndex);
+    });
   }, [activeItems, getDetail, currentRoleKey, isAutoSort, autoPeriod, platform, isModules, isDefaultUser]);
+
+  const nonPinnedRows = useMemo(() => {
+    return displayRows.filter((r) => !r.item.isPinned);
+  }, [displayRows]);
 
   return (
     <section ref={areaRef} data-config-mode="role" data-section={section} className="min-w-0">
@@ -176,9 +215,7 @@ export default function RoleWorkbenchArea({
             <span className="text-[12px] text-gray-400">{isDefaultUser ? '暂无点击数据' : '演示数据'} · 每月1日更新</span>
           </>}
         </div>
-        <label className="flex min-h-[36px] cursor-pointer items-center gap-2 text-[13px] text-gray-500">
-          <input type="checkbox" checked={showDetails} onChange={(event) => onShowDetailsChange(event.target.checked)} aria-label="详细信息" aria-controls={`${statusReasonId}-table`} className="h-3.5 w-3.5 accent-[#1890ff]" />详细信息
-        </label>
+
       </div>
       <div className="px-5">
                 {/* APP 置顶超限可恢复提示 (R-018 / STATE-018 / AC-052) */}
@@ -190,19 +227,18 @@ export default function RoleWorkbenchArea({
 
                 {/* R-031：资料编辑与角色布局在同一张表操作。 */}
                 <div className="overflow-x-auto border-t border-gray-100">
-                  <table id={`${statusReasonId}-table`} className={`w-full text-[14px] ${showDetails ? 'min-w-[1320px]' : 'min-w-[760px]'}`}>
+                  <table id={`${statusReasonId}-table`} className="w-full min-w-[1200px] text-[14px]">
                     <thead>
                       <tr className="border-b border-gray-100 bg-gray-50/70 text-[12px] font-medium text-gray-500">
                         <th className="py-2.5 px-3 text-start w-20">{isAutoSort ? '展示顺序' : '顺序'}</th>
                         <th className="py-2.5 px-3 text-start">{isModules ? '模块名称' : '入口名称'}</th>
                         {isAutoSort && <th className="py-2.5 px-3 text-right w-28">{PERIOD_LABELS[autoPeriod]}点击次数</th>}
-                        {showDetails && <>
                         <th className="py-2.5 px-3 text-center w-20">Pro功能</th>
                         <th className="py-2.5 px-3 text-center w-28">是否展示角标</th>
                         <th className="py-2.5 px-3 text-start w-32">创建人</th>
                         <th className="py-2.5 px-3 text-start w-44">创建时间</th>
-                        </>}
-                        <th className="py-2.5 px-3 text-center w-40">状态</th>
+                        <th className="py-2.5 px-3 text-start w-36">限制产品组</th>
+                        <th className="py-2.5 px-3 text-center w-40">展示开关</th>
                         <th className="py-2.5 px-3 text-center w-28">
                           <div>置顶</div>
                           {platform === 'app' && (
@@ -212,14 +248,13 @@ export default function RoleWorkbenchArea({
                           )}
                         </th>
                         {!isAutoSort && <th className="py-2.5 px-3 text-center w-28">调整顺序</th>}
-                        <th className="py-2.5 px-3 text-center w-36">操作</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {activeItems.length === 0 ? (
                         <tr>
-                          <td colSpan={showDetails ? 10 : 6} className="py-16 text-center text-gray-400">
-                            {removedItems.length > 0 ? '当前配置暂无条目，可从下方“已移除”列表恢复或从库中选择' : isModules ? '暂无已选模块，可点击上方“选择模块”' : '暂无已选入口，可点击上方“添加已有入口”'}
+                          <td colSpan={10} className="py-16 text-center text-gray-400">
+                            {isModules ? '暂无已选模块，可从上方选择' : '暂无已选入口，可从上方添加'}
                           </td>
                         </tr>
                       ) : (
@@ -227,10 +262,18 @@ export default function RoleWorkbenchArea({
                           const detail = getDetail(item.id);
                           const isVis = item.visible !== undefined ? Boolean(item.visible) : (item.defaultVisible !== 'no');
                           const displayName = item.name || detail.name;
-                          const pro = typeof detail.pro === 'boolean' ? detail.pro : Boolean(item.pro);
+                          const rawPro = detail.pro !== undefined ? detail.pro : item.pro;
+                          let proText = '未配置';
+                          if (rawPro === true || rawPro === 'yes') {
+                            proText = '是';
+                          } else if (rawPro === false || rawPro === 'no') {
+                            proText = '否';
+                          }
                           const showBadge = typeof detail.showBadge === 'boolean' ? detail.showBadge : Boolean(item.showBadge);
                           const createdBy = formatCreatedBy(detail.createdBy !== undefined ? detail.createdBy : item.createdBy);
                           const createdAt = formatCreatedAt(detail.createdAt !== undefined ? detail.createdAt : item.createdAt);
+                          const rawProductGroup = detail.productGroup !== undefined ? detail.productGroup : item.productGroup;
+                          const productGroupText = formatProductGroupLabel(rawProductGroup);
                           const fnTargetKey = getRoleStorageKey(detail.roleTarget || item.roleTarget);
                           const isItemMismatch = fnTargetKey && fnTargetKey !== 'all' && fnTargetKey !== getRoleStorageKey(currentRoleKey);
                           const globalDisabled = detail.globalEnabled === false;
@@ -238,8 +281,12 @@ export default function RoleWorkbenchArea({
                           const enableBlockedReason = [
                             globalDisabled ? '全局已停用，请在公共库恢复可用性' : '',
                             isItemMismatch ? `仅适用于${getRoleLabel(fnTargetKey)}` : '',
-                            detail.hasRoleDifferences ? '资料存在历史差异，请先核对公共资料' : '',
+                            detail.hasRoleDifferences ? '存在历史角色差异，请先在公共库统一资料' : '',
                           ].filter(Boolean).join('；');
+
+                          const nonPinnedIndex = item.isPinned ? -1 : nonPinnedRows.findIndex((r) => r.item.id === item.id);
+                          const canMoveUp = !item.isPinned && nonPinnedIndex > 0;
+                          const canMoveDown = !item.isPinned && nonPinnedIndex >= 0 && nonPinnedIndex < nonPinnedRows.length - 1;
 
                           return (
                             <tr
@@ -248,7 +295,7 @@ export default function RoleWorkbenchArea({
                               className={`scroll-mb-80 transition sm:scroll-mb-64 ${highlightedEntryId === item.id ? 'bg-blue-50' : 'hover:bg-blue-50/30'}`}
                             >
                               <td className="py-3 px-3 text-[13px] text-gray-400 tabular-nums whitespace-nowrap">
-                                <span>{isAutoSort ? (participates ? `第${index + 1}位` : '—') : `#${manualIndex + 1}`}</span>
+                                <span>{isAutoSort ? (participates ? `第${index + 1}位` : '—') : `#${index + 1}`}</span>
                               </td>
                               <td
                                 className="py-3 px-3"
@@ -273,23 +320,24 @@ export default function RoleWorkbenchArea({
                                 <div className="mt-1 text-[12px] text-gray-400 break-all" dir="ltr">ID: {item.id}</div>
                               </td>
                               {isAutoSort && <td className="py-2.5 px-3 text-right tabular-nums whitespace-nowrap" dir="ltr">{clicks === null ? '—' : `${clicks} 次`}</td>}
-                              {showDetails && <>
-                              <td className="py-2.5 px-3 text-center">{pro ? '是' : '否'}</td>
+                              <td className="py-2.5 px-3 text-center">{proText}</td>
                               <td className="py-2.5 px-3 text-center">{showBadge ? '展示' : '不展示'}</td>
                               <td className="py-2.5 px-3 text-start" title={createdBy}>
                                 <bdi className="block max-w-[12rem] [overflow-wrap:anywhere]">{createdBy}</bdi>
                               </td>
                               <td className="py-2.5 px-3 whitespace-nowrap"><bdi dir="ltr">{createdAt}</bdi></td>
-                              </>}
+                              <td className="py-2.5 px-3 text-start [overflow-wrap:anywhere]" title={productGroupText}>
+                                <span>{productGroupText}</span>
+                              </td>
                               <td className="py-2.5 px-3 text-center">
                                 <button
                                   type="button"
                                   role="switch"
-                                  aria-label={`${getRoleLabel(currentRoleKey)} · ${platform === 'app' ? 'APP 工作台' : 'PC 工作台'} · ${sectionLabel}：${isModules ? '模块' : '入口'}“${displayName}”显示状态，当前${isVis ? '已开启' : '已关闭'}`}
+                                  aria-label={`${getRoleLabel(currentRoleKey)} · ${platform === 'app' ? 'APP 工作台' : 'PC 工作台'} · ${sectionLabel}：${isModules ? '模块' : '入口'}“${displayName}”展示开关，当前${isVis ? '已开启' : '已关闭'}`}
                                   aria-checked={isVis ? 'true' : 'false'}
-                                  aria-describedby={(globalDisabled || !isVis) && enableBlocked ? `${statusReasonId}-${manualIndex}` : undefined}
+                                  aria-describedby={enableBlocked ? `${statusReasonId}-${manualIndex}` : undefined}
                                   disabled={globalDisabled || (!isVis && enableBlocked)}
-                                  title={(globalDisabled || !isVis) && enableBlocked ? enableBlockedReason : undefined}
+                                  title={enableBlocked ? enableBlockedReason : undefined}
                                   onClick={() => onToggleRoleVisible(item.id)}
                                   className="inline-flex min-h-[44px] w-full min-w-0 flex-wrap items-center justify-center gap-2 rounded-lg px-2 py-2 text-gray-700 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1890ff] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400 transition"
                                 >
@@ -305,9 +353,9 @@ export default function RoleWorkbenchArea({
                                   </span>
                                   <span className="min-w-0 leading-5 [overflow-wrap:anywhere]">{isVis ? '已开启' : '已关闭'}</span>
                                 </button>
-                                {(globalDisabled || !isVis) && enableBlocked && (
+                                {enableBlocked && (
                                   <p id={`${statusReasonId}-${manualIndex}`} className="mt-1 text-[12px] leading-5 text-gray-500 [overflow-wrap:anywhere]">
-                                    {globalDisabled ? '' : '无法开启：'}{enableBlockedReason}
+                                    {globalDisabled ? '' : (isVis ? '限制原因：' : '无法开启：')}{enableBlockedReason}
                                   </p>
                                 )}
                               </td>
@@ -317,7 +365,8 @@ export default function RoleWorkbenchArea({
                                   role="switch"
                                   aria-label={`设置${isModules ? '模块' : '入口'}“${displayName}”置顶状态，当前${item.isPinned ? '已置顶' : '未置顶'}`}
                                   aria-checked={item.isPinned ? 'true' : 'false'}
-                                  disabled={globalDisabled || (!isVis && !item.isPinned)}
+                                  disabled={globalDisabled || ((!isVis || enableBlocked) && !item.isPinned)}
+                                  title={globalDisabled || (!item.isPinned && enableBlocked) ? enableBlockedReason : undefined}
                                   onClick={() => onToggleRolePin(item.id)}
                                   className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1890ff] disabled:cursor-not-allowed disabled:opacity-50 transition"
                                 >
@@ -336,34 +385,26 @@ export default function RoleWorkbenchArea({
                                 <div className="inline-flex items-center justify-center rounded-md border border-gray-200 text-[14px]">
                                   <button
                                     type="button"
-                                    disabled={manualIndex === 0}
-                                    onClick={() => onMoveRoleUp(manualIndex)}
+                                    disabled={!canMoveUp}
+                                    onClick={() => onMoveRoleUp(item.id)}
                                     className="min-h-[44px] min-w-[44px] rounded-md text-gray-500 hover:bg-gray-50 hover:text-[#1890ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1890ff] disabled:opacity-25 disabled:cursor-not-allowed"
-                                    title="上移"
+                                    title={item.isPinned ? '置顶项不支持移动' : '上移'}
                                     aria-label={`上移${displayName}`}
                                   >
                                     ↑
                                   </button>
                                   <button
                                     type="button"
-                                    disabled={manualIndex === activeItems.length - 1}
-                                    onClick={() => onMoveRoleDown(manualIndex)}
+                                    disabled={!canMoveDown}
+                                    onClick={() => onMoveRoleDown(item.id)}
                                     className="min-h-[44px] min-w-[44px] rounded-md text-gray-500 hover:bg-gray-50 hover:text-[#1890ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1890ff] disabled:opacity-25 disabled:cursor-not-allowed"
-                                    title="下移"
+                                    title={item.isPinned ? '置顶项不支持移动' : '下移'}
                                     aria-label={`下移${displayName}`}
                                   >
                                     ↓
                                   </button>
                                 </div>
                               </td>}
-                              {/* 公共资料统一在库中编辑；主列表只移除当前配置的分配。 */}
-                              <td className="py-2.5 px-3 text-center">
-                                <div className="flex flex-wrap items-center justify-center gap-2 text-[12px]">
-                                  <button type="button" onClick={() => onRemoveRoleItem(item.id)}
-                                    className="min-h-[44px] rounded px-2 text-[14px] text-gray-500 hover:bg-red-50 hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1890ff]"
-                                    aria-label={`从当前配置对象移除“${displayName}”`}>移除</button>
-                                </div>
-                              </td>
                             </tr>
                           );
                         })

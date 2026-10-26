@@ -714,7 +714,7 @@ export default function RoleWorkbenchEntryLibrary({
                   const isCurrentlyAssigned = innerEntry.usages.some((u) => u.key === target.storageKey);
                   const isChecked = roleKeys.includes(target.storageKey);
                   return (
-                    <label key={target.id} className={`flex min-h-[44px] items-center justify-between rounded-lg border p-2.5 transition ${
+                    <label key={target.id} className={`flex min-h-[44px] items-center rounded-lg border p-2.5 transition ${
                       isRestricted && !isCurrentlyAssigned
                         ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
                         : 'border-gray-200 bg-white hover:bg-gray-50 cursor-pointer'
@@ -732,16 +732,6 @@ export default function RoleWorkbenchEntryLibrary({
                         </span>
                         {isRestricted && <span className="text-[12px] text-gray-400">（仅限{getRoleLabel(targetRestriction)}）</span>}
                       </div>
-                      <span className="text-[12px] font-medium">
-                        {isCurrentlyAssigned ? (
-                          isChecked ? (
-                            isRestricted ? <span className="text-amber-600 font-semibold">已分配（超出范围）</span>
-                            : <span className="text-emerald-600 font-semibold">已分配</span>
-                          ) : <span className="text-red-500 font-semibold">待移除</span>
-                        ) : (
-                          isChecked ? <span className="text-[#1890ff] font-semibold">待新增</span> : <span className="text-gray-400">未分配</span>
-                        )}
-                      </span>
                     </label>
                   );
                 })}
@@ -881,9 +871,9 @@ export default function RoleWorkbenchEntryLibrary({
               {[
                 ['名称', latestEditor.name], ['英文名称', latestEditor.enName],
                 ['跳转方式', latestEditor.jumpType === 'h5' ? 'H5' : '原生'], ['目标链接', latestEditor.jumpUrl],
-                ['产品组', latestEditor.productGroup === 'all' ? '全部' : latestEditor.productGroup],
-                ['适用角色', latestEditor.roleTarget === 'all' ? '全部' : getRoleLabel(latestEditor.roleTarget)],
-                ['Pro功能', latestEditor.pro ? '是' : '否'], ['是否展示角标', latestEditor.showBadge ? '展示' : '不展示'],
+                ['产品组条件', latestEditor.productGroup === 'all' ? '全部产品组' : latestEditor.productGroup],
+                ['既有角色限制', latestEditor.roleTarget === 'all' ? '全部角色' : getRoleLabel(latestEditor.roleTarget)],
+                ['Pro条件', latestEditor.pro ? '是' : '否'], ['是否展示角标', latestEditor.showBadge ? '展示' : '不展示'],
                 ['全局状态', latestEditor.globalEnabled === false ? '已停用' : '可用'],
               ].map(([label, value]) => <div key={label} className="flex min-w-0 flex-wrap gap-x-3"><dt className="text-gray-500">{label}</dt><dd className="min-w-0"><bdi>{value || '—'}</bdi></dd></div>)}
             </dl>

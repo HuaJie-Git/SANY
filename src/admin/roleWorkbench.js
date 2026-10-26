@@ -255,13 +255,15 @@ const sanitizeItems = (items) => {
     const isVisible = item.visible !== undefined
       ? Boolean(item.visible)
       : (item.defaultVisible === 'no' ? false : true);
+    const isPinned = Boolean(item.isPinned);
     return {
       ...item,
       id: item.id,
-      isPinned: Boolean(item.isPinned),
+      isPinned,
       visible: isVisible,
       defaultVisible: item.defaultVisible || (isVisible ? 'yes' : 'no'),
       custom: Boolean(item.custom),
+      ...(isPinned && typeof item.pinnedOrder === 'number' ? { pinnedOrder: item.pinnedOrder } : {}),
       ...(item.isRemoved === true ? { isRemoved: true, visible: false, defaultVisible: 'no', isPinned: false } : {}),
     };
   });
@@ -272,7 +274,7 @@ export const setRoleItemRemoved = (items, id, isRemoved) => {
   const target = items.find((item) => item.id === id);
   if (!target || Boolean(target.isRemoved) === isRemoved) return items;
   return items.map((item) => item.id === id
-    ? { ...item, isRemoved, visible: false, defaultVisible: 'no', isPinned: false }
+    ? { ...item, isRemoved, visible: false, defaultVisible: 'no', isPinned: false, pinnedOrder: undefined }
     : item);
 };
 
@@ -307,6 +309,49 @@ export const moveActiveRoleItem = (items, activeIndex, direction) => {
   const next = [...items];
   [next[from], next[to]] = [next[to], next[from]];
   return next;
+};
+
+// 非置顶项上下移只与前后非置顶项交换，跳过置顶项且不影响置顶项顺序
+export const moveActiveNonPinnedItem = (items, targetId, direction) => {
+  const currentItem = items.find((i) => i.id === targetId);
+  if (!currentItem || currentItem.isRemoved || currentItem.isPinned) return items;
+
+  const nonPinned = items.filter((i) => !i.isRemoved && !i.isPinned);
+  const currentIndex = nonPinned.findIndex((i) => i.id === targetId);
+  if (currentIndex === -1) return items;
+
+  const targetIndex = currentIndex + direction;
+  if (targetIndex < 0 || targetIndex >= nonPinned.length) return items;
+
+  const neighborItem = nonPinned[targetIndex];
+  const fromIdx = items.findIndex((i) => i.id === targetId);
+  const toIdx = items.findIndex((i) => i.id === neighborItem.id);
+  if (fromIdx === -1 || toIdx === -1) return items;
+
+  const next = [...items];
+  [next[fromIdx], next[toIdx]] = [next[toIdx], next[fromIdx]];
+  return next;
+};
+
+export const PRODUCT_GROUP_LABELS = {
+  all: '全部产品组',
+  excavator: '挖掘机械',
+  crane: '起重机械',
+  concrete: '混凝土机械',
+  truck: '重卡物流',
+};
+
+export const formatProductGroupLabel = (groupValue) => {
+  if (groupValue === undefined || groupValue === null || groupValue === '') {
+    return '未配置';
+  }
+  if (groupValue === 'all') {
+    return '全部产品组';
+  }
+  if (Object.hasOwn(PRODUCT_GROUP_LABELS, groupValue)) {
+    return PRODUCT_GROUP_LABELS[groupValue];
+  }
+  return String(groupValue);
 };
 
 export const readPlatformConfigsFromStorage = () => {

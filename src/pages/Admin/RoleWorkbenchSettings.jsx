@@ -16,7 +16,7 @@ import {
   getRoleStorageKey,
   getRoleLabel,
   setRoleItemRemoved,
-  moveActiveRoleItem,
+  moveActiveNonPinnedItem,
   getEffectiveRoleItems,
   ROLE_WORKBENCH_PLATFORM_KEY,
 } from '../../admin/roleWorkbench';
@@ -67,7 +67,6 @@ export default function RoleWorkbenchSettings() {
   const [platform, setPlatform] = useState('app'); // 'app' | 'pc'
   const [selectedSections, setSelectedSections] = useState({ app: 'workbench', pc: 'actions' });
   const [currentRoleKey, setCurrentRoleKey] = useState(ADMIN_ROLES[0]?.storageKey || '机主');
-  const [detailsExpanded, setDetailsExpanded] = useState(false);
 
   // 持久化配置数据树
   const [allConfigs, setAllConfigs] = useState(() => readPlatformConfigsFromStorage().tree);
@@ -517,15 +516,19 @@ export default function RoleWorkbenchSettings() {
     }));
   };
 
-  // 切换角色项目置顶 (R-018: APP 最多置顶 5 个，隐藏项计入，已有 5 个开第 6 个拦截并提示；R-019 改视口明确弹窗)
+  // 切换角色项目置顶 (R-059: 置顶按操作先后前置；APP 最多置顶 5 个，隐藏项计入)
   const handleToggleRolePin = (p, s, r, id) => {
     const currentItems = getRoleEditorItems(p, s, r);
 
     const itemToToggle = currentItems.find((i) => i.id === id);
     if (!itemToToggle || itemToToggle.isRemoved) return;
-    if (getUnifiedDirectory(p, s).find((entry) => entry.id === id)?.globalEnabled === false) return;
+    const detail = getUnifiedDirectory(p, s).find((entry) => entry.id === id);
+    if (detail?.globalEnabled === false) return;
+    const target = getRoleStorageKey(detail?.roleTarget || itemToToggle.roleTarget);
+    const isItemMismatch = target && target !== 'all' && target !== getRoleStorageKey(r);
+    const enableBlocked = isItemMismatch || Boolean(detail?.hasRoleDifferences);
     const isVisible = itemToToggle.visible !== undefined ? itemToToggle.visible : itemToToggle.defaultVisible !== 'no';
-    if (!itemToToggle.isPinned && !isVisible) return;
+    if (!itemToToggle.isPinned && (!isVisible || enableBlocked)) return;
 
     if (p === 'app' && !itemToToggle.isPinned) {
       const currentPinnedCount = currentItems.filter((i) => !i.isRemoved && Boolean(i.isPinned)).length;
@@ -535,11 +538,42 @@ export default function RoleWorkbenchSettings() {
       }
     }
 
+    const nextIsPinned = !itemToToggle.isPinned;
+    let nextPinnedOrder;
+    if (nextIsPinned) {
+      const maxOrder = currentItems.reduce((max, item) => {
+        return item.isPinned && typeof item.pinnedOrder === 'number' && item.pinnedOrder > max
+          ? item.pinnedOrder
+          : max;
+      }, 0);
+      nextPinnedOrder = maxOrder + 1;
+    }
+
     const next = currentItems.map((item) => {
-      if (item.id === id) return { ...item, isPinned: !item.isPinned };
+      if (item.id === id) {
+        return {
+          ...item,
+          isPinned: nextIsPinned,
+          pinnedOrder: nextPinnedOrder,
+        };
+      }
       return item;
     });
     handleUpdateRoleDraftItems(p, s, r, next);
+  };
+
+  const handleMoveRoleItem = (p, s, r, idOrIdx, direction) => {
+    const currentItems = getRoleEditorItems(p, s, r);
+    const activeItems = currentItems.filter((i) => !i.isRemoved);
+    const targetId = typeof idOrIdx === 'string'
+      ? idOrIdx
+      : activeItems[idOrIdx]?.id;
+    if (!targetId) return;
+
+    const next = moveActiveNonPinnedItem(currentItems, targetId, direction);
+    if (next !== currentItems) {
+      handleUpdateRoleDraftItems(p, s, r, next);
+    }
   };
 
   const handleSetRoleItemRemoved = (p, s, r, id, isRemoved) => {
@@ -672,13 +706,15 @@ export default function RoleWorkbenchSettings() {
       updatedBy: '当前管理员',
       items: itemsToSave.map((item) => {
         const isVis = item.visible !== undefined ? Boolean(item.visible) : (item.defaultVisible !== 'no');
+        const isPinned = Boolean(item.isPinned);
         return {
           ...item,
           id: item.id,
-          isPinned: Boolean(item.isPinned),
+          isPinned,
           visible: isVis,
           defaultVisible: isVis ? 'yes' : 'no',
           custom: Boolean(item.custom),
+          ...(isPinned && typeof item.pinnedOrder === 'number' ? { pinnedOrder: item.pinnedOrder } : {}),
           ...(item.isRemoved ? { visible: false, defaultVisible: 'no', isPinned: false } : {}),
         };
       }),
@@ -1063,7 +1099,6 @@ export default function RoleWorkbenchSettings() {
                 section={sectionId}
                 sectionLabel={sectionLabel}
                 highlightedEntryId={highlightedEntryId}
-                showDetails={detailsExpanded} onShowDetailsChange={setDetailsExpanded}
                 currentRoleKey={currentRoleKey}
 
                 // Role props
@@ -1072,29 +1107,13 @@ export default function RoleWorkbenchSettings() {
                 onUpdateRoleRules={(newRules) => {
                   handleUpdateRoleDraftRules(platform, sectionId, currentRoleKey, newRules);
                 }}
-                onMoveRoleUp={(idx) => {
+                onMoveRoleUp={(idOrIdx) => {
                   if (roleRules.userSort === 'auto_clicks') return;
-                  const activeRoleItems = rawRoleItems.filter((i) => !i.isRemoved);
-                  const currentItem = activeRoleItems[idx];
-                  const neighborItem = activeRoleItems[idx - 1];
-                  if (Boolean(currentItem?.isPinned) || Boolean(neighborItem?.isPinned)) {
-                    openPinLimitAlert('请先取消置顶，再调整顺序。', '暂不能调整顺序');
-                    return;
-                  }
-                  const next = moveActiveRoleItem(rawRoleItems, idx, -1);
-                  if (next !== rawRoleItems) handleUpdateRoleDraftItems(platform, sectionId, currentRoleKey, next);
+                  handleMoveRoleItem(platform, sectionId, currentRoleKey, idOrIdx, -1);
                 }}
-                onMoveRoleDown={(idx) => {
+                onMoveRoleDown={(idOrIdx) => {
                   if (roleRules.userSort === 'auto_clicks') return;
-                  const activeRoleItems = rawRoleItems.filter((i) => !i.isRemoved);
-                  const currentItem = activeRoleItems[idx];
-                  const neighborItem = activeRoleItems[idx + 1];
-                  if (Boolean(currentItem?.isPinned) || Boolean(neighborItem?.isPinned)) {
-                    openPinLimitAlert('请先取消置顶，再调整顺序。', '暂不能调整顺序');
-                    return;
-                  }
-                  const next = moveActiveRoleItem(rawRoleItems, idx, 1);
-                  if (next !== rawRoleItems) handleUpdateRoleDraftItems(platform, sectionId, currentRoleKey, next);
+                  handleMoveRoleItem(platform, sectionId, currentRoleKey, idOrIdx, 1);
                 }}
                 onToggleRolePin={(id) => {
                   handleToggleRolePin(platform, sectionId, currentRoleKey, id);
@@ -1105,7 +1124,8 @@ export default function RoleWorkbenchSettings() {
                   const item = rawRoleItems.find((item) => item.id === id);
                   if (!item || item.isRemoved) return;
                   if (entry?.globalEnabled === false) return;
-                  if (!item?.visible && ((target && target !== 'all' && target !== getRoleStorageKey(currentRoleKey)) || entry?.hasRoleDifferences)) {
+                  const currentVis = item.visible !== undefined ? Boolean(item.visible) : (item.defaultVisible !== 'no');
+                  if (!currentVis && ((target && target !== 'all' && target !== getRoleStorageKey(currentRoleKey)) || entry?.hasRoleDifferences)) {
                     showToast('此入口不适用当前角色或资料存在历史差异，无法开启', 'error');
                     return;
                   }
