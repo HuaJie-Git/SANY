@@ -929,7 +929,7 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
     maintenance: <ModuleCard title="计划保养" className="is-span-12 home-maintenance" action={<button type="button" className="module-text-action" onClick={() => onOpenBusiness?.('maintenance')}>查看全部 <Icon name="arrow" size={14}/></button>}>
       <div className="maintenance-compact-stats">{maintenanceBuckets.map((bucket) => <button type="button" key={bucket.id} className={bucket.tone} onClick={() => onOpenBusiness?.('maintenance', { status: bucket.id })}><span className="maintenance-bucket-title"><i aria-hidden="true"/>{bucket.label}</span><strong>{bucket.assets.length}<em>台设备</em></strong></button>)}</div>
     </ModuleCard>,
-    operations: <OperationsOverview now={currentTime}/>,
+    operations: <OperationsOverview key={previewUser.id} now={currentTime} accountId={previewUser.id} timeZone={previewUser.timeZone || 'Asia/Shanghai'}/>,
     links: <ModuleCard title="快速链接" className="is-span-12 is-links">
       <div className="quick-links">{links.filter((link) => link.visible && link.enabled).map((link) => <button type="button" key={link.id} title={link.linkType === 'internal' ? `${link.label} · 内部链接` : safeQuickLinkUrl(link.url) ? `${link.label} · ${link.authEnabled ? '需鉴权，新标签页打开' : '新标签页打开'}` : link.label} onClick={() => openQuickLink(link)}><span className={link.tone}>{link.iconData ? <img src={link.iconData} alt=""/> : <Icon name={link.icon || 'link'}/>}</span><div><strong>{link.label}{link.showBadge && <small className="quick-link-new">NEW</small>}</strong></div><Icon name="arrow" size={14}/></button>)}{!links.some((link) => link.visible && link.enabled) && <p className="quick-links-empty">当前身份暂无可见的快速链接。</p>}</div>
     </ModuleCard>,

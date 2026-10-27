@@ -8,17 +8,35 @@ const STATUS_LABELS = [
 const amount = (value) => Number.isFinite(value) && value >= 0 ? value : 0;
 const round = (value) => Math.round((value + Number.EPSILON) * 10) / 10;
 
-export function summarizeOperations(devices = [], { now = new Date(), timeZone = 'Asia/Shanghai' } = {}) {
+// 重复返回的设备先合并明细，以最新设备资料确定账号归属、绑定和能量类型。
+function uniqueDevices(devices) {
+  const grouped = new Map();
+  for (const device of devices || []) {
+    if (!device?.id) continue;
+    const group = grouped.get(device.id) || [];
+    group.push(device);
+    grouped.set(device.id, group);
+  }
+  return [...grouped.values()].map((group) => {
+    group.sort((a, b) => (Date.parse(a.updatedAt) || 0) - (Date.parse(b.updatedAt) || 0));
+    const current = group[group.length - 1];
+    const sameAccount = group.filter((device) => device.accountId === current.accountId);
+    return { ...current, dailyReports: sameAccount.flatMap((device) => device.dailyReports || []), snapshots: sameAccount.flatMap((device) => device.snapshots || []) };
+  });
+}
+
+export function summarizeOperations(devices = [], { now = new Date(), timeZone = 'Asia/Shanghai', accountId = 'preview-account' } = {}) {
   const dayFormatter = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' });
   const currentTime = new Date(now).getTime();
   const dayOf = (time) => dayFormatter.format(new Date(time));
   const currentDay = dayOf(currentTime);
-  const latest = (reports, predicate = () => true) => (reports || [])
+  const latest = (reports, predicate = () => true) => (Array.isArray(reports) ? reports : [])
     .filter((report) => {
-      const time = new Date(report.reportedAt).getTime();
+      if (!report || typeof report !== 'object') return false;
+      const time = Date.parse(report.reportedAt);
       return Number.isFinite(time) && time <= currentTime && predicate(report, time);
     })
-    .reduce((found, report) => !found || new Date(report.reportedAt) > new Date(found.reportedAt) ? report : found, null);
+    .reduce((found, report) => !found || Date.parse(report.reportedAt) >= Date.parse(found.reportedAt) ? report : found, null);
   const summary = {
     statuses: STATUS_LABELS.map((item) => ({ ...item, count: 0 })),
     totalHours: 0, idleHours: 0, runningHours: 0,
@@ -28,9 +46,10 @@ export function summarizeOperations(devices = [], { now = new Date(), timeZone =
     fuelCounts: [0, 0, 0, 0], electricityCounts: [0, 0, 0, 0],
   };
 
-  for (const device of devices || []) {
-    // 启用状态、机型不参与筛选；只排除不在册或尚未登记的设备。
-    if (device.inRegister === false || new Date(device.registeredAt).getTime() > currentTime) continue;
+  for (const device of uniqueDevices(devices)) {
+    // 账号下已绑定、已物联且当前在册；启用状态、机型和当前在线状态不参与筛选。
+    const registeredAt = Date.parse(device.registeredAt);
+    if (device.accountId !== accountId || device.isBound !== true || device.isIot !== true || device.inRegister === false || registeredAt > currentTime) continue;
     const state = latest(device.snapshots, (report) => STATUS_LABELS.some((item) => item.label === report.status));
     if (state) summary.statuses.find((item) => item.label === state.status).count += 1;
 
@@ -66,7 +85,7 @@ export function summarizeOperations(devices = [], { now = new Date(), timeZone =
   return summary;
 }
 
-export function createOperationsPreview(now = new Date()) {
+export function createOperationsPreview(now = new Date(), accountId = 'preview-account') {
   const timestamp = new Date(now).toISOString();
   const fuel = [96, 72, 80, 60, 88, 52, 64, 48, 70, 66];
   const remaining = [12, 24, 25, 38, 49, 50, 66, 74, 75, 100, 70, 88];
@@ -74,6 +93,9 @@ export function createOperationsPreview(now = new Date()) {
   const idle = [2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2];
   return running.map((hours, index) => ({
     id: `overview-preview-${index + 1}`,
+    accountId,
+    isBound: true,
+    isIot: true,
     inRegister: true,
     enabled: index % 3 !== 0,
     registeredAt: timestamp,
