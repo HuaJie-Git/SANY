@@ -362,7 +362,7 @@ export default function RoleWorkbenchEntryLibrary({
           </div>
           <p className="mt-1.5 text-[13px] text-gray-500 [overflow-wrap:anywhere]">
             {choosing
-              ? `为【${currentRoleLabel}】配置，勾选添加，取消勾选移除；保存后生效。`
+              ? `为【${currentRoleLabel}】配置，勾选添加，取消勾选移除；确定修改后返回，保存当前配置后生效。`
               : `集中维护公共入口与模块资料、启用/停用状态及角色分配。`}
           </p>
         </header>
@@ -491,7 +491,7 @@ export default function RoleWorkbenchEntryLibrary({
                 const reason = !alreadyAdded ? selectionReason(entry, currentRoleKey, currentItems) : '';
                 return <li key={entry.id}>
                   <label data-library-entry={entry.id} tabIndex={-1}
-                    className={`flex min-h-[76px] min-w-0 items-start gap-3 rounded-md px-2 py-4 ${reason ? 'text-gray-500 opacity-60' : 'cursor-pointer hover:bg-blue-50/40'} ${isDeselected ? 'bg-red-50/30' : isSelected || spotlightId === entry.id ? 'bg-blue-50/50' : ''}`}>
+                    className={`flex min-h-[76px] min-w-0 items-start gap-3 rounded-md px-2 py-4 ${reason ? 'text-gray-500 opacity-60' : 'cursor-pointer hover:bg-blue-50/40'} ${isSelected || spotlightId === entry.id ? 'bg-blue-50/50' : ''}`}>
                     <input
                       type="checkbox"
                       className="mt-1 h-4 w-4 shrink-0 accent-[#1890ff]"
@@ -517,15 +517,7 @@ export default function RoleWorkbenchEntryLibrary({
                     <span className="min-w-0 flex-1">
                       <span className="flex min-w-0 flex-wrap items-baseline justify-between gap-2">
                         <bdi className="min-w-0 text-[14px] font-medium text-gray-900 [overflow-wrap:anywhere]">{entry.name}</bdi>
-                        {alreadyAdded ? (
-                          isDeselected ? (
-                            <span className="text-[12px] font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-200">待移除</span>
-                          ) : (
-                            <span className="text-[12px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">已配置</span>
-                          )
-                        ) : isSelected ? (
-                          <span className="text-[12px] font-semibold text-[#1890ff] bg-blue-50 px-2 py-0.5 rounded border border-blue-200">待添加</span>
-                        ) : spotlightId === entry.id ? (
+                        {spotlightId === entry.id ? (
                           <span className="text-[12px] text-[#1890ff]">刚加入入口库</span>
                         ) : null}
                       </span>
@@ -648,20 +640,14 @@ export default function RoleWorkbenchEntryLibrary({
           </div>}
         </div>
         {choosing && <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-6 py-4">
-          <span className="text-[13px] text-gray-500">
-            已选择：
-            <b className="font-semibold tabular-nums text-blue-600">+{selected.length}</b> 待添加
-            {deselected.length > 0 && (
-              <span className="ms-2">
-                / <b className="font-semibold tabular-nums text-red-600">-{deselected.length}</b> 待移除
-              </span>
-            )}
+          <span className="text-[13px] text-gray-500 [overflow-wrap:anywhere]">
+            本次修改：新增 <b className="font-semibold tabular-nums text-blue-600">{selected.length}</b> 项，移除 <b className="font-semibold tabular-nums text-red-600">{deselected.length}</b> 项
           </span>
           <div className="flex min-w-0 flex-wrap justify-end gap-3">
             <button type="button" className={buttonClass} onClick={closeDrawer}>取消</button>
             <button
               type="button"
-              className={deselected.length > 0 && selected.length === 0 ? dangerClass : primaryClass}
+              className={primaryClass}
               disabled={(!selected.length && !deselected.length) || locked || busy}
               onClick={() => execute(() => {
                 onAdd(snapshot, selected, deselected);
@@ -671,11 +657,7 @@ export default function RoleWorkbenchEntryLibrary({
                 onClose();
               })}
             >
-              {selected.length > 0 && deselected.length > 0
-                ? `应用修改（+${selected.length} / -${deselected.length}）`
-                : deselected.length > 0
-                  ? `确认移除所选（${deselected.length}）`
-                  : `添加到当前配置（${selected.length}）`}
+              确定修改
             </button>
           </div>
         </footer>}
