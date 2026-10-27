@@ -521,7 +521,6 @@ export default function RoleWorkbenchEntryLibrary({
                           <span className="text-[12px] text-[#1890ff]">刚加入入口库</span>
                         ) : null}
                       </span>
-                      <bdi dir="ltr" className="mt-1 block break-all text-[12px] text-gray-400">{entry.id}</bdi>
                       {reason && <span className="mt-1 block text-[13px] leading-5 text-gray-500 [overflow-wrap:anywhere]">{reason}</span>}
                     </span>
                   </label>
@@ -531,7 +530,7 @@ export default function RoleWorkbenchEntryLibrary({
           </> : <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-[14px]">
               <thead><tr className="border-b border-gray-100 text-[12px] text-gray-400">
-                <th className="py-3 pe-4 text-start font-medium">名称 / ID</th>
+                <th className="py-3 pe-4 text-start font-medium">名称</th>
                 <th className="w-24 px-3 py-3 text-start font-medium">全局状态</th>
                 <th className="w-32 px-3 py-3 text-start font-medium">使用对象</th>
                 <th className="py-3 ps-3 text-end font-medium">操作</th>
@@ -550,7 +549,6 @@ export default function RoleWorkbenchEntryLibrary({
                     <tr data-library-entry={entry.id} className="align-top">
                       <td className="py-3 pe-4">
                         <bdi className="block max-w-xs font-medium text-gray-900 [overflow-wrap:anywhere]">{entry.name}</bdi>
-                        <bdi dir="ltr" className="mt-1 block break-all text-[12px] text-gray-400">{entry.id}</bdi>
                         {entry.hasRoleDifferences && <p className="mt-1 text-[12px] text-amber-700">资料差异待核对</p>}
                       </td>
                       <td className="px-3 py-3 text-[13px] text-gray-600">

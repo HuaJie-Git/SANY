@@ -317,7 +317,6 @@ export default function RoleWorkbenchArea({
                                     </span>
                                   )}
                                 </div>
-                                <div className="mt-1 text-[12px] text-gray-400 break-all" dir="ltr">ID: {item.id}</div>
                               </td>
                               {isAutoSort && <td className="py-2.5 px-3 text-right tabular-nums whitespace-nowrap" dir="ltr">{clicks === null ? '—' : `${clicks} 次`}</td>}
                               <td className="py-2.5 px-3 text-center">{proText}</td>
