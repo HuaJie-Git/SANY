@@ -35,7 +35,7 @@ const Metric = ({ item }) => {
   const { label, value, unit, isStatus } = item;
   return (
     <div className="min-w-0">
-      <div className={`flex items-baseline gap-1 ${isStatus ? 'text-[#252b33]' : 'text-[#303640]'}`}>
+      <div className={`flex flex-wrap items-baseline gap-1 ${isStatus ? 'text-[#252b33]' : 'text-[#303640]'}`}>
         {isStatus ? (
           <BilingualLabel zh={value} size="lg" enWeight={700} zhWeight={500} />
         ) : (
@@ -133,25 +133,12 @@ export default function ElectricWorkConditionDetail({
 
   const realtimeMetricsList = [
     { label: '设备状态', value: isOffline ? '离线' : '工作', isStatus: true },
-    ...['剩余电量', '电池健康', '车速', '油门深度', '制动深度', '运载趟数', '运输重量'].map((name) =>
+    ...['剩余电量', '电池健康', '车速', '运输重量'].map((name) =>
       ELECTRIC_REALTIME_METRICS.find((m) => m.label === name) || { label: name, value: '—', unit: '' }
     ),
   ];
 
-  // DEC-014: 今日数据暂定业务分组展示排序（每行左右：工时/怠速工时；运行时长/机器利用率；里程/最高车速；运行功耗/空闲功耗；电耗/回收电量；充电时长）
-  const todayMetricsList = [
-    '工时',
-    '怠速工时',
-    '运行时长',
-    '机器利用率',
-    '里程',
-    '最高车速',
-    '运行功耗',
-    '空闲功耗',
-    '电耗',
-    '回收电量',
-    '充电时长',
-  ].map((name) => ELECTRIC_TODAY_METRICS.find((m) => m.label === name) || { label: name, value: '—', unit: '' });
+  const todayMetricsList = ELECTRIC_TODAY_METRICS;
 
   // 轨迹回放跳转
   if (currentView === 'track') {
@@ -377,7 +364,7 @@ export default function ElectricWorkConditionDetail({
               </h2>
               <button
                 type="button"
-                onClick={() => showToast('按自然日统计当日累计数据；机器利用率按运行时长/工时×100%计算')}
+                onClick={() => showToast('按设备所在地自然日统计；每小时能耗＝当日能耗÷工作时长；单趟载重＝运输重量÷运输趟数')}
                 className="h-4 w-4 rounded-full bg-[#303640] text-center text-[10px] leading-4 text-white flex items-center justify-center cursor-pointer"
                 aria-label="今日数据说明"
               >

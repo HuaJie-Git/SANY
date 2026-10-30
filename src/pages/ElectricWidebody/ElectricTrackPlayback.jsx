@@ -461,14 +461,14 @@ export default function ElectricTrackPlayback({ device, initialDate = '2023-11-2
                         <span className="text-[23px] font-normal leading-none tracking-[-0.4px]">{trackData.totalMileage}</span>
                         <span className="text-[12px] font-medium text-[#7a8290]">km</span>
                       </div>
-                      <div className="mt-2 text-[12px] text-[#7a8290]">总里程</div>
+                      <div className="mt-2 text-[12px] text-[#7a8290]">行驶里程</div>
                     </div>
                     <div>
                       <div className="flex items-baseline gap-1 text-[#303640]">
                         <span className="text-[23px] font-normal leading-none tracking-[-0.4px]">{trackData.totalEnergy}</span>
                         <span className="text-[12px] font-medium text-[#7a8290]">kWh</span>
                       </div>
-                      <div className="mt-2 text-[12px] text-[#7a8290]">总电耗</div>
+                      <div className="mt-2 text-[12px] text-[#7a8290]">能耗</div>
                     </div>
                   </div>
                 </div>
@@ -524,11 +524,11 @@ export default function ElectricTrackPlayback({ device, initialDate = '2023-11-2
                                 <div>• 终点：{ELECTRIC_WIDEBODY_INFO.endLocation}</div>
                                 <div className="grid grid-cols-2 gap-2 pt-1">
                                   <div>
-                                    <span className="text-[10px] block text-[#7a8290]">里程</span>
+                                    <span className="text-[10px] block text-[#7a8290]">行驶里程</span>
                                     <span className="text-[13px] font-medium text-[#252b33]">{seg.mileage}</span>
                                   </div>
                                   <div>
-                                    <span className="text-[10px] block text-[#7a8290]">电耗</span>
+                                    <span className="text-[10px] block text-[#7a8290]">能耗</span>
                                     <span className="text-[13px] font-medium text-[#252b33]">{seg.energy}</span>
                                   </div>
                                   <div>
@@ -545,7 +545,7 @@ export default function ElectricTrackPlayback({ device, initialDate = '2023-11-2
                               <>
                                 <div>• 位置：{ELECTRIC_WIDEBODY_INFO.location}</div>
                                 <div>
-                                  <span className="text-[10px] block text-[#7a8290]">电耗</span>
+                                  <span className="text-[10px] block text-[#7a8290]">能耗</span>
                                   <span className="text-[13px] font-medium text-[#252b33]">{seg.energy}</span>
                                 </div>
                               </>

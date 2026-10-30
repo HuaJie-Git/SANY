@@ -1,6 +1,27 @@
 import React from 'react';
 
 export const WIDEBODY_DICTIONARY = {
+  "本月": "This Month",
+  "充电量": "Charged Energy",
+  "回收能量百分比趋势": "Trends in Energy Recovered %",
+  "运输趟数趋势": "Trends in the Number of Trips",
+  "单趟载重": "Payload/Trip",
+  "回收能量百分比": "Energy Recovered %",
+  "总回收能量": "Total Energy Recovered",
+  "回收能量": "Energy Recovered",
+  "充电桩总能耗": "Total Energy Consumption from Charging Pile",
+  "充电桩能耗": "Energy Consumption from Charging Pile",
+  "每小时能耗": "Energy Consumption/Hour",
+  "工作分布": "Work Distribution",
+  "今日工作参数": "Today’s Work Parameters",
+  "总运输趟数": "Total No. of Trips",
+  "运输趟数": "No. of Trips",
+  "总行驶里程": "Total KM Travelled",
+  "总运转时长": "Total Operating Hours",
+  "总工作时长": "Total Working Hours",
+  "行驶里程": "KM Travelled",
+  "运转时长": "Operating Hours",
+  "工作时长": "Working Hours",
   // Vehicle types
   '电动宽体车': 'Electric Wide-body Dump Truck',
   '燃油宽体车': 'Diesel Wide-body Dump Truck',
@@ -9,7 +30,7 @@ export const WIDEBODY_DICTIONARY = {
 
   // Statuses
   '工作': 'Operating',
-  '怠速': 'Idling',
+  "怠速": "Idle",
   '停机': 'Shutdown',
   '行驶': 'Driving',
   '离线': 'Offline',
@@ -66,7 +87,7 @@ export const WIDEBODY_DICTIONARY = {
 
   // Today & Cumulative Metrics
   '今日数据': "Today's Data",
-  '今日能耗': "Today's Energy",
+  "今日能耗": "Today’s Energy Consumption",
   '工时数据': 'Operating Hours Data',
   '累计数据': 'Cumulative Data',
   '最新工况': 'Latest Operating Condition',
@@ -89,8 +110,8 @@ export const WIDEBODY_DICTIONARY = {
   '充电时长': 'Charging Duration',
   '总充电时长': 'Total Charging Duration',
   '总充电电量': 'Total Charging Energy',
-  '能耗': 'Energy Consumption',
-  '总能耗': 'Total Energy Consumption',
+  "能耗": "Energy Consumption",
+  "总能耗": "Total Energy Consumption",
   '平均每小时能耗': 'Avg Hourly Energy Consumption',
   '平均每小时油耗': 'Avg Hourly Fuel Consumption',
   '运行燃油消耗': 'Operating Fuel Consumption',
@@ -202,89 +223,16 @@ export function getBilingualText(zh, defaultEn) {
   return { en, zh: clean };
 }
 
-/**
- * 通用双语标签组件 (英文上方较大、中文下方较小)
- * 遵从 WIDEBODY-BILINGUAL-001:
- * - 英文上、中文下
- * - 英文默认字号 > 中文字号 (默认 en:13px/600, zh:10px/400)
- * - 标题可传 size="title" (en:16px, zh:12px) 或自定义
- * - 数值/编号/单位请由外部独立渲染，本组件仅负责文案双语
- */
-export function BilingualLabel({
-  zh,
-  en,
-  size = 'default',
-  align = 'start',
-  className = '',
-  style = {},
-  enStyle = {},
-  zhStyle = {},
-  enWeight = 600,
-  zhWeight = 400,
-}) {
-  const t = getBilingualText(zh, en);
-  if (!t.zh && !t.en) return null;
-
-  let defaultEnSize = 13;
-  let defaultZhSize = 10;
-  if (size === 'title') {
-    defaultEnSize = 16;
-    defaultZhSize = 12;
-  } else if (size === 'lg') {
-    defaultEnSize = 14;
-    defaultZhSize = 11;
-  } else if (size === 'card') {
-    defaultEnSize = 13;
-    defaultZhSize = 10;
-  } else if (size === 'sm') {
-    defaultEnSize = 11;
-    defaultZhSize = 9;
-  } else if (size === 'xs') {
-    defaultEnSize = 10;
-    defaultZhSize = 8;
-  }
-
-  const alignStyles = {
-    start: { alignItems: 'flex-start', textAlign: 'left' },
-    center: { alignItems: 'center', textAlign: 'center' },
-    end: { alignItems: 'flex-end', textAlign: 'right' },
-  }[align] || { alignItems: 'flex-start', textAlign: 'left' };
-
+// 当前原型默认中文展示；英文名称保留用于指标语义核对，不增加语言切换。
+export function BilingualLabel({ zh, size = 'default', align = 'start', className = '', style = {}, zhStyle = {}, zhWeight = 400 }) {
+  if (!zh) return null;
+  const fontSize = { title: 16, lg: 14, card: 13, sm: 12, xs: 11 }[size] || 13;
   return (
-    <span
-      className={`widebody-bilingual-block inline-flex flex-col leading-tight ${className}`}
-      style={{
-        ...alignStyles,
-        ...style,
-      }}
-    >
-      <span
-        className="widebody-bilingual-en"
-        style={{
-          fontSize: defaultEnSize,
-          fontWeight: enWeight,
-          color: 'inherit',
-          lineHeight: 1.15,
-          ...enStyle,
-        }}
-      >
-        {t.en}
-      </span>
-      <span
-        className="widebody-bilingual-zh"
-        style={{
-          fontSize: defaultZhSize,
-          fontWeight: zhWeight,
-          opacity: 0.85,
-          color: 'inherit',
-          lineHeight: 1.15,
-          marginTop: 1,
-          ...zhStyle,
-        }}
-      >
-        {t.zh}
-      </span>
-    </span>
+    <span className={`inline-block max-w-full break-words ${className}`} style={{
+      fontSize, fontWeight: size === 'title' ? 600 : zhWeight, lineHeight: 1.4,
+      textAlign: align === 'center' ? 'center' : align === 'end' ? 'end' : 'start',
+      ...style, ...zhStyle,
+    }}>{zh}</span>
   );
 }
 

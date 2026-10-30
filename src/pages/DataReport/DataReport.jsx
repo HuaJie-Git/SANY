@@ -1,3 +1,4 @@
+import { reportMetrics } from '../ElectricWidebody/widebodyMetrics.js';
 import React, { useMemo, useState } from 'react';
 import FuelLevelChart from '../../components/FuelLevelChart/FuelLevelChart';
 import WorkStatusTimeline from '../../components/WorkStatusTimeline/WorkStatusTimeline';
@@ -11,7 +12,6 @@ import {
   getDailyWorkDistribution,
   getPeriodDates,
   normalizeDateStr,
-  formatWeight,
 } from '../ElectricWidebody/fuelWidebodyData';
 
 const shiftDate = (date, days) => {
@@ -652,15 +652,7 @@ const DailyView = ({ deviceName, isFuelWidebody, currentDateStr }) => {
         if (!stat) return deviceData?.daily;
         return {
           fuelLevel: String(stat.fuelLevel),
-          summary: [
-            ['能耗', String(stat.fuel.toFixed(1)), 'L'],
-            ['运行功耗', String(stat.runningFuel.toFixed(1)), 'L'],
-            ['空闲功耗', String(stat.idleFuel.toFixed(1)), 'L'],
-            ['平均每小时能耗', stat.avgHourlyFuel != null ? String(stat.avgHourlyFuel.toFixed(1)) : '—', 'L/h'],
-            ['工时', String(stat.workHours.toFixed(2)), 'h'],
-            ['怠速工时', String(stat.idleHours.toFixed(2)), 'h'],
-            ['运输重量', formatWeight(stat.weight), 't'],
-          ],
+          summary: reportMetrics(stat, false).map(({ label, value, unit }) => [label, value, unit]),
           detailedSegments: getDailyWorkDistribution(currentDateStr || '2023-11-23'),
           workDist: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         };
@@ -677,7 +669,7 @@ const DailyView = ({ deviceName, isFuelWidebody, currentDateStr }) => {
       <div className="px-1 text-[11px] text-[#999]">以下数据为设备所在地当日数据实时统计</div>
       <SummaryCard data={d.summary} isDaily title={isExcavator ? '工时数据' : (isElectric ? '今日能耗' : '今日数据')} />
       <div className="rounded-2xl bg-white p-4 shadow-sm">
-        <div className="text-[15px] font-semibold mb-1">{isPaver ? '当日怠速工时分布' : (isElectric ? '每日工作分布' : '当日工时分布')}</div>
+        <div className="text-[15px] font-semibold mb-1">{isPaver ? '当日怠速工时分布' : (isFuelWidebody ? '工作分布' : (isElectric ? '每日工作分布' : '当日工时分布'))}</div>
         <WorkStatusTimeline segments={d.workDist} detailedSegments={d.detailedSegments} />
       </div>
       {deviceData?.supportsTrajectory !== false ? (
@@ -715,21 +707,14 @@ const WeeklyView = ({ deviceName, baseDate, isFuelWidebody }) => {
         const periodic = getPeriodicFuelData('weekly', baseDate);
         if (!periodic) return dev?.weekly;
         return {
-          summary: [
-            ['能耗', String(periodic.summary.fuel ?? '—'), 'L'],
-            ['运行功耗', String(periodic.summary.runningFuel ?? '—'), 'L'],
-            ['空闲功耗', String(periodic.summary.idleFuel ?? '—'), 'L'],
-            ['平均每小时能耗', String(periodic.summary.avgHourlyFuel ?? '—'), 'L/h'],
-            ['工时', String(periodic.summary.workHours ?? '—'), 'h'],
-            ['怠速工时', String(periodic.summary.idleHours ?? '—'), 'h'],
-            ['总运输重量', formatWeight(periodic.summary.weight), 't'],
-          ],
+          summary: reportMetrics(periodic.summary, false).map(({ label, value, unit }) => [label, value, unit]),
           calDays: periodic.rows.map((r, i) => {
             const dayNum = r?.date ? parseInt(r.date.split('-')[2], 10) : (i + 1);
-            return { d: dayNum, amount: null, fuel: r.fuel };
+            return { d: dayNum, amount: r.workingHours, fuel: r.fuel };
           }),
           fuelTrend: periodic.rows.map((r) => r.fuel),
-          workH: periodic.rows.map((r) => r.workHours),
+          workH: periodic.rows.map((r) => r.operatingHours),
+          totalWorkH: periodic.rows.map((r) => r.workingHours),
           idleH: periodic.rows.map((r) => r.idleHours),
           dates: periodic.dates,
         };
@@ -746,10 +731,10 @@ const WeeklyView = ({ deviceName, baseDate, isFuelWidebody }) => {
     <div className="space-y-3">
       <SummaryCard data={d.summary} period="weekly" title={deviceName === '挖掘机' ? '汇总' : '运营数据'} />
       <div className="rounded-2xl bg-white p-4 shadow-sm">
-        <div className="text-[15px] font-semibold mb-3">设备运行日历</div>
+        <div className="text-[15px] font-semibold mb-3">{isFuelWidebody ? '设备运行日历（本周）' : '设备运行日历'}</div>
         <WeekCalendar
           days={d.calDays}
-          amountUnit={dev?.amountUnit}
+          amountUnit={isFuelWidebody ? 'h' : dev?.amountUnit}
           resourceUnit={isElectric ? 'kWh' : 'L'}
           {...(isFuelWidebody ? { weekday: WEEKDAY_MON_FIRST, weekdays: WEEKDAY_MON_FIRST } : {})}
         />
@@ -760,7 +745,7 @@ const WeeklyView = ({ deviceName, baseDate, isFuelWidebody }) => {
           series={[
             isPaver
               ? { key: 'fuel', label: '燃油消耗', unit: ' L', data: d.fuelTrend, color: '#ed8b24' }
-              : { key: 'hourlyFuel', label: useEnergy ? '平均每小时能耗' : '平均每小时油耗', unit: isElectric ? ' kWh/h' : ' L/h', data: d.fuelTrend.map((fuel, i) => Number((fuel / (d.workH[i] || 1)).toFixed(2))), color: '#ff862d' },
+              : { key: 'hourlyFuel', label: useEnergy ? '平均每小时能耗' : '平均每小时油耗', unit: isElectric ? ' kWh/h' : ' L/h', data: d.fuelTrend.map((fuel, i) => Number((fuel / (isFuelWidebody ? d.totalWorkH[i] : (d.workH[i] || 1))).toFixed(2))), color: '#ff862d' },
           ]}
           labels={['周一','周二','周三','周四','周五','周六','周日']}
           tooltipLabels={tooltipLabels}
@@ -793,19 +778,12 @@ const MonthlyView = ({ deviceName, baseDate, isFuelWidebody }) => {
         const periodic = getPeriodicFuelData('monthly', baseDate);
         if (!periodic) return dev?.monthly;
         return {
-          summary: [
-            ['能耗', String(periodic.summary.fuel ?? '—'), 'L'],
-            ['运行功耗', String(periodic.summary.runningFuel ?? '—'), 'L'],
-            ['空闲功耗', String(periodic.summary.idleFuel ?? '—'), 'L'],
-            ['平均每小时能耗', String(periodic.summary.avgHourlyFuel ?? '—'), 'L/h'],
-            ['工时', String(periodic.summary.workHours ?? '—'), 'h'],
-            ['怠速工时', String(periodic.summary.idleHours ?? '—'), 'h'],
-            ['总运输重量', formatWeight(periodic.summary.weight), 't'],
-          ],
+          summary: reportMetrics(periodic.summary, false).map(({ label, value, unit }) => [label, value, unit]),
           fuelTrend: periodic.rows.map((r) => r.fuel),
-          workH: periodic.rows.map((r) => r.workHours),
+          workH: periodic.rows.map((r) => r.operatingHours),
+          totalWorkH: periodic.rows.map((r) => r.workingHours),
           idleH: periodic.rows.map((r) => r.idleHours),
-          amountTrend: periodic.rows.map(() => null),
+          amountTrend: periodic.rows.map(r => r.workingHours),
           dates: periodic.dates,
         };
       })()
@@ -824,10 +802,10 @@ const MonthlyView = ({ deviceName, baseDate, isFuelWidebody }) => {
     <div className="space-y-3">
       <SummaryCard data={d.summary} period="monthly" title={deviceName === '挖掘机' ? '汇总' : '运营数据'} />
       <div className="rounded-2xl bg-white p-4 shadow-sm">
-        <div className="text-[15px] font-semibold mb-3">设备运行日历</div>
+        <div className="text-[15px] font-semibold mb-3">{isFuelWidebody ? `设备运行日历（${new Date(baseDate).getMonth() + 1}月）` : '设备运行日历'}</div>
         <MonthCalendar
           dailyData={dailyData}
-          amountUnit={dev?.amountUnit}
+          amountUnit={isFuelWidebody ? 'h' : dev?.amountUnit}
           resourceUnit={isElectric ? 'kWh' : 'L'}
           highlight
           {...(isFuelWidebody ? { baseDate } : {})}
@@ -839,7 +817,7 @@ const MonthlyView = ({ deviceName, baseDate, isFuelWidebody }) => {
           series={[
             isPaver
               ? { key: 'mFuel', label: '燃油消耗', unit: ' L', data: d.fuelTrend, color: '#ed8b24' }
-              : { key: 'mHourlyFuel', label: useEnergy ? '平均每小时能耗' : '平均每小时油耗', unit: isElectric ? ' kWh/h' : ' L/h', data: d.fuelTrend.map((fuel, i) => Number((fuel / (d.workH[i] || 1)).toFixed(2))), color: '#ff862d' },
+              : { key: 'mHourlyFuel', label: useEnergy ? '平均每小时能耗' : '平均每小时油耗', unit: isElectric ? ' kWh/h' : ' L/h', data: d.fuelTrend.map((fuel, i) => Number((fuel / (isFuelWidebody ? d.totalWorkH[i] : (d.workH[i] || 1))).toFixed(2))), color: '#ff862d' },
           ]}
           labels={monthLabels}
           tooltipLabels={tooltipLabels}

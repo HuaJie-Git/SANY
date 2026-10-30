@@ -4,8 +4,8 @@ import React, { useState } from 'react';
  * 共享轻量 SVG 趋势图组件 (STYLE-FUEL-002/004)
  * 遵从规范:
  * 1. 折线与面积 points/d 完全由传入的数据数组动态映射计算，杜绝任何硬编码静态路径
- * 2. 单系列支持折线 + 交互数值点选 (平均电耗、运载趟数)
- * 3. 双系列支持双轴双刻度：左轴实线圆点 (充电时长)，右轴虚线菱形点 + 面积填充 (回收电量)
+ * 2. 单系列支持折线 + 交互数值点选 (平均电耗、运输趟数)
+ * 3. 双系列支持双轴双刻度：左轴实线圆点 (充电时长)，右轴虚线菱形点 + 面积填充 (回收能量百分比)
  * 4. 燃油卡片规范：rounded-[14px], shadow-[0_1px_2px_rgba(31,41,55,0.035)], 无强制最小高度留白
  */
 
@@ -192,10 +192,10 @@ export function ElectricSingleLineChart({
 }
 
 export function ElectricDualAxisChart({
-  title = '充电时长与回收电量',
+  title = '充电时长与回收能量百分比',
   labels = [],
   series1 = { name: '充电时长', unit: 'h', data: [] },
-  series2 = { name: '回收电量', unit: 'kWh', data: [] },
+  series2 = { name: '回收能量百分比', unit: '%', data: [] },
 }) {
   const [selectedIndex, setSelectedIndex] = useState(null);
 
@@ -227,7 +227,7 @@ export function ElectricDualAxisChart({
   const maxRaw1 = Math.max(...data1, 0);
   const maxVal1 = maxRaw1 > 0 ? Math.ceil(maxRaw1 * 1.3 * 10) / 10 : 2.0;
 
-  // 右轴 (回收电量 kWh)
+  // 右轴按传入序列的数值与单位绘制，回收比例使用 %。
   const maxRaw2 = Math.max(...data2, 0);
   const maxVal2 = maxRaw2 > 0 ? Math.ceil(maxRaw2 * 1.25) : 30;
 
@@ -277,11 +277,11 @@ export function ElectricDualAxisChart({
           <span>0h</span>
         </div>
 
-        {/* 右 Y 轴刻度 (回收电量 kWh) */}
+        {/* 右 Y 轴刻度与第二序列单位保持一致 */}
         <div className="absolute right-0 top-[10px] bottom-[24px] flex flex-col justify-between text-[9px] text-[#f3c84b] font-mono select-none pointer-events-none text-right">
-          <span>{maxVal2}k</span>
-          <span>{Math.round(maxVal2 * 0.5)}k</span>
-          <span>0</span>
+          <span>{maxVal2}{series2.unit}</span>
+          <span>{Math.round(maxVal2 * 0.5)}{series2.unit}</span>
+          <span>0{series2.unit}</span>
         </div>
 
         <svg className="w-full h-44" viewBox={`0 0 ${width} ${height}`}>
@@ -354,7 +354,7 @@ export function ElectricDualAxisChart({
                 className="cursor-pointer focus:outline-none"
                 tabIndex={0}
                 role="button"
-                aria-label={`${p.label}: 充电 ${p.val}h, 回收 ${points2[idx]?.val || 0}kWh`}
+                aria-label={`${p.label}: ${series1.name} ${p.val}${series1.unit}, ${series2.name} ${points2[idx]?.val ?? '—'}${series2.unit}`}
                 onClick={() => setSelectedIndex(idx === selectedIndex ? null : idx)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {

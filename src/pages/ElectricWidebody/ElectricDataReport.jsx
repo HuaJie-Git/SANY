@@ -200,9 +200,9 @@ export default function ElectricDataReport({ device, onBack }) {
                   </div>
                 </div>
 
-                {/* 当日开工分布 (DEC-015: 更名为当日开工分布，色条/刻度/最下工作左怠速右) */}
+                {/* 工作分布 (DEC-015: 更名为工作分布，色条/刻度/最下工作左怠速右) */}
                 <div className="rounded-[14px] bg-white p-4 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
-                  <div className="text-[15px] font-semibold text-[#252b33] mb-3">当日开工分布</div>
+                  <div className="text-[15px] font-semibold text-[#252b33] mb-3">工作分布</div>
 
                   <div className="relative h-3 rounded-sm overflow-hidden bg-gray-100" style={{ direction: 'ltr' }}>
                     {(reportData.timelineSegments && reportData.timelineSegments.length > 0) ? (
@@ -294,7 +294,7 @@ export default function ElectricDataReport({ device, onBack }) {
 
                 {/* 设备运行日历 + 第一平均电耗折线图 同一白卡 (STYLE-FUEL-004) */}
                 <div className="rounded-[14px] bg-white p-4 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
-                  <div className="text-[15px] font-semibold text-[#252b33] mb-3">设备运行日历</div>
+                  <div className="text-[15px] font-semibold text-[#252b33] mb-3">设备运行日历（本周）</div>
                   <div className="grid grid-cols-7 gap-1 text-center">
                     {reportData.days.map((day, idx) => (
                       <button
@@ -311,7 +311,7 @@ export default function ElectricDataReport({ device, onBack }) {
                       >
                         <span className={`block text-[10px] font-medium ${selectedDayDetail?.fullDate === day.fullDate ? 'text-white' : 'text-[#252b33]'}`}>{day.name}</span>
                         <span className={`block text-[8px] ${selectedDayDetail?.fullDate === day.fullDate ? 'text-white/80' : 'text-[#7a8290]'}`}>{day.date}</span>
-                        <span className={`block text-[9px] font-medium mt-0.5 ${selectedDayDetail?.fullDate === day.fullDate ? 'text-white' : 'text-[#252b33]'}`}>{day.mileage}km</span>
+                        <span className={`block text-[9px] font-medium mt-0.5 ${selectedDayDetail?.fullDate === day.fullDate ? 'text-white' : 'text-[#252b33]'}`}>{day.workingHours}h</span>
                         <span className={`block text-[8px] ${selectedDayDetail?.fullDate === day.fullDate ? 'text-white/80' : 'text-[#7a8290]'}`}>{day.energy}kWh</span>
                       </button>
                     ))}
@@ -322,7 +322,7 @@ export default function ElectricDataReport({ device, onBack }) {
                     <div className="mt-3 p-2.5 bg-[#f8f9fa] rounded-lg border border-gray-200 text-[11px] text-[#252b33] flex items-center justify-between">
                       <div>
                         <strong>{selectedDayDetail.fullDate}</strong>:
-                        <span className="ml-1.5">{selectedDayDetail.mileage} km · {selectedDayDetail.energy} kWh</span>
+                        <span className="ml-1.5">{selectedDayDetail.workingHours} h · {selectedDayDetail.energy} kWh</span>
                       </div>
                       <button
                         type="button"
@@ -346,9 +346,9 @@ export default function ElectricDataReport({ device, onBack }) {
                   />
                 </div>
 
-                {/* 趋势图 2：运载趟数趋势 (独占白卡) */}
+                {/* 趋势图 2：运输趟数趋势 (独占白卡) */}
                 <ElectricSingleLineChart
-                  title="运载趟数趋势"
+                  title="运输趟数趋势"
                   unit="趟"
                   data={reportData.tripsTrend}
                   labels={reportData.days.map((d) => d.name)}
@@ -356,12 +356,12 @@ export default function ElectricDataReport({ device, onBack }) {
                   decimals={0}
                 />
 
-                {/* 趋势图 3：充电时长与回收电量双系列双轴趋势 (独占白卡) */}
+                {/* 趋势图 3：充电时长与回收能量百分比双系列双轴趋势 (独占白卡) */}
                 <ElectricDualAxisChart
-                  title="充电时长与回收电量"
+                  title="充电时长与回收能量百分比趋势"
                   labels={reportData.days.map((d) => d.name)}
                   series1={{ name: '充电时长', unit: 'h', data: reportData.chargeDurationTrend }}
-                  series2={{ name: '回收电量', unit: 'kWh', data: reportData.recoveryEnergyTrend }}
+                  series2={{ name: '回收能量百分比', unit: '%', data: reportData.recoveryRateTrend }}
                 />
               </>
             )}
@@ -404,7 +404,7 @@ export default function ElectricDataReport({ device, onBack }) {
 
                 {/* 设备运行月历矩阵 + 第一平均电耗折线图 同一白卡 (STYLE-FUEL-004) */}
                 <div className="rounded-[14px] bg-white p-4 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
-                  <div className="text-[15px] font-semibold text-[#252b33] mb-3">设备运行日历</div>
+                  <div className="text-[15px] font-semibold text-[#252b33] mb-3">设备运行日历（{currentDate.getMonth() + 1}月）</div>
 
                   <div className="grid grid-cols-7 gap-1 text-center mb-1 text-[10px] text-[#999] font-medium">
                     <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
@@ -431,7 +431,7 @@ export default function ElectricDataReport({ device, onBack }) {
                         }`}
                       >
                         <span className={`text-[10px] font-medium leading-tight ${selectedDayDetail?.dateStr === day.dateStr ? 'text-white' : 'text-[#252b33]'}`}>{day.day}</span>
-                        <span className={`text-[8px] leading-tight ${selectedDayDetail?.dateStr === day.dateStr ? 'text-white' : 'text-[#252b33]'}`}>{day.mileage}km</span>
+                        <span className={`text-[8px] leading-tight ${selectedDayDetail?.dateStr === day.dateStr ? 'text-white' : 'text-[#252b33]'}`}>{day.workingHours}h</span>
                         <span className={`text-[8px] leading-tight ${selectedDayDetail?.dateStr === day.dateStr ? 'text-white/80' : 'text-[#999]'}`}>{day.energy}kWh</span>
                       </button>
                     ))}
@@ -442,7 +442,7 @@ export default function ElectricDataReport({ device, onBack }) {
                     <div className="mt-3 p-2.5 bg-[#f8f9fa] rounded-lg border border-gray-200 text-[11px] text-[#252b33] flex items-center justify-between">
                       <div>
                         <strong>{selectedDayDetail.dateStr}</strong>:
-                        <span className="ml-1.5">{selectedDayDetail.mileage} km · {selectedDayDetail.energy} kWh</span>
+                        <span className="ml-1.5">{selectedDayDetail.workingHours} h · {selectedDayDetail.energy} kWh</span>
                       </div>
                       <button
                         type="button"
@@ -466,9 +466,9 @@ export default function ElectricDataReport({ device, onBack }) {
                   />
                 </div>
 
-                {/* 图 2：月度运载趟数走势 (独占白卡) */}
+                {/* 图 2：月度运输趟数走势 (独占白卡) */}
                 <ElectricSingleLineChart
-                  title="运载趟数走势"
+                  title="运输趟数走势"
                   unit="趟"
                   data={reportData.tripsTrend}
                   labels={reportData.days.map((d) => `${d.day}日`)}
@@ -476,12 +476,12 @@ export default function ElectricDataReport({ device, onBack }) {
                   decimals={0}
                 />
 
-                {/* 图 3：月度充电时长与回收电量双系列双轴走势 (独占白卡) */}
+                {/* 图 3：月度充电时长与回收能量百分比双系列双轴走势 (独占白卡) */}
                 <ElectricDualAxisChart
-                  title="充电时长与回收电量"
+                  title="充电时长与回收能量百分比趋势"
                   labels={reportData.days.map((d) => `${d.day}日`)}
                   series1={{ name: '充电时长', unit: 'h', data: reportData.chargeDurationTrend }}
-                  series2={{ name: '回收电量', unit: 'kWh', data: reportData.recoveryEnergyTrend }}
+                  series2={{ name: '回收能量百分比', unit: '%', data: reportData.recoveryRateTrend }}
                 />
               </>
             )}

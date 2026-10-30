@@ -1,9 +1,10 @@
+import { completeDay, summarizeDays } from './widebodyMetrics.js';
 /**
  * 燃油宽体车 (KT090AE20208) 专属报表数据引擎
  * 遵循 PC-DEC-008 / V5-R01 / A01 / V5-REVIEW-001:
  * 1. 采用与 PC 端 widebody.js 完全相同的确定性 hash 函数与日记录生成算法；
  * 2. 统一专属文案为“能耗 / 平均每小时能耗”，单位 L 与 L/h；
- * 3. 基准日 2023-11-23 与 PC 端严格一致 (能耗 7.0L, 平均每小时能耗 50.0L/h, 工时 0.14h, 怠速工时 0.16h, 油位 74%)；
+ * 3. 基准日 2023-11-23 与 PC 端严格一致 (能耗 7.0L, 每小时能耗 23.33L/h, 工时 0.14h, 怠速工时 0.16h, 油位 74%)；
  * 4. 周期数据 (周/月) 由每日记录动态确定性聚合，周汇总四项指标与 PC 端同周聚合完全一致；
  * 5. 连续工时分布分段 (09:00 起始，0.14h 工作，0.16h 怠速)，不加假整小时。
  */
@@ -177,9 +178,9 @@ export function safeAvg(sum, count, decimals = 2) {
 
 /**
  * 燃油宽体车单日统计生成引擎（与 PC widebody.js 契约完全一致）
- * 2023-11-23 基准日严格对齐：能耗 7L, 平均每小时能耗 50.0L/h, 工时 0.14h, 怠速工时 0.16h
+ * 2023-11-23 基准日严格对齐：能耗 7L, 每小时能耗 23.33L/h, 工时 0.14h, 怠速工时 0.16h
  */
-export function getFuelDayStats(dateInput) {
+function basegetFuelDayStats(dateInput) {
   const dateStr = normalizeDateStr(dateInput);
   if (!dateStr) return null;
 
@@ -187,29 +188,30 @@ export function getFuelDayStats(dateInput) {
     return {
       date: dateStr,
       fuel: 7.0,
-      avgHourlyFuel: 50.0,
+      avgHourlyFuel: 23.3,
       workHours: 0.14,
       idleHours: 0.16,
       runningHours: 0.3,
       mileage: 2.4,
       runningFuel: 6.2,
       idleFuel: 0.8,
-      utilizationRate: 214.3,
+      utilizationRate: 42.0,
       fuelLevel: 74,
-      weight: null,
+      weight: 144.5,
+      trips: 2,
     };
   }
 
   const seed = hashDateString(dateStr);
-  const fuel = parseFloat((5.0 + (seed % 6) + (seed % 5) * 0.2).toFixed(1));
   const workHours = parseFloat((0.10 + (seed % 5) * 0.02).toFixed(2));
   const idleHours = parseFloat((0.12 + (seed % 5) * 0.02).toFixed(2));
   const runningHours = parseFloat((workHours + idleHours).toFixed(2));
-  const avgHourlyFuel = workHours > 0 ? parseFloat((fuel / workHours).toFixed(1)) : null;
   const mileage = parseFloat((1.8 + (seed % 4) * 0.4).toFixed(1));
   const runningFuel = parseFloat((4.0 + (seed % 5) * 0.5).toFixed(1));
   const idleFuel = parseFloat((0.4 + (seed % 4) * 0.2).toFixed(1));
-  const utilizationRate = getMachineUtilization(runningHours, workHours);
+  const fuel = Number((runningFuel + idleFuel).toFixed(1));
+  const avgHourlyFuel = runningHours > 0 ? Number((fuel / runningHours).toFixed(1)) : null;
+  const utilizationRate = getMachineUtilization(Number((workHours * 0.9).toFixed(3)), runningHours);
   const fuelLevel = 60 + (seed % 30);
 
   return {
@@ -224,14 +226,15 @@ export function getFuelDayStats(dateInput) {
     idleFuel,
     utilizationRate,
     fuelLevel,
-    weight: null,
+    weight: Number((135 + seed % 150).toFixed(1)),
+    trips: 2 + seed % 4,
   };
 }
 
 /**
  * 周期聚合（燃油宽体车，与 PC widebody.js:getPeriodicFuelData 契约完全一致）
  */
-export function getPeriodicFuelData(period, baseDateInput) {
+function basegetPeriodicFuelData(period, baseDateInput) {
   const dates = getPeriodDates(period, baseDateInput);
   const rows = dates.map((dateStr) => getFuelDayStats(dateStr)).filter(Boolean);
 
@@ -244,8 +247,9 @@ export function getPeriodicFuelData(period, baseDateInput) {
   const totalMileage = safeSum(rows.map((r) => r.mileage), 1);
   const totalWeight = safeSum(rows.map((r) => r.weight), 1);
 
-  const avgHourlyFuel = safeAvg(totalFuel, totalWorkHours, 1);
-  const utilizationRate = getMachineUtilization(totalRunningHours, totalWorkHours);
+  const avgHourlyFuel = safeAvg(totalFuel, totalRunningHours, 1);
+  const totalDrivingHours = safeSum(rows.map((r) => r.drivingHours), 3);
+  const utilizationRate = getMachineUtilization(totalDrivingHours, totalRunningHours);
 
   return {
     period,
@@ -430,4 +434,11 @@ export function getFuelOperationsData(startDateStr, endDateStr) {
     avgCycleTime: null,
     avgPayload: null,
   };
+}
+
+export function getFuelDayStats(dateInput) { return completeDay(basegetFuelDayStats(dateInput), false); }
+
+export function getPeriodicFuelData(period, dateInput) {
+  const result = basegetPeriodicFuelData(period, dateInput);
+  return { ...result, summary: { ...result.summary, ...summarizeDays(result.rows, false) } };
 }

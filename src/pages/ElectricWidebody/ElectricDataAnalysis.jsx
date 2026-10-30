@@ -463,7 +463,7 @@ export default function ElectricDataAnalysis({ device, onBack }) {
   }
 
   // 充电数据详情分支 (V2-R03 / REVIEW-V2-01: 父级持有已应用区间，返回保留)
-  if (analysisView === 'charging') {
+  if (!isFuel && analysisView === 'charging') {
     return (
       <ElectricChargingData
         device={device}

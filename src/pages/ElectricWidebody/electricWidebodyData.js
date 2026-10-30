@@ -1,8 +1,9 @@
+import { completeDay, summarizeDays, reportMetrics, todayMetrics, cumulativeMetrics } from './widebodyMetrics.js';
 /**
  * 电动宽体车 (POPJ0841016452) 专用数据与动态联动引擎
  * 遵从 DEC-004 与 REVIEW-002:
  * 1. 名称统一为「电动宽体车」
- * 2. 术语严格统一为「电耗」「平均电耗」「总电耗」「充电时长 (h)」「回收电量 (kWh)」
+ * 2. 今日及周期使用能耗、充电桩能耗、回收能量与回收比例，累计充电量只作为计算输入。
  * 3. 统一规范化 YYYY-MM-DD 日样例生成函数 getDailyVehicleStats，保证日报、周历、月历在同日完全相等 (F2-03)
  * 4. 周/月汇总由日历真实累加，未计算基期则环比展示「—」(F2-03)
  * 5. 轨迹窗口去除 0.5h 下限，精准支持 10 分钟等任意时间区间 (F2-02)
@@ -106,7 +107,7 @@ export function getMachineUtilizationRate(runtimeHours, workHours) {
  * 统一日样例生成函数 (F2-03)
  * 规范化 YYYY-MM-DD 后哈希，日报、周历、月历均从相同日记录派生
  */
-export function getDailyVehicleStats(dateInput) {
+function basegetDailyVehicleStats(dateInput) {
   const dateStr = normalizeDateStr(dateInput);
   const [year, month, day] = dateStr.split('-').map(Number);
 
@@ -120,10 +121,10 @@ export function getDailyVehicleStats(dateInput) {
       month,
       day,
       mileage: 48.6,
-      energy: 186.4,
+      energy: 210,
       trips: 6,
       weight: 72.5,
-      avgEnergy: 3.84,
+      avgEnergy: 4.32,
       chargeDuration: 1.2,
       recoveryEnergy: 24.5,
       workHours,
@@ -131,9 +132,7 @@ export function getDailyVehicleStats(dateInput) {
       runtimeHours,
       maxSpeed: 42,
       batteryHealth: 96,
-      drivingEnergy: 161.9,
-      idleEnergy: 24.5,
-      utilizationRate: getMachineUtilizationRate(runtimeHours, workHours),
+      utilizationRate: getMachineUtilizationRate(4, runtimeHours),
       chargingEnergy: 210.0,
       endOfDaySoc: 62.0,
     };
@@ -141,7 +140,7 @@ export function getDailyVehicleStats(dateInput) {
 
   const seed = hashDateString(dateStr);
   const mileage = parseFloat((36 + (seed % 20) + (seed % 10) * 0.1).toFixed(1));
-  const energy = parseFloat((140 + (seed % 60) + (seed % 7) * 0.1).toFixed(1));
+  const energy = parseFloat((170 + (seed % 70) + (seed % 7) * 0.1).toFixed(1));
   const trips = 4 + (seed % 5);
   const weight = parseFloat((trips * 12 + (seed % 10) * 0.5).toFixed(1));
   const avgEnergy = mileage > 0 ? parseFloat((energy / mileage).toFixed(2)) : null;
@@ -152,11 +151,7 @@ export function getDailyVehicleStats(dateInput) {
   const runtimeHours = parseFloat((workHours + idleHours).toFixed(1));
   const maxSpeed = 38 + (seed % 8);
   const batteryHealth = 92 + (seed % 7);
-  // 运行/空闲功耗按独立口径保留
-  const drivingEnergy = parseFloat((120 + (seed % 50)).toFixed(1));
-  const idleEnergy = parseFloat((18 + (seed % 10)).toFixed(1));
-  // DEC-011: 机器利用率 = runtimeHours / workHours * 100，允许超过100%，不clamp；分母<=0时为 null
-  const utilizationRate = getMachineUtilizationRate(runtimeHours, workHours);
+  const utilizationRate = getMachineUtilizationRate(Number((workHours * 0.9).toFixed(2)), runtimeHours);
   const chargingEnergy = parseFloat((chargeDuration * 175.0).toFixed(1));
   const endOfDaySoc = 45 + (seed % 40);
 
@@ -177,8 +172,6 @@ export function getDailyVehicleStats(dateInput) {
     runtimeHours,
     maxSpeed,
     batteryHealth,
-    drivingEnergy,
-    idleEnergy,
     utilizationRate,
     chargingEnergy,
     endOfDaySoc,
@@ -188,45 +181,14 @@ export function getDailyVehicleStats(dateInput) {
 // 基准日单例对象，供今日指标共源派生 (REVIEW-V2-01)
 const baselineToday = getDailyVehicleStats('2023-11-23');
 
-// 实时工况指标 (V2-R01 / REVIEW-V2-01: 8项，含剩余电量与电池健康SOH，数值在上、标签在下)
+// 实时工况保留电池、电量、车速与上报运输重量；运输趟数归入今日数据。
 export const ELECTRIC_REALTIME_METRICS = [
   { label: '剩余电量', value: '78', unit: '%' },
-  {
-    label: '电池健康',
-    value:
-      baselineToday.batteryHealth !== null && baselineToday.batteryHealth !== undefined
-        ? String(baselineToday.batteryHealth)
-        : '—',
-    unit: '%',
-  },
+  { label: '电池健康', value: String(baselineToday.batteryHealth), unit: '%' },
   { label: '车速', value: '24', unit: 'km/h' },
-  { label: '油门深度', value: '42', unit: '%' },
-  { label: '制动深度', value: '0', unit: '%' },
-  { label: '运载趟数', value: '6', unit: '趟' },
-  { label: '运输重量', value: '72.5', unit: 't' },
+  { label: '运输重量', value: String(baselineToday.weight), unit: 't' },
 ];
-
-// 今日数据指标 (V2-R01 / REVIEW-V2-01: 11项，从基准日 getDailyVehicleStats 派生共源，数值在上、标签在下)
-export const ELECTRIC_TODAY_METRICS = [
-  { label: '里程', value: String(baselineToday.mileage), unit: 'km' },
-  { label: '电耗', value: String(baselineToday.energy), unit: 'kWh' },
-  { label: '运行功耗', value: String(baselineToday.drivingEnergy), unit: 'kWh' },
-  { label: '空闲功耗', value: String(baselineToday.idleEnergy), unit: 'kWh' },
-  { label: '工时', value: String(baselineToday.workHours), unit: 'h' },
-  { label: '怠速工时', value: String(baselineToday.idleHours), unit: 'h' },
-  { label: '运行时长', value: String(baselineToday.runtimeHours), unit: 'h' },
-  {
-    label: '机器利用率',
-    value:
-      baselineToday.utilizationRate !== null && baselineToday.utilizationRate !== undefined
-        ? String(baselineToday.utilizationRate)
-        : '—',
-    unit: '%',
-  },
-  { label: '充电时长', value: String(baselineToday.chargeDuration), unit: 'h' },
-  { label: '回收电量', value: String(baselineToday.recoveryEnergy), unit: 'kWh' },
-  { label: '最高车速', value: String(baselineToday.maxSpeed), unit: 'km/h' },
-];
+export const ELECTRIC_TODAY_METRICS = todayMetrics(baselineToday, true);
 
 // 24小时分布：0:关机, 1:工作/重载, 2:怠速/装载
 export const ELECTRIC_TODAY_TIMELINE = [
@@ -234,15 +196,8 @@ export const ELECTRIC_TODAY_TIMELINE = [
   1, 1, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0,
 ];
 
-// 累计数据指标 (V2-R01: 6项，数值在上、标签在下)
-export const ELECTRIC_CUMULATIVE_METRICS = [
-  { label: '总运行时长', value: '1,240.5', unit: 'h' },
-  { label: '总运载趟数', value: '318', unit: '趟' },
-  { label: '总运输重量', value: '22,860', unit: 't' },
-  { label: '总里程', value: '28,450', unit: 'km' },
-  { label: '总电耗', value: '108,920', unit: 'kWh' },
-  { label: '总充电电量', value: '121,500', unit: 'kWh' },
-];
+// 累计展示从最终字段清单派生，不单独展示累计充电量。
+export const ELECTRIC_CUMULATIVE_METRICS = cumulativeMetrics(true);
 
 /**
  * 真实日期驱动报表数据生成器 (FIX-001 / F2-01 / F2-03)
@@ -265,7 +220,7 @@ export function formatReportEnergy(value) {
   return energy === null ? '—' : energy.toFixed(1);
 }
 
-export function getReportDataByDate(dateObj, tab) {
+function basegetReportDataByDate(dateObj, tab) {
   const year = dateObj.getFullYear();
   const month = dateObj.getMonth(); // 0-11
   const day = dateObj.getDate();
@@ -277,17 +232,7 @@ export function getReportDataByDate(dateObj, tab) {
     return {
       dateStr: dateKey,
       dateLabel: `${year}年${month + 1}月${day}日`,
-      kpis: [
-        { label: '里程', value: dailyStat.mileage.toFixed(1), unit: 'km' },
-        { label: '电耗', value: dailyStat.energy.toFixed(1), unit: 'kWh' },
-        { label: '运行功耗', value: formatReportEnergy(dailyStat.drivingEnergy), unit: 'kWh' },
-        { label: '空闲功耗', value: formatReportEnergy(dailyStat.idleEnergy), unit: 'kWh' },
-        { label: '运载趟数', value: String(dailyStat.trips), unit: '趟' },
-        { label: '运输重量', value: dailyStat.weight.toFixed(1), unit: 't' },
-        { label: '平均电耗', value: dailyStat.avgEnergy.toFixed(2), unit: 'kWh/km' },
-        { label: '充电时长', value: dailyStat.chargeDuration.toFixed(1), unit: 'h' },
-        { label: '回收电量', value: dailyStat.recoveryEnergy.toFixed(1), unit: 'kWh' },
-      ],
+      kpis: reportMetrics(dailyStat, true),
       timeline: ELECTRIC_TODAY_TIMELINE,
       timelineSegments: getElectricTimelineSegments(dateKey),
       socCurve: getDailySocCurve(dateKey),
@@ -305,14 +250,7 @@ export function getReportDataByDate(dateObj, tab) {
     const avgEnergyTrend = [];
     const tripsTrend = [];
     const chargeDurationTrend = [];
-    const recoveryEnergyTrend = [];
-
-    let totalMileage = 0;
-    let totalEnergy = 0;
-    let totalTrips = 0;
-    let totalWeight = 0;
-    let totalCharge = 0;
-    let totalRecovery = 0;
+    const recoveryRateTrend = [];
 
     const weekdayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
     for (let i = 0; i < 7; i++) {
@@ -320,14 +258,8 @@ export function getReportDataByDate(dateObj, tab) {
       const dKey = normalizeDateStr(d);
       const dailyStat = getDailyVehicleStats(dKey);
 
-      totalMileage += dailyStat.mileage;
-      totalEnergy += dailyStat.energy;
-      totalTrips += dailyStat.trips;
-      totalWeight += dailyStat.weight;
-      totalCharge += dailyStat.chargeDuration;
-      totalRecovery += dailyStat.recoveryEnergy;
-
       weekDays.push({
+        ...dailyStat,
         name: weekdayNames[i],
         date: `${d.getMonth() + 1}/${d.getDate()}`,
         fullDate: dKey,
@@ -336,8 +268,7 @@ export function getReportDataByDate(dateObj, tab) {
         weight: dailyStat.weight,
         mileage: dailyStat.mileage,
         energy: dailyStat.energy,
-        drivingEnergy: dailyStat.drivingEnergy,
-        idleEnergy: dailyStat.idleEnergy,
+
         chargeDuration: dailyStat.chargeDuration,
         recovery: dailyStat.recoveryEnergy,
         recoveryEnergy: dailyStat.recoveryEnergy,
@@ -348,31 +279,20 @@ export function getReportDataByDate(dateObj, tab) {
       avgEnergyTrend.push(dailyStat.avgEnergy);
       tripsTrend.push(dailyStat.trips);
       chargeDurationTrend.push(dailyStat.chargeDuration);
-      recoveryEnergyTrend.push(dailyStat.recoveryEnergy);
+      recoveryRateTrend.push(dailyStat.recoveryRate);
     }
 
     const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
-    const avgWeeklyEnergy = totalMileage > 0 ? (totalEnergy / totalMileage).toFixed(2) : '0.00';
 
     return {
       dateStr: dateKey,
       dateLabel: `${monday.getFullYear()}年${monday.getMonth() + 1}月${monday.getDate()}日 - ${sunday.getMonth() + 1}月${sunday.getDate()}日`,
-      summary: [
-        { label: '总里程', value: totalMileage.toFixed(1), unit: 'km', wow: '—', isUp: null },
-        { label: '总电耗', value: totalEnergy.toFixed(1), unit: 'kWh', wow: '—', isUp: null },
-        { label: '运行功耗', value: formatReportEnergy(sumReportEnergy(weekDays.map((d) => d.drivingEnergy))), unit: 'kWh', wow: '—', isUp: null },
-        { label: '空闲功耗', value: formatReportEnergy(sumReportEnergy(weekDays.map((d) => d.idleEnergy))), unit: 'kWh', wow: '—', isUp: null },
-        { label: '运载趟数', value: String(totalTrips), unit: '趟', wow: '—', isUp: null },
-        { label: '总运输重量', value: totalWeight.toFixed(1), unit: 't', wow: '—', isUp: null },
-        { label: '平均电耗', value: avgWeeklyEnergy, unit: 'kWh/km', wow: '—', isUp: null },
-        { label: '充电时长', value: totalCharge.toFixed(1), unit: 'h', wow: '—', isUp: null },
-        { label: '回收电量', value: totalRecovery.toFixed(1), unit: 'kWh', wow: '—', isUp: null },
-      ],
+      summary: reportMetrics(summarizeDays(weekDays, true), true),
       days: weekDays,
       avgEnergyTrend,
       tripsTrend,
       chargeDurationTrend,
-      recoveryEnergyTrend,
+      recoveryRateTrend,
       socTrend: weekDays.map((d) => ({
         label: d.name,
         date: d.date,
@@ -392,35 +312,21 @@ export function getReportDataByDate(dateObj, tab) {
   const avgEnergyTrend = [];
   const tripsTrend = [];
   const chargeDurationTrend = [];
-  const recoveryEnergyTrend = [];
-
-  let totalMileage = 0;
-  let totalEnergy = 0;
-  let totalTrips = 0;
-  let totalWeight = 0;
-  let totalCharge = 0;
-  let totalRecovery = 0;
+  const recoveryRateTrend = [];
 
   for (let i = 1; i <= daysInMonth; i++) {
     const dKey = normalizeDateStr(new Date(year, month, i));
     const dailyStat = getDailyVehicleStats(dKey);
 
-    totalMileage += dailyStat.mileage;
-    totalEnergy += dailyStat.energy;
-    totalTrips += dailyStat.trips;
-    totalWeight += dailyStat.weight;
-    totalCharge += dailyStat.chargeDuration;
-    totalRecovery += dailyStat.recoveryEnergy;
-
     monthDays.push({
+      ...dailyStat,
       day: i,
       dateStr: dKey,
       trips: dailyStat.trips,
       weight: dailyStat.weight,
       mileage: dailyStat.mileage,
       energy: dailyStat.energy,
-      drivingEnergy: dailyStat.drivingEnergy,
-      idleEnergy: dailyStat.idleEnergy,
+
       chargeDuration: dailyStat.chargeDuration,
       recovery: dailyStat.recoveryEnergy,
       recoveryEnergy: dailyStat.recoveryEnergy,
@@ -431,32 +337,20 @@ export function getReportDataByDate(dateObj, tab) {
     avgEnergyTrend.push(dailyStat.avgEnergy);
     tripsTrend.push(dailyStat.trips);
     chargeDurationTrend.push(dailyStat.chargeDuration);
-    recoveryEnergyTrend.push(dailyStat.recoveryEnergy);
+    recoveryRateTrend.push(dailyStat.recoveryRate);
   }
-
-  const avgMonthlyEnergy = totalMileage > 0 ? (totalEnergy / totalMileage).toFixed(2) : '0.00';
 
   return {
     dateStr: `${year}-${String(month + 1).padStart(2, '0')}`,
     dateLabel: `${year}年${month + 1}月`,
     daysInMonth,
     firstDayOfWeek,
-    summary: [
-      { label: '总里程', value: totalMileage.toFixed(1), unit: 'km', mom: '—', isUp: null },
-      { label: '总电耗', value: totalEnergy.toFixed(1), unit: 'kWh', mom: '—', isUp: null },
-      { label: '运行功耗', value: formatReportEnergy(sumReportEnergy(monthDays.map((d) => d.drivingEnergy))), unit: 'kWh', mom: '—', isUp: null },
-      { label: '空闲功耗', value: formatReportEnergy(sumReportEnergy(monthDays.map((d) => d.idleEnergy))), unit: 'kWh', mom: '—', isUp: null },
-      { label: '运载趟数', value: String(totalTrips), unit: '趟', mom: '—', isUp: null },
-      { label: '总运输重量', value: totalWeight.toFixed(1), unit: 't', mom: '—', isUp: null },
-      { label: '平均电耗', value: avgMonthlyEnergy, unit: 'kWh/km', mom: '—', isUp: null },
-      { label: '充电时长', value: totalCharge.toFixed(1), unit: 'h', mom: '—', isUp: null },
-      { label: '回收电量', value: totalRecovery.toFixed(1), unit: 'kWh', mom: '—', isUp: null },
-    ],
+    summary: reportMetrics(summarizeDays(monthDays, true), true),
     days: monthDays,
     avgEnergyTrend,
     tripsTrend,
     chargeDurationTrend,
-    recoveryEnergyTrend,
+    recoveryRateTrend,
     socTrend: monthDays.map((d) => ({
       label: `${d.day}日`,
       date: `${month + 1}/${d.day}`,
@@ -1198,7 +1092,7 @@ export const getElectricDayStats = getDailyVehicleStats;
  * 轨迹回放动态数据引擎 (FIX-003 / F2-02 / V5-REVIEW-001)
  * 1. 严格校验起止时间：结束时间 <= 开始时间返回就地错误，不生造里程/电耗
  * 2. 跨度限制：单次查询跨度不得超过31天
- * 3. 统计共源：按每日重叠比例自洽汇总里程/电耗，整天基准日严格对齐 48.6km / 186.4kWh / 24.5kWh
+ * 3. 统计共源：按每日重叠比例自洽汇总里程/电耗，整天基准日严格对齐 48.6km / 210kWh / 24.5kWh
  */
 export function getTrackDataByRange(startDate, startTime, endDate, endTime) {
   const normStart = normalizeDateStr(startDate);
@@ -1454,3 +1348,9 @@ export const ELECTRIC_BEHAVIOR_METRICS = {
   sharpTurnCount: 1,
   smoothOperationHours: '5.1',
 };
+
+export function getDailyVehicleStats(dateInput) { return completeDay(basegetDailyVehicleStats(dateInput), true); }
+
+export function getReportDataByDate(date, tab) {
+  return basegetReportDataByDate(date, tab);
+}

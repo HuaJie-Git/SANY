@@ -44,70 +44,27 @@ console.log('=== 开始执行 V2 纯数据契约测试 (DEC-010 / DEC-011 / REVI
 // -----------------------------------------------------------------------------
 console.log('【1. 详情指标契约 (8 / 11 / 6)】');
 
-// 实时指标 8 项检查（含电池健康）
-const realtimeLabels = ['剩余电量', '电池健康', '车速', '油门深度', '制动深度', '运载趟数', '运输重量'];
-assert(ELECTRIC_REALTIME_METRICS.length === 7, '实时常量列表包含 7 项（结合状态字段共 8 项）');
-realtimeLabels.forEach((label) => {
-  const found = ELECTRIC_REALTIME_METRICS.find((m) => m.label === label);
-  assert(Boolean(found), `实时指标包含「${label}」`);
-});
-
-const sohMetric = ELECTRIC_REALTIME_METRICS.find((m) => m.label === '电池健康');
-const sohVal = Number(sohMetric.value);
-assert(!isNaN(sohVal) && sohVal >= 0 && sohVal <= 100, `电池健康 SOH 合法范围 0~100 (当前 ${sohVal}%)`);
-
-// 今日指标 11 项检查
-const expectedTodayLabels = [
-  '里程', '电耗', '运行功耗', '空闲功耗', '工时', '怠速工时',
-  '运行时长', '机器利用率', '充电时长', '回收电量', '最高车速',
-];
-assert(ELECTRIC_TODAY_METRICS.length === 11, '今日数据指标严格包含 11 项');
-expectedTodayLabels.forEach((label, idx) => {
-  assert(ELECTRIC_TODAY_METRICS[idx].label === label, `今日指标顺序第 ${idx + 1} 位为「${label}」`);
-});
-
-// 累计指标 6 项检查（含总充电电量）
-const cumulativeLabels = ['总运行时长', '总运载趟数', '总运输重量', '总里程', '总电耗', '总充电电量'];
-assert(ELECTRIC_CUMULATIVE_METRICS.length === 6, '累计数据指标严格包含 6 项');
-cumulativeLabels.forEach((label) => {
-  const found = ELECTRIC_CUMULATIVE_METRICS.find((m) => m.label === label);
-  assert(Boolean(found), `累计指标包含「${label}」`);
-});
-
-// 基准日 2023-11-23 详情数据自洽
+// 详情字段与能量/运输公式契约。
+const realtimeLabels = ['剩余电量', '电池健康', '车速', '运输重量'];
+assert(ELECTRIC_REALTIME_METRICS.length === 4, '实时保留4项数据加设备状态');
+realtimeLabels.forEach(label => assert(ELECTRIC_REALTIME_METRICS.some(m => m.label === label), `实时保留${label}`));
+assert(!ELECTRIC_REALTIME_METRICS.some(m => ['油门深度', '制动深度', '运输趟数'].includes(m.label)), '实时移除明确指定字段');
+const expectedTodayLabels = ['工作时长', '运转时长', '怠速时长', '机器利用率', '行驶里程', '最高车速', '运输趟数', '能耗', '每小时能耗', '充电桩能耗', '回收能量', '回收能量百分比', '单趟载重'];
+assert(ELECTRIC_TODAY_METRICS.length === 13, '今日展示13项，运输重量只在实时展示，充电时长移除');
+expectedTodayLabels.forEach(label => assert(ELECTRIC_TODAY_METRICS.some(m => m.label === label), `今日包含${label}`));
+const cumulativeLabels = ['总工作时长', '总运转时长', '总行驶里程', '总运输趟数', '总能耗', '每小时能耗', '充电桩总能耗', '总回收能量', '回收能量百分比', '单趟载重'];
+assert(ELECTRIC_CUMULATIVE_METRICS.length === 10, '累计严格展示10项');
+cumulativeLabels.forEach(label => assert(ELECTRIC_CUMULATIVE_METRICS.some(m => m.label === label), `累计包含${label}`));
 const stat20231123 = getDailyVehicleStats('2023-11-23');
-assert(stat20231123.runtimeHours === 5.3, '基准日运行时长为 5.3h');
-assert(stat20231123.workHours === 4.5, '基准日工时为 4.5h');
-assert(stat20231123.utilizationRate === 117.8, '基准日机器利用率 5.3/4.5*100 = 117.8% (DEC-011)');
-assert(stat20231123.chargeDuration === 1.2, '基准日充电时长为 1.2h');
-assert(stat20231123.chargingEnergy === 210.0, '基准日充电电量为 210.0kWh');
-assert(stat20231123.drivingEnergy === 161.9 && stat20231123.idleEnergy === 24.5, '保留用户自有功耗示例 161.9 / 24.5');
-
-// REVIEW-V2-01: 单源派生契约测试 (ELECTRIC_TODAY_METRICS / ELECTRIC_REALTIME_METRICS 共源)
-assert(
-  ELECTRIC_TODAY_METRICS.find((m) => m.label === '里程').value === String(stat20231123.mileage),
-  '今日里程从基准日派生共源'
-);
-assert(
-  ELECTRIC_TODAY_METRICS.find((m) => m.label === '电耗').value === String(stat20231123.energy),
-  '今日电耗从基准日派生共源'
-);
-assert(
-  ELECTRIC_TODAY_METRICS.find((m) => m.label === '运行功耗').value === String(stat20231123.drivingEnergy),
-  '今日运行功耗从基准日派生共源'
-);
-assert(
-  ELECTRIC_TODAY_METRICS.find((m) => m.label === '空闲功耗').value === String(stat20231123.idleEnergy),
-  '今日空闲功耗从基准日派生共源'
-);
-assert(
-  ELECTRIC_TODAY_METRICS.find((m) => m.label === '机器利用率').value === String(stat20231123.utilizationRate),
-  '今日机器利用率从基准日派生共源'
-);
-assert(
-  ELECTRIC_REALTIME_METRICS.find((m) => m.label === '电池健康').value === String(stat20231123.batteryHealth),
-  '实时电池健康从基准日派生共源'
-);
+assert(stat20231123.workingHours === 5.3 && stat20231123.operatingHours === 4.5, '工作与运转工时对应正确');
+assert(stat20231123.utilizationRate === 75.5, '利用率正常示例采用有效行驶小时作为分子');
+assert(stat20231123.hourlyEnergy === 39.62, '210kWh / 5.3h = 39.62kWh/h');
+assert(stat20231123.recoveryEnergy === 24.5 && stat20231123.recoveryRate === 11.67, '回收与桩电量比例正确');
+assert(stat20231123.payloadPerTrip === 12.08, '72.5t / 6趟 = 12.08t/趟');
+assert(stat20231123.chargeDuration === 1.2 && stat20231123.chargingEnergy === 210, '外部充电统计保持共源');
+for (const [label,key] of [['行驶里程','mileage'],['能耗','energy'],['工作时长','workingHours'],['机器利用率','utilizationRate']]) {
+  assert(ELECTRIC_TODAY_METRICS.find(m => m.label === label).value === String(stat20231123[key]), `今日${label}与日报共源`);
+}
 
 // REVIEW-V2-01: 真实调用 getMachineUtilizationRate helper 测试
 assert(getMachineUtilizationRate(5.3, 4.5) === 117.8, '机器利用率计算 5.3/4.5 = 117.8% (允许>100%，不clamp)');

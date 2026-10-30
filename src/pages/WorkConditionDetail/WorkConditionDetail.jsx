@@ -1,3 +1,4 @@
+import { todayMetrics, cumulativeMetrics } from '../ElectricWidebody/widebodyMetrics.js';
 import React, { useEffect, useRef, useState } from 'react';
 import FuelLevelChart from '../../components/FuelLevelChart/FuelLevelChart';
 import WorkStatusTimeline from '../../components/WorkStatusTimeline/WorkStatusTimeline';
@@ -5,7 +6,7 @@ import IconFont from '../../components/IconFont/IconFont';
 import EscEventPage from '../EscEvent/EscEventPage';
 import ElectricWorkConditionDetail from '../ElectricWidebody/ElectricWorkConditionDetail';
 import { isElectricWidebody } from '../ElectricWidebody/electricWidebodyData';
-import { getDailyWorkDistribution } from '../ElectricWidebody/fuelWidebodyData';
+import { getFuelDayStats, getDailyWorkDistribution } from '../ElectricWidebody/fuelWidebodyData';
 
 const PURE_ELECTRIC_MIXER_DATA = {
   supportsTrajectory: true,
@@ -762,7 +763,7 @@ const WorkConditionDetailInner = ({
   const timerRef = useRef(null);
 
   const templateData = MACHINE_DATA['三一平地机'];
-  const data = MACHINE_DATA[device?.code] || MACHINE_DATA[device?.name] || {
+  let data = MACHINE_DATA[device?.code] || MACHINE_DATA[device?.name] || {
     ...templateData,
     model: device?.name || templateData.model,
     plate: device?.code || templateData.plate,
@@ -789,6 +790,16 @@ const WorkConditionDetailInner = ({
   const _isMiningTruck = ['燃油宽体车', '矿用宽体自卸车', '宽体车', 'KT090AE', 'KT090AE20208'].includes(device?.name) || device?.type === '燃油宽体车' || device?.code?.startsWith('KT090AE');
   const _isDumpTruck = ['自卸车', '自装卸车', 'HRZX2331', 'HRZX2331008983'].includes(device?.name) || device?.code?.startsWith('HRZX');
   const isLoader = ['电动装载机', '装载机', 'SW970EACG', 'SW970EACG0278'].includes(device?.name) || device?.code?.startsWith('SW970E');
+
+  if (_isMiningTruck) {
+    const normalDay = getFuelDayStats('2023-11-23');
+    data = { ...data,
+      realtime: data.realtime.filter(([label]) => !['油门深度', '制动深度', '运载趟数', '运输趟数'].includes(label))
+        .map(item => item[0] === '运输重量' ? ['运输重量', String(normalDay.weight), 't'] : item),
+      today: todayMetrics(normalDay, false).map(({ label, value, unit }) => [label, value, unit]),
+      cumulative: cumulativeMetrics(false).map(({ label, value, unit }) => [label, value, unit]),
+    };
+  }
 
   const reportTime = data.reportTime || (demoMode ? '2026-09-23 08:30 (UTC+8)' : '2026-09-20 09:41:00');
   const fuelLevel = data.realtime.find(([label]) => ['当前油位', '油位'].includes(label))?.[1] || '70';

@@ -4,7 +4,7 @@ import { useWidebodyState } from './useWidebodyState';
 
 /**
  * V2-R03 / REVIEW-V2-01: 充电数据独立页面 (ElectricChargingData)
- * 具备紧凑日期区间筛选按钮与下拉弹层、区间汇总指标（充电次数、充电度数、充电时长）
+ * 具备紧凑日期区间筛选按钮与下拉弹层、区间汇总指标（充电次数、充电量、充电时长）
  * 与逐次充电记录明细卡（开始/结束时间、时长、开始/结束SOC、增加%、度数、位置）
  * 遵循极简规范：燃油同款白卡双列指标 (22px/12px/11px)，去多余文案与小灰卡
  */
@@ -212,7 +212,7 @@ export default function ElectricChargingData({
                 </span>
                 <span className="text-[12px] font-medium text-[#7a8290]">kWh</span>
               </div>
-              <div className="mt-2 text-[11px] leading-[15px] text-[#7a8290] break-words">充电度数</div>
+              <div className="mt-2 text-[11px] leading-[15px] text-[#7a8290] break-words">充电量</div>
             </div>
 
             <div className="min-w-0">
@@ -309,10 +309,10 @@ export default function ElectricChargingData({
                     </div>
                   </div>
 
-                  {/* 第三行：充电度数 & 充电位置 */}
+                  {/* 第三行：充电量 & 充电位置 */}
                   <div className="grid grid-cols-2 gap-2 text-[12px] pt-0.5">
                     <div>
-                      <span className="text-[11px] text-[#7a8290] block mb-0.5">充电度数</span>
+                      <span className="text-[11px] text-[#7a8290] block mb-0.5">充电量</span>
                       <span className="text-[14px] font-medium text-[#252b33]">
                         {hasEnergy ? `${rec.energy} kWh` : '—'}
                       </span>
