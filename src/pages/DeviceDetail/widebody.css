@@ -167,20 +167,56 @@
   word-break: break-word;
 }
 
-/* 实时状态两行网格，地图只与当行对齐，避免跨整列撑出留白。 */
-.widebody-realtime-layout {
+/* 实时状态：三张今日卡片并排，累计数据与地图并排。 */
+.widebody-realtime-layout,
+.widebody-realtime-layout.is-electric {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
-  grid-template-areas: "today location" "energy gear";
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-areas: "today travel energy";
   gap: 12px;
   align-items: stretch;
 }
-
 .widebody-energy-card { grid-area: energy; }
-.widebody-realtime-layout.is-electric {
-  grid-template-areas: "today location" "energy energy";
+.widebody-today-travel-card { grid-area: travel; }
+.widebody-gear-card { min-width: 0; }
+.widebody-history-location-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
 }
-.widebody-gear-card { grid-area: gear; }
+.widebody-history-location-row > * { min-width: 0; }
+.widebody-history-location-row.is-fuel { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.widebody-history-location-row .widebody-cumulative-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.widebody-realtime-layout .widebody-metrics-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px 12px;
+}
+.widebody-realtime-layout .widebody-metric-box {
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  padding: 4px 0;
+}
+.widebody-realtime-layout .widebody-metric-box strong { font-size: 22px; }
+.widebody-realtime-layout .widebody-metric-box strong,
+.widebody-history-location-row .widebody-cumulative-item strong {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px;
+  overflow: visible;
+}
+.widebody-metric-box strong em,
+.widebody-cumulative-item strong em { font-size: 11px; font-style: normal; font-weight: 500; }
+.widebody-metric-box strong,
+.widebody-cumulative-item strong { direction: ltr; unicode-bidi: isolate; }
+.widebody-page:dir(rtl) .widebody-metric-box strong,
+.widebody-page:dir(rtl) .widebody-cumulative-item strong { justify-content: flex-end; }
+
+
 .widebody-gear-chart {
   flex: 1;
   display: flex;
@@ -190,16 +226,16 @@
 }
 .widebody-gear-chart > div { width: 100%; }
 .widebody-gear-chart svg {
-  width: 200px;
-  height: 200px;
-  max-width: 100%;
+  width: 100%;
+  height: 220px;
+  max-width: 360px;
 }
 
 /* Today Top Row: Side-by-side Work (wider) and Travel (narrower) */
 .widebody-today-top-row {
   grid-area: today;
   display: grid;
-  grid-template-columns: minmax(0, 1.8fr) minmax(0, 1.2fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   align-items: stretch;
 }
@@ -218,7 +254,7 @@
 }
 
 .widebody-today-travel-card .widebody-metrics-row {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .widebody-metric-box {
@@ -285,7 +321,6 @@
 
 /* Map Card */
 .widebody-map-card {
-  grid-area: location;
   min-width: 0;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
@@ -511,7 +546,7 @@
 }
 
 .widebody-electric-summary-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .widebody-electric-summary-grid .widebody-metric-summary-item {
@@ -522,7 +557,7 @@
   overflow-wrap: anywhere;
 }
 
-.widebody-electric-summary-grid .widebody-metric-summary-item:nth-child(4n) {
+.widebody-electric-summary-grid .widebody-metric-summary-item:nth-child(5n) {
   border-inline-end: 0;
 }
 
@@ -806,24 +841,16 @@
   color: #64748b;
 }
 
-/* Responsive adjustments */
-@media (max-width: 1050px) {
-  .widebody-realtime-layout {
-    grid-template-columns: 1fr;
-    grid-template-areas: "today" "location" "energy" "gear";
-  }
+/* 窄窗口保留完整卡片顺序；标签可换行，数值可查看全文。 */
+@media (max-width: 1100px) {
+  .widebody-realtime-layout,
   .widebody-realtime-layout.is-electric {
-    grid-template-areas: "today" "location" "energy";
-  }
-  .widebody-map-container {
-    min-height: 280px;
-  }
-}
-
-@media (max-width: 900px) {
-  .widebody-today-top-row {
     grid-template-columns: 1fr;
+    grid-template-areas: "today" "travel" "energy";
   }
+  .widebody-history-location-row,
+  .widebody-history-location-row.is-fuel { grid-template-columns: 1fr; }
+  .widebody-map-container { min-height: 280px; }
 }
 
 /* ─── PC-V3 Sub-navigation for Electric Widebody ─── */

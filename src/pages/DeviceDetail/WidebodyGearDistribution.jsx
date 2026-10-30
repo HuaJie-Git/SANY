@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 
 const GEAR_COLORS = {
-  '1档': '#2563eb',
-  '2档': '#10b981',
-  '3档': '#f59e0b',
-  '4档': '#8b5cf6',
-  'R档': '#ef4444',
+  '1档': '#91cd76',
+  '2档': '#087f35',
+  '3档': '#16b9f4',
+  '4档': '#0750c8',
+  'R档': '#ff8000',
 };
 
-/* ─── Solid Pie Chart for Gear Distribution ─── */
+/* 档位环形图：保留选中、图例和键盘交互。 */
 export default function WidebodyGearDistribution({ data, title = '档位分布' }) {
   const [selectedGear, setSelectedGear] = useState(null);
 
@@ -29,7 +29,7 @@ export default function WidebodyGearDistribution({ data, title = '档位分布' 
     return <div style={{ padding: 24, textAlign: 'center', color: '#9ca3af', fontSize: 11 }}>暂无档位数据</div>;
   }
 
-  const size = 160;
+  const size = 200;
   const center = size / 2;
   const radius = 60;
 
@@ -54,7 +54,7 @@ export default function WidebodyGearDistribution({ data, title = '档位分布' 
     return {
       ...g,
       color: GEAR_COLORS[g.name] || '#6b7280',
-      pathD,
+      pathD, midAngle: (startAngle + endAngle) / 2,
     };
   });
 
@@ -81,7 +81,7 @@ export default function WidebodyGearDistribution({ data, title = '档位分布' 
       tabIndex={0}
       onKeyDown={handleKeyDown}
     >
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible' }}>
+      <svg dir="ltr" width={size} height={size} viewBox={`-60 0 ${size + 120} ${size}`} style={{ overflow: 'visible' }}>
         {isSingle100 ? (
           <circle
             cx={center}
@@ -130,6 +130,20 @@ export default function WidebodyGearDistribution({ data, title = '档位分布' 
             );
           })
         )}
+        <circle cx={center} cy={center} r={34} fill="#fff" style={{ pointerEvents: 'none' }} />
+        {slices.map(slice => {
+          const right = Math.cos(slice.midAngle) >= 0;
+          const labelX = center + (right ? 112 : -112);
+          const labelY = center + 80 * Math.sin(slice.midAngle);
+          const x1 = center + radius * Math.cos(slice.midAngle);
+          const y1 = center + radius * Math.sin(slice.midAngle);
+          const x2 = center + (radius + 12) * Math.cos(slice.midAngle);
+          return <g key={`label-${slice.name}`} style={{ pointerEvents: 'none' }}>
+            <polyline points={`${x1},${y1} ${x2},${labelY} ${labelX},${labelY}`} fill="none" stroke={slice.color} strokeWidth="0.7" />
+            <text x={labelX} y={labelY - 5} textAnchor={right ? 'start' : 'end'} fontSize="10" fill="#64748b">{slice.name}</text>
+            <text x={labelX} y={labelY + 10} textAnchor={right ? 'start' : 'end'} fontSize="10" fill={slice.color}>{slice.percent}%</text>
+          </g>;
+        })}
       </svg>
       {/* Legend showing gear name + percent */}
       <div
@@ -166,8 +180,8 @@ export default function WidebodyGearDistribution({ data, title = '档位分布' 
               }}
               aria-label={`${g.name} 占比 ${g.percent}%`}
             >
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block', flexShrink: 0 }} />
-              <span style={{ wordBreak: 'break-word' }}>{g.name}: {g.percent}%</span>
+              <span style={{ width: 8, height: 8, borderRadius: 0, background: color, display: 'inline-block', flexShrink: 0 }} />
+              <span dir="ltr" style={{ wordBreak: 'break-word', unicodeBidi: 'isolate' }}>{g.name}: {g.percent}%</span>
             </button>
           );
         })}

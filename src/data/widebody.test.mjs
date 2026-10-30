@@ -125,23 +125,23 @@ console.log('✓ Safe sum and average (preserving null) verified');
 // 5. Baseline stats & determinism (Zero Math.random)
 const elecBase = getElectricDayStats('2023-11-23');
 assert.equal(elecBase.mileage, 48.6);
-assert.equal(elecBase.energy, 186.4);
+assert.equal(elecBase.energy, 210);
 assert.equal(elecBase.trips, 6);
-assert.equal(elecBase.avgEnergy, 3.84);
+assert.equal(elecBase.avgEnergy, 4.32);
 assert.equal(elecBase.chargeDuration, 1.2);
 assert.equal(elecBase.recoveryEnergy, 24.5);
 assert.equal(elecBase.workHours, 4.5);
 assert.equal(elecBase.idleHours, 0.8);
 assert.equal(elecBase.runningHours, 5.3);
-assert.equal(elecBase.utilizationRate, 117.8);
+assert.equal(elecBase.utilizationRate, 75.5);
 
 const fuelBase = getFuelDayStats('2023-11-23');
 assert.equal(fuelBase.fuel, 7.0);
-assert.equal(fuelBase.avgHourlyFuel, 50.0);
+assert.equal(fuelBase.avgHourlyFuel, 23.3);
 assert.equal(fuelBase.workHours, 0.14);
 assert.equal(fuelBase.idleHours, 0.16);
 assert.equal(fuelBase.runningHours, 0.3);
-assert.equal(fuelBase.utilizationRate, 214.3);
+assert.equal(fuelBase.utilizationRate, 42);
 assert.equal(fuelBase.fuelLevel, 74);
 
 // Determinism test across invocations
@@ -173,7 +173,7 @@ const fuelWeekly = getPeriodicFuelData('weekly', '2023-11-23');
 assert.equal(fuelWeekly.rows.length, 7);
 assert.equal(
   fuelWeekly.summary.avgHourlyFuel,
-  parseFloat((fuelWeekly.summary.fuel / fuelWeekly.summary.workHours).toFixed(1))
+  parseFloat((fuelWeekly.summary.fuel / fuelWeekly.summary.workingHours).toFixed(1))
 );
 
 console.log('✓ Periodic aggregations & mathematical consistency verified');
@@ -218,7 +218,7 @@ assert.equal(track.isValid, true);
 assert.equal(track.startDate, '2023-11-23');
 assert.equal(track.durationHours, 10.0);
 assert.equal(track.totalMileage, '20.3');
-assert.equal(track.totalEnergy, '77.7');
+assert.equal(track.totalEnergy, '87.5');
 assert.equal(track.recoveryEnergy, '10.2');
 assert.equal(track.segments.length, 4);
 assert.equal(track.waypoints.length, 5);
@@ -230,7 +230,7 @@ const fullTrack = getTrackDataByRange('2023-11-23', '00:00', '2023-11-23', '24:0
 assert.equal(fullTrack.isValid, true);
 assert.equal(fullTrack.durationHours, 24);
 assert.equal(fullTrack.totalMileage, '48.6');
-assert.equal(fullTrack.totalEnergy, '186.4');
+assert.equal(fullTrack.totalEnergy, '210.0');
 assert.equal(fullTrack.recoveryEnergy, '24.5');
 
 // 9.3 With-seconds timestamp test (V5-FINAL-001: prevents double seconds :00:00 and Invalid Date)

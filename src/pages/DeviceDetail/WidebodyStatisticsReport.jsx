@@ -1,3 +1,4 @@
+import { reportMetrics } from '../../data/widebodyMetrics.js';
 import React, { useState, useMemo, useEffect } from 'react';
 import './widebody.css';
 import WidebodyOperationsReport from './WidebodyOperationsReport';
@@ -515,69 +516,11 @@ function WidebodyDataReport({ device, reportSelector }) {
   }, [period, currentDateStr, dates]);
 
   // Metric cards definitions
-  const summaryMetrics = useMemo(() => {
-    if (isElectric) {
-      return [
-        { label: '里程', value: summary.mileage ?? '—', unit: 'km' },
-        { label: '电耗', value: summary.energy ?? '—', unit: 'kWh' },
-        { label: '运行功耗', value: summary.runningPower ?? '—', unit: 'kWh' },
-        { label: '空闲功耗', value: summary.idlePower ?? '—', unit: 'kWh' },
-        { label: '运载趟数', value: summary.trips ?? '—', unit: '趟' },
-        { label: '运输重量', value: summary.weight ?? '—', unit: 't' },
-        { label: '平均电耗', value: summary.avgEnergy ?? '—', unit: 'kWh/km' },
-        { label: '充电时长', value: summary.chargeDuration ?? '—', unit: 'h' },
-        { label: '回收电量', value: summary.recoveryEnergy ?? '—', unit: 'kWh' },
-      ];
-    }
-    return [
-      { label: '能耗', value: summary.fuel ?? '—', unit: 'L' },
-      { label: '运行功耗', value: summary.runningFuel ?? summary.runningPower ?? '—', unit: 'L' },
-      { label: '空闲功耗', value: summary.idleFuel ?? summary.idlePower ?? '—', unit: 'L' },
-      { label: '平均每小时能耗', value: summary.avgHourlyFuel ?? '—', unit: 'L/h' },
-      { label: '工时', value: summary.workHours ?? '—', unit: 'h' },
-      { label: '怠速工时', value: summary.idleHours ?? '—', unit: 'h' },
-      {
-        label: '运输重量',
-        value:
-          summary.weight !== null &&
-          summary.weight !== undefined &&
-          summary.weight !== '' &&
-          Number.isFinite(Number(summary.weight)) &&
-          Number(summary.weight) >= 0
-            ? (Number(summary.weight) === 0 ? '0' : Number(summary.weight).toFixed(1))
-            : '—',
-        unit: 't',
-      },
-    ];
-  }, [isElectric, summary]);
-
-  // Table Columns
-  const tableColumns = useMemo(() => {
-    if (isElectric) {
-      return [
-        { key: 'date', label: '日期' },
-        { key: 'mileage', label: '里程 (km)' },
-        { key: 'energy', label: '电耗 (kWh)' },
-        { key: 'runningPower', label: '运行功耗 (kWh)' },
-        { key: 'idlePower', label: '空闲功耗 (kWh)' },
-        { key: 'trips', label: '运载趟数 (趟)' },
-        { key: 'weight', label: '运输重量 (t)' },
-        { key: 'avgEnergy', label: '平均电耗 (kWh/km)' },
-        { key: 'chargeDuration', label: '充电时长 (h)' },
-        { key: 'recoveryEnergy', label: '回收电量 (kWh)' },
-      ];
-    }
-    return [
-      { key: 'date', label: '日期' },
-      { key: 'fuel', label: '能耗 (L)' },
-      { key: 'runningFuel', label: '运行功耗 (L)' },
-      { key: 'idleFuel', label: '空闲功耗 (L)' },
-      { key: 'avgHourlyFuel', label: '平均每小时能耗 (L/h)' },
-      { key: 'workHours', label: '工时 (h)' },
-      { key: 'idleHours', label: '怠速工时 (h)' },
-      { key: 'weight', label: '运输重量 (t)' },
-    ];
-  }, [isElectric]);
+  const summaryMetrics = useMemo(() => reportMetrics(summary, isElectric), [isElectric, summary]);
+  const tableColumns = useMemo(() => [
+    { key: 'date', label: '日期' },
+    ...reportMetrics(summary, isElectric).map(({ key, label, unit }) => ({ key, label: `${label} (${unit})` })),
+  ], [isElectric, summary]);
 
   // CSV export trigger
   const handleExportCsv = () => {
@@ -835,13 +778,13 @@ function WidebodyDataReport({ device, reportSelector }) {
           {period === 'daily' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {/* Full-width compact strip: 24h Work distribution */}
-              <section className="widebody-card widebody-daily-timeline-card" aria-label="当日开工分布">
+              <section className="widebody-card widebody-daily-timeline-card" aria-label="工作分布">
                 <div className="widebody-card-header">
                   <div className="widebody-card-title">
                     <span className="widebody-icon-badge purple">
                       <ClockIcon />
                     </span>
-                    <strong>当日开工分布</strong>
+                    <strong>工作分布</strong>
                   </div>
                 </div>
                 <GanttTimeline segments={dailyWorkSegments} />
@@ -860,7 +803,7 @@ function WidebodyDataReport({ device, reportSelector }) {
                     <span className="widebody-icon-badge purple">
                       <CalendarLinearIcon />
                     </span>
-                    <strong>运行日历 ({period === 'weekly' ? '本周' : '当月'})</strong>
+                    <strong>运行日历 ({period === 'weekly' ? dateRangeLabel : `${Number(currentDateStr.slice(5, 7))}月`})</strong>
                   </div>
                 </div>
                 <div className="widebody-calendar-grid">
@@ -879,13 +822,13 @@ function WidebodyDataReport({ device, reportSelector }) {
                       <b>{row.date.slice(8)}日</b>
                       {isElectric ? (
                         <>
-                          <span title={`${row.mileage}km`}>{row.mileage}km</span>
-                          <small title={`${row.energy}kWh`}>{row.energy}kWh</small>
+                          <span title={`能耗 ${row.energy}kWh`}>{row.energy}kWh</span>
+                          <small title={`工作时长 ${row.workingHours}h`}>{row.workingHours}h</small>
                         </>
                       ) : (
                         <>
                           <span title={`${row.fuel}L`}>{row.fuel}L</span>
-                          <small title={`${row.workHours}h`}>{row.workHours}h</small>
+                          <small title={`工作时长 ${row.workingHours}h`}>{row.workingHours}h</small>
                         </>
                       )}
                     </div>
@@ -906,13 +849,13 @@ function WidebodyDataReport({ device, reportSelector }) {
                         label="平均电耗趋势"
                       />
                     </section>
-                    <section className="widebody-card" aria-label="运载趟数趋势">
+                    <section className="widebody-card" aria-label="运输趟数趋势">
                       <TrendChart
                         labels={dates}
                         data={rows.map((r) => r.trips)}
                         unit="趟"
                         color="#10b981"
-                        label="运载趟数趋势"
+                        label="运输趟数趋势"
                       />
                     </section>
                     <section className="widebody-card" aria-label="充电时长趋势">
@@ -924,13 +867,13 @@ function WidebodyDataReport({ device, reportSelector }) {
                         label="充电时长趋势"
                       />
                     </section>
-                    <section className="widebody-card" aria-label="回收电量趋势">
+                    <section className="widebody-card" aria-label="回收能量百分比趋势">
                       <TrendChart
                         labels={dates}
-                        data={rows.map((r) => r.recoveryEnergy)}
-                        unit="kWh"
+                        data={rows.map((r) => r.recoveryRate)}
+                        unit="%"
                         color="#8b5cf6"
-                        label="回收电量趋势"
+                        label="回收能量百分比趋势"
                       />
                     </section>
                   </>
@@ -945,22 +888,22 @@ function WidebodyDataReport({ device, reportSelector }) {
                         label="能耗趋势"
                       />
                     </section>
-                    <section className="widebody-card" aria-label="平均每小时能耗趋势">
+                    <section className="widebody-card" aria-label="每小时能耗趋势">
                       <TrendChart
                         labels={dates}
                         data={rows.map((r) => r.avgHourlyFuel)}
                         unit="L/h"
                         color="#2563eb"
-                        label="平均每小时能耗趋势"
+                        label="每小时能耗趋势"
                       />
                     </section>
-                    <section className="widebody-card" aria-label="工时趋势">
+                    <section className="widebody-card" aria-label="运转时长趋势">
                       <TrendChart
                         labels={dates}
                         data={rows.map((r) => r.workHours)}
                         unit="h"
                         color="#10b981"
-                        label="工时趋势"
+                        label="运转时长趋势"
                       />
                     </section>
                     <section className="widebody-card" aria-label="怠速工时趋势">

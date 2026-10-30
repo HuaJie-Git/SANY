@@ -234,7 +234,7 @@ export default function WidebodyChargingReport({ device, reportSelector }) {
       unit: '次',
     },
     {
-      label: '充电度数',
+      label: '充电量',
       value: summary.totalEnergy !== null ? summary.totalEnergy : '—',
       unit: 'kWh',
     },
@@ -341,7 +341,7 @@ export default function WidebodyChargingReport({ device, reportSelector }) {
         </button>
       </div>
 
-      {/* ── Summary Cards: 充电次数 / 充电度数 / 充电时长 ── */}
+      {/* ── Summary Cards: 充电次数 / 充电量 / 充电时长 ── */}
       <section className="widebody-card" aria-label="充电汇总指标" style={{ marginBottom: 12 }}>
         <div className="widebody-card-header">
           <div className="widebody-card-title">
@@ -387,7 +387,7 @@ export default function WidebodyChargingReport({ device, reportSelector }) {
                 <th style={{ width: '90px' }}>开始SOC</th>
                 <th style={{ width: '90px' }}>结束SOC</th>
                 <th style={{ width: '90px' }}>增加量</th>
-                <th style={{ width: '120px' }}>充电度数</th>
+                <th style={{ width: '120px' }}>充电量</th>
                 <th>充电位置</th>
               </tr>
             </thead>

@@ -226,9 +226,9 @@ export default function WidebodyHistoryTrack({ device }) {
       { key: 'segment', label: '分段' },
       { key: 'status', label: '状态' },
       { key: 'timeRange', label: '时间段' },
-      { key: 'duration', label: '工时(h)' },
-      { key: 'mileage', label: '里程(km)' },
-      { key: 'energy', label: '电耗(kWh)' },
+      { key: 'duration', label: '工作时长(h)' },
+      { key: 'mileage', label: '行驶里程(km)' },
+      { key: 'energy', label: '能耗(kWh)' },
       { key: 'avgSpeed', label: '平均车速' },
       { key: 'note', label: '说明' },
     ];
@@ -448,14 +448,14 @@ export default function WidebodyHistoryTrack({ device }) {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 12, color: '#9ca3af', width: 72, flexShrink: 0 }}>
-                {isElectric ? '电耗(kWh)' : '能耗(L)'}
+                {isElectric ? '能耗(kWh)' : '能耗(L)'}
               </span>
               <span style={{ fontSize: 13, fontWeight: 500, color: '#1f2937' }}>
                 {(!isElectric || isEmptyTrack) ? '—' : trackData?.totalEnergy}
               </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 12, color: '#9ca3af', width: 72, flexShrink: 0 }}>里程(km)</span>
+              <span style={{ fontSize: 12, color: '#9ca3af', width: 72, flexShrink: 0 }}>行驶里程(km)</span>
               <span style={{ fontSize: 13, fontWeight: 500, color: '#1f2937' }}>
                 {(!isElectric || isEmptyTrack) ? '—' : trackData?.totalMileage}
               </span>
@@ -489,7 +489,7 @@ export default function WidebodyHistoryTrack({ device }) {
                 <span></span>
                 <span>状态</span>
                 <span>时间段</span>
-                <span style={{ textAlign: 'right' }}>电耗</span>
+                <span style={{ textAlign: 'right' }}>能耗</span>
               </div>
               {computedSegments.map((r, i) => {
                 const statusColor = r.type === 'drive' ? '#2563eb' : r.type === 'idle' ? '#f59e0b' : '#10b981';
@@ -628,7 +628,7 @@ export default function WidebodyHistoryTrack({ device }) {
             <span>轨迹示意</span>
             {isElectric && !isEmptyTrack && (
               <span style={{ fontSize: 11, color: '#64748b', fontWeight: 400 }}>
-                当前车速: {vehicleState.speed} km/h | 累积电耗: {vehicleState.energy} kWh
+                当前车速: {vehicleState.speed} km/h | 累积能耗: {vehicleState.energy} kWh
               </span>
             )}
           </div>

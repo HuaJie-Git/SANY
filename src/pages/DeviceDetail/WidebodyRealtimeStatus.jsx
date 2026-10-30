@@ -1,3 +1,4 @@
+import { todayMetrics, cumulativeMetrics } from '../../data/widebodyMetrics.js';
 import React, { useState, useEffect, useMemo } from 'react';
 import './widebody.css';
 import WidebodyGearDistribution from './WidebodyGearDistribution';
@@ -7,7 +8,8 @@ import {
   getDailyFuelCurve,
   getDailyWorkDistribution,
   getDailyGearDistribution,
-  getMachineUtilization,
+  getElectricDayStats,
+  getFuelDayStats,
 } from '../../data/widebody';
 
 function RefreshIcon() {
@@ -32,17 +34,6 @@ function ClockIcon() {
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10" />
       <polyline points="12 6 12 12 16 14" />
-    </svg>
-  );
-}
-
-function TruckIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="1" y="3" width="15" height="13" />
-      <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
-      <circle cx="5.5" cy="18.5" r="2.5" />
-      <circle cx="18.5" cy="18.5" r="2.5" />
     </svg>
   );
 }
@@ -527,8 +518,7 @@ export default function WidebodyRealtimeStatus({ device }) {
 
   const isElectric = isElectricWidebody(device);
   const realtime = device.realtime || {};
-  const today = device.today || {};
-  const cumulative = device.cumulative || {};
+  const today = isElectric ? getElectricDayStats('2023-11-23') : getFuelDayStats('2023-11-23');
 
   // 1. Realtime Items (Top bar: Electric 6 items / Fuel 5 items, strictly no default fallback)
   const realtimeItems = isElectric
@@ -537,69 +527,27 @@ export default function WidebodyRealtimeStatus({ device }) {
         { label: '剩余电量', value: formatValue(realtime['剩余电量']) },
         { label: '电池健康', value: formatValue(realtime['电池健康']) },
         { label: '车速', value: formatValue(realtime['车速']) },
-        { label: '油门深度', value: formatValue(realtime['油门深度']) },
-        { label: '制动深度', value: formatValue(realtime['制动深度']) },
+        { label: '运输重量', value: formatValue(realtime['运输重量']) },
       ]
     : [
         { label: '设备状态', value: formatValue(realtime['设备状态']) },
         { label: '车速', value: formatValue(realtime['车速']) },
         { label: '油位', value: formatValue(realtime['油位']) },
-        { label: '油门深度', value: formatValue(realtime['油门深度']) },
         { label: '行驶档位', value: formatValue(realtime['齿轮模式']) },
+        { label: '运输重量', value: formatValue(realtime['运输重量']) },
       ];
 
-  // 2. Today Groups (Review B: calculate machine utilization dynamically via formula, no hardcoding)
-  const computedUtil = getMachineUtilization(today.runningHours, today.workHours);
-  const utilDisplay = computedUtil !== null ? `${computedUtil}%` : '—';
-
-  // Group A: 今日工时 (4项)
-  const todayWorkItems = [
-    { label: '工时', value: formatValue(today.workHours, 'h') },
-    { label: '怠速工时', value: formatValue(today.idleHours, 'h') },
-    { label: '运行时长', value: formatValue(today.runningHours, 'h') },
-    { label: '机器利用率', value: utilDisplay },
-  ];
-
-  // Group B: 今日行驶 (4项: 里程、最高车速、运载趟数、运输重量)
-  const todayTravelItems = [
-    { label: '里程', value: formatValue(today.mileage, 'km') },
-    { label: '最高车速', value: formatValue(today.maxSpeed, 'km/h') },
-    { label: '运载趟数', value: formatValue(realtime['运载趟数']) },
-    { label: '运输重量', value: formatValue(realtime['运输重量']) },
-  ];
-
-  // Group C: 今日电耗 / 今日能耗 (Electric 5项 / Fuel 3项)
-  const todayEnergyItems = isElectric
-    ? [
-        { label: '电耗', value: formatValue(today.energy, 'kWh') },
-        { label: '运行功耗', value: formatValue(today.runningPower, 'kWh') },
-        { label: '空闲功耗', value: formatValue(today.idlePower, 'kWh') },
-        { label: '回收电量', value: formatValue(today.recoveredEnergy, 'kWh') },
-        { label: '充电时长', value: formatValue(today.chargeHours, 'h') },
-      ]
-    : [
-        { label: '能耗', value: formatValue(today.fuel, 'L') },
-        { label: '运行功耗', value: formatValue(today.runningFuel, 'L') },
-        { label: '空闲功耗', value: formatValue(today.idleFuel, 'L') },
-      ];
-
-  // 3. Cumulative Items (Bottom separate card: Electric 6项 / Fuel 5项)
-  const cumulativeItems = isElectric
-    ? [
-        { label: '总运行时长', value: formatValue(cumulative.totalRunningHours) },
-        { label: '总运载趟数', value: formatValue(cumulative.totalTrips) },
-        { label: '总运输重量', value: formatValue(cumulative.totalWeight) },
-        { label: '总里程', value: formatValue(cumulative.totalMileage) },
-        { label: '总电耗', value: formatValue(cumulative.totalEnergy) },
-        { label: '总充电电量', value: formatValue(cumulative.totalChargeEnergy) },
-      ]
-    : [
-        { label: '总工作时间', value: formatValue(cumulative.totalWorkHours) },
-        { label: '运载趟数', value: formatValue(cumulative.totalTrips) },
-        { label: '总运输重量', value: formatValue(cumulative.totalWeight) },
-        { label: '总里程', value: formatValue(cumulative.totalMileage) },
-        { label: '总能耗', value: formatValue(cumulative.totalFuel) },
-      ];
+  const allTodayItems = todayMetrics(today, isElectric);
+  const energyKeys = isElectric
+    ? ['energy', 'hourlyEnergy', 'chargingEnergy', 'recoveryEnergy', 'recoveryRate']
+    : ['fuel', 'hourlyEnergy', 'runningFuel', 'idleFuel'];
+  const displayItem = item => item;
+  const workKeys = ['operatingHours', 'idleHours', 'workingHours', 'utilizationRate'];
+  const todayWorkItems = workKeys.map(key => allTodayItems.find(item => item.key === key)).filter(Boolean).map(displayItem);
+  const todayTravelItems = ['mileage', 'maxSpeed', 'trips', 'weight', 'payloadPerTrip']
+    .map(key => allTodayItems.find(item => item.key === key)).filter(Boolean).map(displayItem);
+  const todayEnergyItems = allTodayItems.filter(item => energyKeys.includes(item.key)).map(displayItem);
+  const cumulativeItems = cumulativeMetrics(isElectric).map(displayItem);
 
   const socData = isElectric ? getDailySocCurve('2023-11-23') : null;
   const fuelData = !isElectric ? getDailyFuelCurve('2023-11-23') : null;
@@ -651,11 +599,11 @@ export default function WidebodyRealtimeStatus({ device }) {
         </div>
       </section>
 
-      {/* 两行网格：工时/行驶与位置，电车能耗曲线通栏、燃油保留档位分布 */}
+      {/* 今日工时、行驶、能耗并排；累计与位置位于下方。 */}
       <div className={`widebody-realtime-layout${isElectric ? ' is-electric' : ''}`}>
         {/* Today Top Row: Side-by-side Work (wider) and Travel (narrower) */}
         <div className="widebody-today-top-row">
-          {/* Block 1: 今日工时 (4项 + 24h开工分布) */}
+          {/* Block 1: 今日工作参数 (4项 + 24h开工分布) */}
           <section className="widebody-card widebody-today-work-card" aria-label="今日工时">
             <div className="widebody-card-header">
               <SectionTitle icon={<ClockIcon />} title="今日工时" tone="purple" />
@@ -663,51 +611,47 @@ export default function WidebodyRealtimeStatus({ device }) {
             <div className="widebody-metrics-row">
               {todayWorkItems.map((item) => (
                 <div className="widebody-metric-box" key={item.label}>
+                  <strong title={`${item.value}${item.unit}`}><span>{item.value}</span><em>{item.unit}</em></strong>
                   <small title={item.label}>{item.label}</small>
-                  <strong title={item.value}>{item.value}</strong>
                 </div>
               ))}
             </div>
             <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid #f1f5f9' }}>
               <div style={{ fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: 2 }}>
-                当日开工分布
+                工作分布
               </div>
               <Gantt24h segments={workSegments} />
             </div>
           </section>
 
-          {/* Block 2: 今日行驶 (2项) */}
-          <section className="widebody-card widebody-today-travel-card" aria-label="今日行驶">
-            <div className="widebody-card-header">
-              <SectionTitle icon={<TruckIcon />} title="今日行驶" tone="blue" />
-            </div>
-            <div className="widebody-metrics-row">
-              {todayTravelItems.map((item) => (
-                <div className="widebody-metric-box" key={item.label}>
-                  <small title={item.label}>{item.label}</small>
-                  <strong title={item.value}>{item.value}</strong>
-                </div>
-              ))}
-            </div>
-          </section>
         </div>
 
-        <LocalMap device={device} locationName={locationName} />
+        <section className="widebody-card widebody-today-travel-card" aria-label="今日行驶">
+          <div className="widebody-card-header"><SectionTitle icon={<MapPinIcon />} title="今日行驶" tone="orange" /></div>
+          <div className="widebody-metrics-row">
+            {todayTravelItems.map(item => (
+              <div className="widebody-metric-box" key={item.key}>
+                <strong title={`${item.value}${item.unit}`}><span>{item.value}</span><em>{item.unit}</em></strong>
+                <small title={item.label}>{item.label}</small>
+              </div>
+            ))}
+          </div>
+        </section>
 
         {/* Block 3: 今日电耗 / 今日能耗 (5项/3项 + %剩余量曲线) */}
-        <section className="widebody-card widebody-energy-card" aria-label={isElectric ? '今日电耗' : '今日能耗'}>
+        <section className="widebody-card widebody-energy-card" aria-label={'今日能耗'}>
           <div className="widebody-card-header">
             <SectionTitle
               icon={isElectric ? <ZapIcon /> : <FlameIcon />}
-              title={isElectric ? '今日电耗' : '今日能耗'}
+              title={'今日能耗'}
               tone={isElectric ? 'blue' : 'orange'}
             />
           </div>
           <div className="widebody-metrics-row">
             {todayEnergyItems.map((item) => (
               <div className="widebody-metric-box" key={item.label}>
+                <strong title={`${item.value}${item.unit}`}><span>{item.value}</span><em>{item.unit}</em></strong>
                 <small title={item.label}>{item.label}</small>
-                <strong title={item.value}>{item.value}</strong>
               </div>
             ))}
           </div>
@@ -732,6 +676,9 @@ export default function WidebodyRealtimeStatus({ device }) {
           </div>
         </section>
 
+      </div>
+
+      <div className={`widebody-history-location-row${isElectric ? '' : ' is-fuel'}`}>
         {!isElectric && (
           <section className="widebody-card widebody-gear-card" aria-label="档位分布">
             <div className="widebody-card-header">
@@ -740,9 +687,6 @@ export default function WidebodyRealtimeStatus({ device }) {
             <div className="widebody-gear-chart"><WidebodyGearDistribution data={gearData} title="档位分布" /></div>
           </section>
         )}
-      </div>
-
-      {/* Bottom: 历史累计数据 (通栏) */}
       <section className="widebody-card" aria-label="历史累计数据">
         <div className="widebody-card-header">
           <SectionTitle icon={<ArchiveIcon />} title="历史累计数据" tone="orange" />
@@ -750,12 +694,14 @@ export default function WidebodyRealtimeStatus({ device }) {
         <div className="widebody-cumulative-grid">
           {cumulativeItems.map((item) => (
             <div className="widebody-cumulative-item" key={item.label}>
-              <strong title={item.value}>{item.value}</strong>
+              <strong title={`${item.value}${item.unit}`}><span>{item.value}</span><em>{item.unit}</em></strong>
               <small title={item.label}>{item.label}</small>
             </div>
           ))}
         </div>
       </section>
+      <LocalMap device={device} locationName={locationName} />
+      </div>
     </div>
   );
 }

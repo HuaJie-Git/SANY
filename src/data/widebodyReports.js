@@ -540,7 +540,7 @@ export function exportChargingCsv(records, filename = '充电报表.csv') {
     { key: 'startSocDisplay', label: '开始SOC(%)' },
     { key: 'endSocDisplay', label: '结束SOC(%)' },
     { key: 'socIncreaseDisplay', label: '增加量(%)' },
-    { key: 'energyDisplay', label: '充电度数(kWh)' },
+    { key: 'energyDisplay', label: '充电量(kWh)' },
     { key: 'location', label: '充电位置' },
   ];
 

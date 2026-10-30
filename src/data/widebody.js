@@ -1,3 +1,4 @@
+import { completeDay, summarizeDays, cumulativeData } from './widebodyMetrics.js';
 /**
  * PC 宽体车专属数据模型、契约与纯函数
  * 覆盖：
@@ -182,31 +183,10 @@ export const ELECTRIC_WIDEBODY_DEVICE = {
     剩余电量: '78%',
     电池健康: '96%',
     车速: '24km/h',
-    油门深度: '42%',
-    制动深度: '0%',
-    运载趟数: '6趟',
     运输重量: '72.5t',
   },
-  today: {
-    workHours: 4.5,
-    idleHours: 0.8,
-    runningHours: 5.3,
-    mileage: 48.6,
-    maxSpeed: 42,
-    runningPower: 161.9,
-    idlePower: 24.5,
-    energy: 186.4,
-    recoveredEnergy: 24.5,
-    chargeHours: 1.2,
-  },
-  cumulative: {
-    totalRunningHours: '1240.5h',
-    totalTrips: '318趟',
-    totalWeight: '22860t',
-    totalMileage: '28450km',
-    totalEnergy: '108920kWh',
-    totalChargeEnergy: '121500kWh',
-  },
+  today: getElectricDayStats('2023-11-23'),
+  cumulative: cumulativeData(true),
   warnings: [],
   plate: '蒙K·89201电',
   archive: {
@@ -243,29 +223,12 @@ export const FUEL_WIDEBODY_DEVICE = {
   realtime: {
     设备状态: '工作',
     车速: '6km/h',
-    运输重量: '—t',
-    运载趟数: '0趟',
+    运输重量: '144.5t',
     油位: '74%',
-    油门深度: '0%',
     齿轮模式: '2档',
   },
-  today: {
-    mileage: 2.4,
-    fuel: 7,
-    workHours: 0.14,
-    idleHours: 0.16,
-    runningHours: 0.3,
-    maxSpeed: 43,
-    runningFuel: 6.2,
-    idleFuel: 0.8,
-  },
-  cumulative: {
-    totalWorkHours: '2484.25h',
-    totalTrips: '0趟',
-    totalWeight: '0t',
-    totalMileage: '165066.96km',
-    totalFuel: '61200.5L',
-  },
+  today: getFuelDayStats('2023-11-23'),
+  cumulative: cumulativeData(false),
   warnings: [],
   archive: {
     updateTime: '2023-11-23 15:30:00',
@@ -307,9 +270,9 @@ export function isFuelWidebody(device) {
 /**
  * 电动宽体车单日统计
  * 2023-11-23 基准日严格对齐 APP 与需求：
- * 里程 48.6km, 电耗 186.4kWh, 运载趟数 6趟, 平均电耗 3.84kWh/km, 充电时长 1.2h, 回收电量 24.5kWh
+ * 行驶里程 48.6km，能耗 210kWh，运输趟数 6，平均电耗 4.32kWh/km，充电时长 1.2h，回收能量 24.5kWh。
  */
-export function getElectricDayStats(dateInput) {
+function basegetElectricDayStats(dateInput) {
   const dateStr = normalizeDateStr(dateInput);
   if (!dateStr) return null;
 
@@ -317,25 +280,23 @@ export function getElectricDayStats(dateInput) {
     return {
       date: dateStr,
       mileage: 48.6,
-      energy: 186.4,
+      energy: 210,
       trips: 6,
       weight: 72.5,
-      avgEnergy: 3.84,
+      avgEnergy: 4.32,
       chargeDuration: 1.2,
       recoveryEnergy: 24.5,
       workHours: 4.5,
       idleHours: 0.8,
       runningHours: 5.3,
-      runningPower: 161.9,
-      idlePower: 24.5,
-      utilizationRate: 117.8,
+      utilizationRate: 75.5,
       endOfDaySoc: 62.0,
     };
   }
 
   const seed = hashDateString(dateStr);
   const mileage = parseFloat((36 + (seed % 20) + (seed % 10) * 0.1).toFixed(1));
-  const energy = parseFloat((140 + (seed % 60) + (seed % 7) * 0.1).toFixed(1));
+  const energy = parseFloat((170 + (seed % 70) + (seed % 7) * 0.1).toFixed(1));
   const trips = 4 + (seed % 5);
   const weight = parseFloat((trips * 12 + (seed % 10) * 0.5).toFixed(1));
   const avgEnergy = mileage > 0 ? parseFloat((energy / mileage).toFixed(2)) : null;
@@ -344,9 +305,7 @@ export function getElectricDayStats(dateInput) {
   const workHours = parseFloat((3.8 + (seed % 4) * 0.4).toFixed(1));
   const idleHours = parseFloat((0.6 + (seed % 3) * 0.2).toFixed(1));
   const runningHours = parseFloat((workHours + idleHours).toFixed(1));
-  const utilizationRate = getMachineUtilization(runningHours, workHours);
-  const runningPower = parseFloat((120 + (seed % 50)).toFixed(1));
-  const idlePower = parseFloat((18 + (seed % 10)).toFixed(1));
+  const utilizationRate = getMachineUtilization(Number((workHours * 0.9).toFixed(2)), runningHours);
   const endOfDaySoc = 45 + (seed % 40);
 
   return {
@@ -361,8 +320,6 @@ export function getElectricDayStats(dateInput) {
     workHours,
     idleHours,
     runningHours,
-    runningPower,
-    idlePower,
     utilizationRate,
     endOfDaySoc,
   };
@@ -371,10 +328,10 @@ export function getElectricDayStats(dateInput) {
 /**
  * 燃油宽体车单日统计
  * 2023-11-23 基准日严格对齐 APP 与需求：
- * 能耗 7L, 平均每小时能耗 50.0L/h, 工时 0.14h, 怠速工时 0.16h
+ * 能耗 7L, 每小时能耗 23.33L/h, 工时 0.14h, 怠速工时 0.16h
  * PC-REVIEW-001 D: 运行/怠速油耗为独立口径，禁止按总能耗拆分
  */
-export function getFuelDayStats(dateInput) {
+function basegetFuelDayStats(dateInput) {
   const dateStr = normalizeDateStr(dateInput);
   if (!dateStr) return null;
 
@@ -382,30 +339,31 @@ export function getFuelDayStats(dateInput) {
     return {
       date: dateStr,
       fuel: 7.0,
-      avgHourlyFuel: 50.0,
+      avgHourlyFuel: 23.3,
       workHours: 0.14,
       idleHours: 0.16,
       runningHours: 0.3,
       mileage: 2.4,
       runningFuel: 6.2,
       idleFuel: 0.8,
-      utilizationRate: 214.3,
+      utilizationRate: 42.0,
       fuelLevel: 74,
-      weight: null,
+      weight: 144.5,
+      trips: 2,
     };
   }
 
   const seed = hashDateString(dateStr);
-  const fuel = parseFloat((5.0 + (seed % 6) + (seed % 5) * 0.2).toFixed(1));
   const workHours = parseFloat((0.10 + (seed % 5) * 0.02).toFixed(2));
   const idleHours = parseFloat((0.12 + (seed % 5) * 0.02).toFixed(2));
   const runningHours = parseFloat((workHours + idleHours).toFixed(2));
-  const avgHourlyFuel = workHours > 0 ? parseFloat((fuel / workHours).toFixed(1)) : null;
   const mileage = parseFloat((1.8 + (seed % 4) * 0.4).toFixed(1));
   // 独立确定性示例值，禁止按总能耗比例拆分
   const runningFuel = parseFloat((4.0 + (seed % 5) * 0.5).toFixed(1));
   const idleFuel = parseFloat((0.4 + (seed % 4) * 0.2).toFixed(1));
-  const utilizationRate = getMachineUtilization(runningHours, workHours);
+  const fuel = Number((runningFuel + idleFuel).toFixed(1));
+  const avgHourlyFuel = runningHours > 0 ? Number((fuel / runningHours).toFixed(1)) : null;
+  const utilizationRate = getMachineUtilization(Number((workHours * 0.9).toFixed(3)), runningHours);
   const fuelLevel = 60 + (seed % 30);
 
   return {
@@ -420,7 +378,8 @@ export function getFuelDayStats(dateInput) {
     idleFuel,
     utilizationRate,
     fuelLevel,
-    weight: null,
+    weight: Number((135 + seed % 150).toFixed(1)),
+    trips: 2 + seed % 4,
   };
 }
 
@@ -428,13 +387,9 @@ export function getFuelDayStats(dateInput) {
  * 周期聚合（电动宽体车）
  * 安全保留 null，不把缺失当 0 吞掉
  */
-export function getPeriodicElectricData(period, baseDateInput) {
+function basegetPeriodicElectricData(period, baseDateInput) {
   const dates = getPeriodDates(period, baseDateInput);
-  const rows = dates.map((dateStr) => getElectricDayStats(dateStr)).filter(Boolean).map((row) => ({
-    ...row,
-    runningPower: safeSum([row.runningPower], 1),
-    idlePower: safeSum([row.idlePower], 1),
-  }));
+  const rows = dates.map((dateStr) => getElectricDayStats(dateStr)).filter(Boolean);
 
   const totalMileage = safeSum(rows.map((r) => r.mileage), 1);
   const totalEnergy = safeSum(rows.map((r) => r.energy), 1);
@@ -447,7 +402,8 @@ export function getPeriodicElectricData(period, baseDateInput) {
   const totalRunningHours = safeSum(rows.map((r) => r.runningHours), 1);
 
   const avgEnergy = safeAvg(totalEnergy, totalMileage, 2);
-  const utilizationRate = getMachineUtilization(totalRunningHours, totalWorkHours);
+  const totalDrivingHours = safeSum(rows.map((r) => r.drivingHours), 3);
+  const utilizationRate = getMachineUtilization(totalDrivingHours, totalRunningHours);
 
   return {
     period,
@@ -456,8 +412,6 @@ export function getPeriodicElectricData(period, baseDateInput) {
     summary: {
       mileage: totalMileage,
       energy: totalEnergy,
-      runningPower: safeSum(rows.map((row) => row.runningPower), 1),
-      idlePower: safeSum(rows.map((row) => row.idlePower), 1),
       trips: totalTrips,
       weight: totalWeight,
       avgEnergy,
@@ -475,7 +429,7 @@ export function getPeriodicElectricData(period, baseDateInput) {
  * 周期聚合（燃油宽体车）
  * 安全保留 null，不把缺失当 0 吞掉
  */
-export function getPeriodicFuelData(period, baseDateInput) {
+function basegetPeriodicFuelData(period, baseDateInput) {
   const dates = getPeriodDates(period, baseDateInput);
   const rows = dates.map((dateStr) => getFuelDayStats(dateStr)).filter(Boolean);
 
@@ -488,8 +442,9 @@ export function getPeriodicFuelData(period, baseDateInput) {
   const totalMileage = safeSum(rows.map((r) => r.mileage), 1);
   const totalWeight = safeSum(rows.map((r) => r.weight), 1);
 
-  const avgHourlyFuel = safeAvg(totalFuel, totalWorkHours, 1);
-  const utilizationRate = getMachineUtilization(totalRunningHours, totalWorkHours);
+  const avgHourlyFuel = safeAvg(totalFuel, totalRunningHours, 1);
+  const totalDrivingHours = safeSum(rows.map((r) => r.drivingHours), 3);
+  const utilizationRate = getMachineUtilization(totalDrivingHours, totalRunningHours);
 
   return {
     period,
@@ -715,7 +670,7 @@ function parseTrackDateTime(dateStr, timeStr) {
  * 宽体车电车轨迹数据生成引擎 (对齐 APP 契约 / V5-R02 / A02 / V5-REVIEW-001)
  * 1. 严格校验起止时间：结束时间 <= 开始时间返回就地错误，不生造里程/电耗
  * 2. 跨度限制：单次查询跨度不得超过31天
- * 3. 统计共源：按每日重叠比例自洽汇总里程/电耗，整天基准日严格对齐 48.6km / 186.4kWh / 24.5kWh
+ * 3. 统计共源：按每日重叠比例自洽汇总里程/电耗，整天基准日严格对齐 48.6km / 210kWh / 24.5kWh
  */
 export function getTrackDataByRange(startDate, startTime, endDate, endTime) {
   const normStart = normalizeDateStr(startDate);
@@ -947,4 +902,18 @@ export function getTrackDataByRange(startDate, startTime, endDate, endTime) {
     segments,
     waypoints,
   };
+}
+
+export function getElectricDayStats(dateInput) { return completeDay(basegetElectricDayStats(dateInput), true); }
+
+export function getFuelDayStats(dateInput) { return completeDay(basegetFuelDayStats(dateInput), false); }
+
+export function getPeriodicElectricData(period, dateInput) {
+  const result = basegetPeriodicElectricData(period, dateInput);
+  return { ...result, summary: { ...result.summary, ...summarizeDays(result.rows, true) } };
+}
+
+export function getPeriodicFuelData(period, dateInput) {
+  const result = basegetPeriodicFuelData(period, dateInput);
+  return { ...result, summary: { ...result.summary, ...summarizeDays(result.rows, false) } };
 }

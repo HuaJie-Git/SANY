@@ -1,6 +1,27 @@
 import React from 'react';
 
 export const WIDEBODY_DICTIONARY = {
+  "本月": "This Month",
+  "充电量": "Charged Energy",
+  "回收能量百分比趋势": "Trends in Energy Recovered %",
+  "运输趟数趋势": "Trends in the Number of Trips",
+  "单趟载重": "Payload/Trip",
+  "回收能量百分比": "Energy Recovered %",
+  "总回收能量": "Total Energy Recovered",
+  "回收能量": "Energy Recovered",
+  "充电桩总能耗": "Total Energy Consumption from Charging Pile",
+  "充电桩能耗": "Energy Consumption from Charging Pile",
+  "每小时能耗": "Energy Consumption/Hour",
+  "工作分布": "Work Distribution",
+  "今日工作参数": "Today’s Work Parameters",
+  "总运输趟数": "Total No. of Trips",
+  "运输趟数": "No. of Trips",
+  "总行驶里程": "Total KM Travelled",
+  "总运转时长": "Total Operating Hours",
+  "总工作时长": "Total Working Hours",
+  "行驶里程": "KM Travelled",
+  "运转时长": "Operating Hours",
+  "工作时长": "Working Hours",
   // Vehicle types
   '电动宽体车': 'Electric Wide-body Dump Truck',
   '燃油宽体车': 'Diesel Wide-body Dump Truck',
@@ -9,7 +30,7 @@ export const WIDEBODY_DICTIONARY = {
 
   // Statuses
   '工作': 'Operating',
-  '怠速': 'Idling',
+  "怠速": "Idle",
   '停机': 'Shutdown',
   '行驶': 'Driving',
   '离线': 'Offline',
@@ -62,7 +83,7 @@ export const WIDEBODY_DICTIONARY = {
 
   // Today & Cumulative Metrics
   '今日数据': "Today's Data",
-  '今日能耗': "Today's Energy",
+  "今日能耗": "Today’s Energy Consumption",
   '工时数据': 'Operating Hours Data',
   '累计数据': 'Cumulative Data',
   '最新工况': 'Latest Operating Condition',
@@ -85,8 +106,8 @@ export const WIDEBODY_DICTIONARY = {
   '充电时长': 'Charging Duration',
   '总充电时长': 'Total Charging Duration',
   '总充电电量': 'Total Charging Energy',
-  '能耗': 'Energy Consumption',
-  '总能耗': 'Total Energy Consumption',
+  "能耗": "Energy Consumption",
+  "总能耗": "Total Energy Consumption",
   '平均每小时能耗': 'Avg Hourly Energy Consumption',
   '平均每小时油耗': 'Avg Hourly Fuel Consumption',
   '运行燃油消耗': 'Operating Fuel Consumption',
