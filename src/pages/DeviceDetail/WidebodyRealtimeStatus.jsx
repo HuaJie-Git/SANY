@@ -638,12 +638,12 @@ export default function WidebodyRealtimeStatus({ device }) {
           </div>
         </section>
 
-        {/* Block 3: 能耗 (5项/3项 + %剩余量曲线) */}
-        <section className="widebody-card widebody-energy-card" aria-label={'能耗'}>
+        {/* Block 3: 今日电耗 / 今日能耗 (5项/3项 + %剩余量曲线) */}
+        <section className="widebody-card widebody-energy-card" aria-label={'今日能耗'}>
           <div className="widebody-card-header">
             <SectionTitle
               icon={isElectric ? <ZapIcon /> : <FlameIcon />}
-              title={'能耗'}
+              title={'今日能耗'}
               tone={isElectric ? 'blue' : 'orange'}
             />
           </div>
