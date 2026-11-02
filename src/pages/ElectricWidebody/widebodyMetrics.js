@@ -84,8 +84,7 @@ export function reportMetrics(data, electric) {
   const keys = ['workingHours', 'operatingHours', 'mileage', 'trips',
     electric ? 'energy' : 'fuel', 'hourlyEnergy',
     ...(electric ? ['chargingEnergy', 'recoveryEnergy', 'recoveryRate'] : []), 'payloadPerTrip'];
-  return detailMetrics(data, electric).filter(m => keys.includes(m.key))
-    .map(m => m.key === 'energy' || m.key === 'fuel' ? { ...m, label: '今日能耗' } : m);
+  return detailMetrics(data, electric).filter(m => keys.includes(m.key));
 }
 
 export function todayMetrics(data, electric) {

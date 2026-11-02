@@ -87,7 +87,6 @@ export const WIDEBODY_DICTIONARY = {
 
   // Today & Cumulative Metrics
   '今日数据': "Today's Data",
-  "今日能耗": "Today’s Energy Consumption",
   '工时数据': 'Operating Hours Data',
   '累计数据': 'Cumulative Data',
   '最新工况': 'Latest Operating Condition',
