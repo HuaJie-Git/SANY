@@ -67,8 +67,8 @@ function detailMetrics(data, electric) {
     ['workingHours', '工作时长', 'h'], ['operatingHours', '运转时长', 'h'],
     ['idleHours', '怠速时长', 'h'], ['mileage', '行驶里程', 'km'],
     ['trips', '运输趟数', '趟'], ['weight', '运输重量', 't'],
-    [electric ? 'energy' : 'fuel', '能耗', energyUnit],
-    ['hourlyEnergy', '每小时能耗', `${energyUnit}/h`],
+    [electric ? 'energy' : 'fuel', electric ? '能耗' : '油耗', energyUnit],
+    ['hourlyEnergy', electric ? '每小时能耗' : '每小时油耗', `${energyUnit}/h`],
     ...(electric ? [
       ['chargingEnergy', '充电桩能耗', 'kWh'], ['recoveryEnergy', '回收能量', 'kWh'],
       ['recoveryRate', '回收能量百分比', '%'], ['avgEnergy', '平均电耗', 'kWh/km'],
@@ -119,6 +119,6 @@ export function cumulativeMetrics(electric) {
     .filter(m => !['idleHours', 'weight', 'runningFuel', 'idleFuel', 'avgEnergy', 'chargeDuration'].includes(m.key))
     .map(m => ({ ...m, label: ({ workingHours: '总工作时长', operatingHours: '总运转时长',
       mileage: '总行驶里程', trips: '总运输趟数', weight: '总运输重量', energy: '总能耗',
-      fuel: '总能耗', chargingEnergy: '充电桩总能耗', recoveryEnergy: '总回收能量',
+      fuel: '总油耗', chargingEnergy: '充电桩总能耗', recoveryEnergy: '总回收能量',
     })[m.key] || m.label }));
 }

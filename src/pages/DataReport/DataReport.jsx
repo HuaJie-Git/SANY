@@ -725,7 +725,7 @@ const WeeklyView = ({ deviceName, baseDate, isFuelWidebody }) => {
   }
   const isPaver = deviceName === '三一摊铺机';
   const isElectric = dev?.electric;
-  const useEnergy = isElectric || isFuelWidebody || dev?.useEnergyTerminology;
+  const useEnergy = !isFuelWidebody && (isElectric || dev?.useEnergyTerminology);
   const tooltipLabels = d.dates || d.fuelTrend.map((_, index) => formatFullDate(shiftDate(baseDate, index)));
   return (
     <div className="space-y-3">
@@ -793,7 +793,7 @@ const MonthlyView = ({ deviceName, baseDate, isFuelWidebody }) => {
   }
   const isPaver = deviceName === '三一摊铺机';
   const isElectric = dev?.electric;
-  const useEnergy = isElectric || isFuelWidebody || dev?.useEnergyTerminology;
+  const useEnergy = !isFuelWidebody && (isElectric || dev?.useEnergyTerminology);
   const monthLabels = Array.from({ length: d.fuelTrend.length }, (_, i) => `${i + 1}`);
   const tooltipLabels = d.dates || d.fuelTrend.map((_, index) => formatFullDate(shiftDate(baseDate, index)));
   const hasDailyAmount = Array.isArray(d.amountTrend) && d.amountTrend.some((amount) => amount != null && Number(amount) > 0);

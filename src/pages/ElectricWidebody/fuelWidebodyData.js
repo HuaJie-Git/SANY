@@ -3,8 +3,8 @@ import { completeDay, summarizeDays } from './widebodyMetrics.js';
  * 燃油宽体车 (KT090AE20208) 专属报表数据引擎
  * 遵循 PC-DEC-008 / V5-R01 / A01 / V5-REVIEW-001:
  * 1. 采用与 PC 端 widebody.js 完全相同的确定性 hash 函数与日记录生成算法；
- * 2. 统一专属文案为“能耗 / 平均每小时能耗”，单位 L 与 L/h；
- * 3. 基准日 2023-11-23 与 PC 端严格一致 (能耗 7.0L, 每小时能耗 23.33L/h, 工时 0.14h, 怠速工时 0.16h, 油位 74%)；
+ * 2. 统一专属文案为“油耗 / 平均每小时油耗”，单位 L 与 L/h；
+ * 3. 基准日 2023-11-23 与 PC 端严格一致 (油耗 7.0L, 每小时油耗 23.33L/h, 工时 0.14h, 怠速工时 0.16h, 油位 74%)；
  * 4. 周期数据 (周/月) 由每日记录动态确定性聚合，周汇总四项指标与 PC 端同周聚合完全一致；
  * 5. 连续工时分布分段 (09:00 起始，0.14h 工作，0.16h 怠速)，不加假整小时。
  */
@@ -178,7 +178,7 @@ export function safeAvg(sum, count, decimals = 2) {
 
 /**
  * 燃油宽体车单日统计生成引擎（与 PC widebody.js 契约完全一致）
- * 2023-11-23 基准日严格对齐：能耗 7L, 每小时能耗 23.33L/h, 工时 0.14h, 怠速工时 0.16h
+ * 2023-11-23 基准日严格对齐：油耗 7L, 每小时油耗 23.33L/h, 工时 0.14h, 怠速工时 0.16h
  */
 function basegetFuelDayStats(dateInput) {
   const dateStr = normalizeDateStr(dateInput);
@@ -323,10 +323,10 @@ export const FUEL_WIDEBODY_DATA = {
   daily: {
     fuelLevel: String(defaultDayStat.fuelLevel),
     summary: [
-      ['能耗', String(defaultDayStat.fuel.toFixed(1)), 'L'],
+      ['油耗', String(defaultDayStat.fuel.toFixed(1)), 'L'],
       ['运行功耗', String(defaultDayStat.runningFuel.toFixed(1)), 'L'],
       ['空闲功耗', String(defaultDayStat.idleFuel.toFixed(1)), 'L'],
-      ['平均每小时能耗', String(defaultDayStat.avgHourlyFuel.toFixed(1)), 'L/h'],
+      ['平均每小时油耗', String(defaultDayStat.avgHourlyFuel.toFixed(1)), 'L/h'],
       ['工时', String(defaultDayStat.workHours.toFixed(2)), 'h'],
       ['怠速工时', String(defaultDayStat.idleHours.toFixed(2)), 'h'],
       ['运输重量', formatWeight(defaultDayStat.weight), 't'],
@@ -336,10 +336,10 @@ export const FUEL_WIDEBODY_DATA = {
   },
   weekly: {
     summary: [
-      ['能耗', String(defaultWeekData.summary.fuel), 'L'],
+      ['油耗', String(defaultWeekData.summary.fuel), 'L'],
       ['运行功耗', String(defaultWeekData.summary.runningFuel ?? '35.0'), 'L'],
       ['空闲功耗', String(defaultWeekData.summary.idleFuel ?? '4.5'), 'L'],
-      ['平均每小时能耗', String(defaultWeekData.summary.avgHourlyFuel), 'L/h'],
+      ['平均每小时油耗', String(defaultWeekData.summary.avgHourlyFuel), 'L/h'],
       ['工时', String(defaultWeekData.summary.workHours), 'h'],
       ['怠速工时', String(defaultWeekData.summary.idleHours), 'h'],
       ['总运输重量', formatWeight(defaultWeekData.summary.weight), 't'],
@@ -355,10 +355,10 @@ export const FUEL_WIDEBODY_DATA = {
   },
   monthly: {
     summary: [
-      ['能耗', String(defaultMonthData.summary.fuel), 'L'],
+      ['油耗', String(defaultMonthData.summary.fuel), 'L'],
       ['运行功耗', String(defaultMonthData.summary.runningFuel ?? '140.0'), 'L'],
       ['空闲功耗', String(defaultMonthData.summary.idleFuel ?? '18.0'), 'L'],
-      ['平均每小时能耗', String(defaultMonthData.summary.avgHourlyFuel), 'L/h'],
+      ['平均每小时油耗', String(defaultMonthData.summary.avgHourlyFuel), 'L/h'],
       ['工时', String(defaultMonthData.summary.workHours), 'h'],
       ['怠速工时', String(defaultMonthData.summary.idleHours), 'h'],
       ['总运输重量', formatWeight(defaultMonthData.summary.weight), 't'],
