@@ -448,7 +448,7 @@ export default function WidebodyHistoryTrack({ device }) {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 12, color: '#9ca3af', width: 72, flexShrink: 0 }}>
-                {isElectric ? '能耗(kWh)' : '能耗(L)'}
+                {isElectric ? '能耗(kWh)' : '油耗(L)'}
               </span>
               <span style={{ fontSize: 13, fontWeight: 500, color: '#1f2937' }}>
                 {(!isElectric || isEmptyTrack) ? '—' : trackData?.totalEnergy}

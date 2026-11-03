@@ -879,22 +879,22 @@ function WidebodyDataReport({ device, reportSelector }) {
                   </>
                 ) : (
                   <>
-                    <section className="widebody-card" aria-label="能耗趋势">
+                    <section className="widebody-card" aria-label="油耗趋势">
                       <TrendChart
                         labels={dates}
                         data={rows.map((r) => r.fuel)}
                         unit="L"
                         color="#ff7500"
-                        label="能耗趋势"
+                        label="油耗趋势"
                       />
                     </section>
-                    <section className="widebody-card" aria-label="每小时能耗趋势">
+                    <section className="widebody-card" aria-label="每小时油耗趋势">
                       <TrendChart
                         labels={dates}
                         data={rows.map((r) => r.avgHourlyFuel)}
                         unit="L/h"
                         color="#2563eb"
-                        label="每小时能耗趋势"
+                        label="每小时油耗趋势"
                       />
                     </section>
                     <section className="widebody-card" aria-label="运转时长趋势">
