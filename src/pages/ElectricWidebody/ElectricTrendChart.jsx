@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 /**
  * 共享轻量 SVG 趋势图组件 (STYLE-FUEL-002/004)
  * 遵从规范:
  * 1. 折线与面积 points/d 完全由传入的数据数组动态映射计算，杜绝任何硬编码静态路径
- * 2. 单系列支持折线 + 交互数值点选 (平均电耗、运输趟数)
+ * 2. 单系列支持折线 + 交互数值点选 (平均能耗、运输趟数)
  * 3. 双系列支持双轴双刻度：左轴实线圆点 (充电时长)，右轴虚线菱形点 + 面积填充 (回收能量百分比)
  * 4. 燃油卡片规范：rounded-[14px], shadow-[0_1px_2px_rgba(31,41,55,0.035)], 无强制最小高度留白
  */
@@ -20,12 +20,17 @@ export function ElectricSingleLineChart({
 }) {
   const [selectedIndex, setSelectedIndex] = useState(null);
 
+  // 切换日期/周期/数据/单位时清空选中点，防止残留前一条数据/单位 (STATE-001)
+  useEffect(() => {
+    setSelectedIndex(null);
+  }, [data, unit, title]);
+
   if (!data || data.length === 0) {
     const emptyContent = (
       <>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[15px] font-semibold text-[#252b33]">{title}</span>
-          <span className="text-[11px] text-[#7a8290]">{unit}</span>
+        <div className="flex items-center justify-between mb-2" dir="auto">
+          <span className="text-[15px] font-semibold text-[#252b33] break-words">{title}</span>
+          <span className="text-[11px] text-[#7a8290] break-words">{unit}</span>
         </div>
         <div className="h-28 flex items-center justify-center text-[12px] text-[#7a8290]">
           暂无趋势数据
@@ -46,7 +51,7 @@ export function ElectricSingleLineChart({
 
   const width = 320;
   const height = 120;
-  const padLeft = 32;
+  const padLeft = 38;
   const padRight = 16;
   const padTop = 15;
   const padBottom = 24;
@@ -55,19 +60,31 @@ export function ElectricSingleLineChart({
   const plotH = height - padTop - padBottom;
 
   const minVal = 0;
-  const maxRaw = Math.max(...data);
+  const validNums = data.filter((v) => v !== null && v !== undefined && v !== '' && typeof v !== 'boolean' && !Array.isArray(v) && Number.isFinite(Number(v)) && Number(v) >= 0).map(Number);
+  const maxRaw = validNums.length > 0 ? Math.max(...validNums) : 0;
   const maxVal = maxRaw > 0 ? maxRaw * 1.2 : 10;
 
-  // 坐标点计算
-  const points = data.map((val, idx) => {
+  // 坐标点计算 (STATE-001: 无效/缺失点标记 isValid=false，断点不连到0，数值显示—)
+  const points = data.map((rawVal, idx) => {
     const x = padLeft + (idx / Math.max(1, data.length - 1)) * plotW;
-    const y = padTop + (1 - (val - minVal) / (maxVal - minVal)) * plotH;
-    return { x, y, val, label: labels[idx] || `${idx + 1}` };
+    const isValid = rawVal !== null && rawVal !== undefined && rawVal !== '' && typeof rawVal !== 'boolean' && !Array.isArray(rawVal) && Number.isFinite(Number(rawVal)) && Number(rawVal) >= 0;
+    const val = isValid ? Number(rawVal) : null;
+    const y = isValid ? padTop + (1 - (val - minVal) / (maxVal - minVal)) * plotH : null;
+    return { x, y, val, isValid, label: labels[idx] || `${idx + 1}` };
   });
 
-  const pathD = points.reduce((acc, p, i) => {
-    return i === 0 ? `M ${p.x.toFixed(1)} ${p.y.toFixed(1)}` : `${acc} L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
-  }, '');
+  // 动态折线路径：遇到无效点断开，不连到0 (STATE-001)
+  let pathD = '';
+  let inSegment = false;
+  points.forEach((p) => {
+    if (p.isValid) {
+      const cmd = !inSegment ? 'M' : 'L';
+      pathD += `${pathD ? ' ' : ''}${cmd} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
+      inSegment = true;
+    } else {
+      inSegment = false;
+    }
+  });
 
   // X 轴标签抽样 (月报只展示 1日, 10日, 20日, 末日)
   const isMonthly = data.length > 10;
@@ -82,9 +99,12 @@ export function ElectricSingleLineChart({
     <>
       <h2 className="sr-only">{title}</h2>
 
-      <div className="relative mt-2">
+      <div className="relative mt-2" dir="ltr">
         {/* Y 轴刻度标签 */}
-        <div className="absolute left-0 top-[10px] bottom-[24px] flex flex-col justify-between text-[9px] text-[#7a8290] font-mono select-none pointer-events-none">
+        <div
+          className="absolute left-0 top-[10px] bottom-[24px] flex flex-col justify-between text-[9px] text-[#7a8290] font-mono select-none pointer-events-none text-right pr-1"
+          style={{ width: `${padLeft - 2}px` }}
+        >
           <span>{maxVal.toFixed(decimals === 0 ? 0 : 1)}</span>
           <span>{(maxVal * 0.5).toFixed(decimals === 0 ? 0 : 1)}</span>
           <span>0</span>
@@ -97,17 +117,19 @@ export function ElectricSingleLineChart({
           <line x1={padLeft} y1={padTop + plotH} x2={width - padRight} y2={padTop + plotH} stroke="#edf0f4" strokeWidth="1" />
 
           {/* 动态折线 */}
-          <path
-            d={pathD}
-            fill="none"
-            stroke={color}
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+          {pathD && (
+            <path
+              d={pathD}
+              fill="none"
+              stroke={color}
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
 
           {/* 激活指示垂线 */}
-          {selectedPoint && (
+          {selectedPoint && selectedPoint.isValid && (
             <line
               x1={selectedPoint.x}
               y1={padTop}
@@ -128,7 +150,7 @@ export function ElectricSingleLineChart({
                 className="cursor-pointer focus:outline-none"
                 tabIndex={0}
                 role="button"
-                aria-label={`${p.label}: ${p.val} ${unit}`}
+                aria-label={`${p.label}: ${p.isValid ? `${p.val.toFixed(decimals)} ${unit}` : '—'}`}
                 onClick={() => setSelectedIndex(idx === selectedIndex ? null : idx)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
@@ -144,14 +166,16 @@ export function ElectricSingleLineChart({
                   height={plotH}
                   fill="transparent"
                 />
-                <circle
-                  cx={p.x}
-                  cy={p.y}
-                  r={isSel ? 5 : isMonthly ? 2.5 : 3.5}
-                  fill={isSel ? color : '#ffffff'}
-                  stroke={color}
-                  strokeWidth={isSel ? 2.5 : 2}
-                />
+                {p.isValid && (
+                  <circle
+                    cx={p.x}
+                    cy={p.y}
+                    r={isSel ? 5 : isMonthly ? 2.5 : 3.5}
+                    fill={isSel ? color : '#ffffff'}
+                    stroke={color}
+                    strokeWidth={isSel ? 2.5 : 2}
+                  />
+                )}
               </g>
             );
           })}
@@ -165,15 +189,15 @@ export function ElectricSingleLineChart({
         </div>
       </div>
 
-      {/* 底部图例 title+unit；未选点不显示“单位:”副说明，选点才显示数值 */}
-      <div className="flex flex-wrap items-center justify-between gap-2 min-w-0 text-[11px] text-[#7a8290] mt-3 pt-2 border-t border-gray-100">
-        <div className="flex flex-wrap items-center gap-1.5 font-medium text-[#252b33]">
-          <span className="w-2.5 h-0.5 rounded-full" style={{ backgroundColor: color }}></span>
-          <span>{title} ({unit})</span>
+      {/* 底部图例 title+unit；未选点不显示“单位:”副说明，选点才显示数值 (STATE-001) */}
+      <div className="flex flex-wrap items-center justify-between gap-2 min-w-0 text-[11px] text-[#7a8290] mt-3 pt-2 border-t border-gray-100" dir="auto">
+        <div className="flex flex-wrap items-center gap-1.5 font-medium text-[#252b33] min-w-0 break-words">
+          <span className="w-2.5 h-0.5 rounded-full shrink-0" style={{ backgroundColor: color }}></span>
+          <span className="break-words">{title} ({unit})</span>
         </div>
         {selectedPoint && (
-          <span className="font-semibold text-[#2377f3] bg-blue-50 px-2 py-0.5 rounded-md">
-            {selectedPoint.label}: {Number(selectedPoint.val).toFixed(decimals)} {unit}
+          <span className="font-semibold text-[#2377f3] bg-blue-50 px-2 py-0.5 rounded-md shrink-0">
+            {selectedPoint.label}: {selectedPoint.isValid ? `${selectedPoint.val.toFixed(decimals)} ${unit}` : '—'}
           </span>
         )}
       </div>

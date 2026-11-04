@@ -199,6 +199,7 @@ function basegetFuelDayStats(dateInput) {
       fuelLevel: 74,
       weight: 144.5,
       trips: 2,
+      avgFuel: 291.67,
     };
   }
 
@@ -211,6 +212,7 @@ function basegetFuelDayStats(dateInput) {
   const idleFuel = parseFloat((0.4 + (seed % 4) * 0.2).toFixed(1));
   const fuel = Number((runningFuel + idleFuel).toFixed(1));
   const avgHourlyFuel = runningHours > 0 ? Number((fuel / runningHours).toFixed(1)) : null;
+  const avgFuel = (mileage > 0 && fuel != null) ? (fuel === 0 ? 0 : Number(((fuel / mileage) * 100).toFixed(2))) : null;
   const utilizationRate = getMachineUtilization(Number((workHours * 0.9).toFixed(3)), runningHours);
   const fuelLevel = 60 + (seed % 30);
 
@@ -228,6 +230,7 @@ function basegetFuelDayStats(dateInput) {
     fuelLevel,
     weight: Number((135 + seed % 150).toFixed(1)),
     trips: 2 + seed % 4,
+    avgFuel,
   };
 }
 
@@ -349,7 +352,9 @@ export const FUEL_WIDEBODY_DATA = {
       amount: null,
       fuel: r.fuel,
     })),
+    rows: defaultWeekData.rows,
     fuelTrend: defaultWeekData.rows.map((r) => r.fuel),
+    avgFuelTrend: defaultWeekData.rows.map((r) => r.avgFuel),
     workH: defaultWeekData.rows.map((r) => r.workHours),
     idleH: defaultWeekData.rows.map((r) => r.idleHours),
   },
@@ -363,7 +368,9 @@ export const FUEL_WIDEBODY_DATA = {
       ['怠速工时', String(defaultMonthData.summary.idleHours), 'h'],
       ['总运输重量', formatWeight(defaultMonthData.summary.weight), 't'],
     ],
+    rows: defaultMonthData.rows,
     fuelTrend: defaultMonthData.rows.map((r) => r.fuel),
+    avgFuelTrend: defaultMonthData.rows.map((r) => r.avgFuel),
     workH: defaultMonthData.rows.map((r) => r.workHours),
     idleH: defaultMonthData.rows.map((r) => r.idleHours),
   },

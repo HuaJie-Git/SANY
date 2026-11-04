@@ -1,5 +1,5 @@
-import { reportMetrics } from '../ElectricWidebody/widebodyMetrics.js';
-import React, { useMemo, useState } from 'react';
+import { reportMetrics, calcPer100Km } from '../ElectricWidebody/widebodyMetrics.js';
+import React, { useMemo, useState, useEffect } from 'react';
 import FuelLevelChart from '../../components/FuelLevelChart/FuelLevelChart';
 import WorkStatusTimeline from '../../components/WorkStatusTimeline/WorkStatusTimeline';
 import ElectricDataReport from '../ElectricWidebody/ElectricDataReport';
@@ -451,15 +451,32 @@ const WEEKDAY_MON_FIRST = ['周一','周二','周三','周四','周五','周六'
 const LineChart = ({ series, labels, tooltipLabels = labels, yMax, yUnit, rightUnit }) => {
   const [hoverIndex, setHoverIndex] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(null);
+
+  useEffect(() => {
+    setHoverIndex(null);
+    setSelectedIndex(null);
+  }, [series, labels]);
+
   const W = 320, H = 168, PAD = { t: 25, r: rightUnit ? 34 : 10, b: 34, l: 38 };
   const cw = W - PAD.l - PAD.r, ch = H - PAD.t - PAD.b;
   const leftSeries = series.filter((item) => item.axis !== 'right');
   const rightSeries = series.filter((item) => item.axis === 'right');
-  const leftMax = yMax || Math.max(...leftSeries.flatMap((item) => item.data), 1) * 1.15;
-  const rightMax = Math.max(...rightSeries.flatMap((item) => item.data), 1) * 1.15;
+  const validLeftValues = leftSeries.flatMap((item) =>
+    (item.data || []).filter((v) => v !== null && v !== undefined && v !== '' && typeof v !== 'boolean' && !Array.isArray(v) && Number.isFinite(Number(v))).map(Number)
+  );
+  const leftRawMax = validLeftValues.length > 0 ? Math.max(...validLeftValues) : 0;
+  const leftMax = yMax || (leftRawMax > 0 ? leftRawMax * 1.15 : 1);
+  const validRightValues = rightSeries.flatMap((item) =>
+    (item.data || []).filter((v) => v !== null && v !== undefined && v !== '' && typeof v !== 'boolean' && !Array.isArray(v) && Number.isFinite(Number(v))).map(Number)
+  );
+  const rightRawMax = validRightValues.length > 0 ? Math.max(...validRightValues) : 0;
+  const rightMax = rightRawMax > 0 ? rightRawMax * 1.15 : 1;
   const len = series[0]?.data.length || 0;
   const toX = (i) => PAD.l + (len > 1 ? (i / (len - 1)) * cw : cw / 2);
-  const toY = (v, axis) => PAD.t + ch - (v / (axis === 'right' ? rightMax : leftMax)) * ch;
+  const toY = (v, axis) => {
+    const denom = (axis === 'right' ? rightMax : leftMax) || 1;
+    return PAD.t + ch - (v / denom) * ch;
+  };
   const step = len > 8 ? Math.ceil(len / 6) : 1;
   const activeIndex = hoverIndex ?? selectedIndex;
   const activeLeft = activeIndex == null ? 50 : Math.min(74, Math.max(26, (toX(activeIndex) / W) * 100));
@@ -476,11 +493,25 @@ const LineChart = ({ series, labels, tooltipLabels = labels, yMax, yUnit, rightU
           return <g key={f}><line x1={PAD.l} y1={y} x2={W - PAD.r} y2={y} stroke="#e9ecef" strokeWidth=".7" /><text x={PAD.l - 5} y={y + 3} textAnchor="end" fontSize="8" fill="#999">{(leftMax * f).toFixed(0)}</text>{rightUnit && <text x={W - PAD.r + 5} y={y + 3} fontSize="8" fill="#999">{(rightMax * f).toFixed(1)}</text>}</g>;
         })}
         {series.map((item) => {
-          const pathD = item.data.map((value, i) => `${i === 0 ? 'M' : 'L'}${toX(i).toFixed(1)},${toY(value, item.axis).toFixed(1)}`).join(' ');
+          let pathD = '';
+          let inSegment = false;
+          (item.data || []).forEach((value, i) => {
+            const isValid = value !== null && value !== undefined && value !== '' && typeof value !== 'boolean' && !Array.isArray(value) && Number.isFinite(Number(value));
+            if (isValid) {
+              const cmd = !inSegment ? 'M' : 'L';
+              pathD += `${pathD ? ' ' : ''}${cmd}${toX(i).toFixed(1)},${toY(Number(value), item.axis).toFixed(1)}`;
+              inSegment = true;
+            } else {
+              inSegment = false;
+            }
+          });
           return (
             <g key={item.key}>
-              <path d={pathD} fill="none" stroke={item.color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-              {item.data.map((value, i) => <circle key={i} cx={toX(i)} cy={toY(value, item.axis)} r={activeIndex === i ? 3.5 : 2.3} fill="#fff" stroke={item.color} strokeWidth="1.5" onMouseEnter={() => setHoverIndex(i)} onClick={() => setSelectedIndex(i)} />)}
+              {pathD && <path d={pathD} fill="none" stroke={item.color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />}
+              {(item.data || []).map((value, i) => {
+                if (value === null || value === undefined || value === '' || typeof value === 'boolean' || Array.isArray(value) || !Number.isFinite(Number(value))) return null;
+                return <circle key={i} cx={toX(i)} cy={toY(Number(value), item.axis)} r={activeIndex === i ? 3.5 : 2.3} fill="#fff" stroke={item.color} strokeWidth="1.5" onMouseEnter={() => setHoverIndex(i)} onClick={() => setSelectedIndex(i)} />;
+              })}
             </g>
           );
         })}
@@ -493,7 +524,17 @@ const LineChart = ({ series, labels, tooltipLabels = labels, yMax, yUnit, rightU
       {activeIndex != null && (
         <div className="pointer-events-none absolute top-[34px] min-w-[156px] -translate-x-1/2 rounded-lg bg-white px-3 py-2.5 shadow-[0_8px_24px_rgba(31,41,55,0.18)]" style={{ left: `${activeLeft}%` }}>
           <div className="mb-1.5 text-[12px] font-medium text-[#4b5563]">{tooltipLabels[activeIndex]}</div>
-          {series.map((item) => <div key={item.key} className="flex items-center gap-2 text-[11px] leading-5 text-[#59616c]"><span className="h-2.5 w-2.5 rounded-full" style={{ background: item.color }} /><span className="flex-1">{item.label || item.key}</span><b className="text-[#303640]">{item.data[activeIndex]}{item.unit || ''}</b></div>)}
+          {series.map((item) => {
+            const val = item.data ? item.data[activeIndex] : null;
+            const isValid = val !== null && val !== undefined && val !== '' && Number.isFinite(Number(val));
+            return (
+              <div key={item.key} className="flex items-center gap-2 text-[11px] leading-5 text-[#59616c]">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: item.color }} />
+                <span className="flex-1">{item.label || item.key}</span>
+                <b className="text-[#303640]">{isValid ? `${val}${item.unit || ''}` : '—'}</b>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -717,6 +758,7 @@ const WeeklyView = ({ deviceName, baseDate, isFuelWidebody }) => {
           totalWorkH: periodic.rows.map((r) => r.workingHours),
           idleH: periodic.rows.map((r) => r.idleHours),
           dates: periodic.dates,
+          rows: periodic.rows,
         };
       })()
     : dev?.weekly;
@@ -740,16 +782,38 @@ const WeeklyView = ({ deviceName, baseDate, isFuelWidebody }) => {
         />
       </div>
       <div className="rounded-2xl bg-white p-4 shadow-sm">
-        <div className="text-[15px] font-semibold mb-1">{deviceName === '挖掘机' ? '开机时段分析' : (isPaver ? '燃油消耗' : (useEnergy ? '平均每小时能耗趋势' : '平均每小时油耗趋势'))}</div>
+        <div className="text-[15px] font-semibold mb-1">
+          {isFuelWidebody
+            ? '平均油耗趋势'
+            : (deviceName === '挖掘机'
+                ? '开机时段分析'
+                : (isPaver
+                    ? '燃油消耗'
+                    : (useEnergy ? '平均每小时能耗趋势' : '平均每小时油耗趋势')))}
+        </div>
         <LineChart
           series={[
             isPaver
               ? { key: 'fuel', label: '燃油消耗', unit: ' L', data: d.fuelTrend, color: '#ed8b24' }
-              : { key: 'hourlyFuel', label: useEnergy ? '平均每小时能耗' : '平均每小时油耗', unit: isElectric ? ' kWh/h' : ' L/h', data: d.fuelTrend.map((fuel, i) => Number((fuel / (isFuelWidebody ? d.totalWorkH[i] : (d.workH[i] || 1))).toFixed(2))), color: '#ff862d' },
+              : isFuelWidebody
+              ? {
+                  key: 'wAvgFuel100Km',
+                  label: '平均油耗趋势',
+                  unit: ' L/100km',
+                  data: (d.rows || []).map((r) => calcPer100Km(r.fuel, r.mileage)),
+                  color: '#ff862d',
+                }
+              : {
+                  key: 'hourlyFuel',
+                  label: useEnergy ? '平均每小时能耗' : '平均每小时油耗',
+                  unit: isElectric ? ' kWh/h' : ' L/h',
+                  data: d.fuelTrend.map((fuel, i) => Number((fuel / (d.workH[i] || 1)).toFixed(2))),
+                  color: '#ff862d',
+                },
           ]}
           labels={['周一','周二','周三','周四','周五','周六','周日']}
           tooltipLabels={tooltipLabels}
-          yUnit={isPaver ? 'L' : (isElectric ? 'kWh/h' : 'L/h')}
+          yUnit={isPaver ? 'L' : (isFuelWidebody ? 'L/100km' : (isElectric ? 'kWh/h' : 'L/h'))}
         />
         {isPaver && <div className="mt-2 flex items-center justify-center gap-1 text-[10px] text-[#666]"><span className="inline-block h-2 w-2 rounded-sm bg-[#ed8b24]" />燃油消耗(L)</div>}
       </div>
@@ -785,6 +849,7 @@ const MonthlyView = ({ deviceName, baseDate, isFuelWidebody }) => {
           idleH: periodic.rows.map((r) => r.idleHours),
           amountTrend: periodic.rows.map(r => r.workingHours),
           dates: periodic.dates,
+          rows: periodic.rows,
         };
       })()
     : dev?.monthly;
@@ -812,16 +877,38 @@ const MonthlyView = ({ deviceName, baseDate, isFuelWidebody }) => {
         />
       </div>
       <div className="rounded-2xl bg-white p-4 shadow-sm">
-        <div className="text-[15px] font-semibold mb-1">{deviceName === '挖掘机' ? '开机时段分析' : (isPaver ? '燃油消耗' : (useEnergy ? '平均每小时能耗趋势' : '平均每小时油耗趋势'))}</div>
+        <div className="text-[15px] font-semibold mb-1">
+          {isFuelWidebody
+            ? '平均油耗趋势'
+            : (deviceName === '挖掘机'
+                ? '开机时段分析'
+                : (isPaver
+                    ? '燃油消耗'
+                    : (useEnergy ? '平均每小时能耗趋势' : '平均每小时油耗趋势')))}
+        </div>
         <LineChart
           series={[
             isPaver
               ? { key: 'mFuel', label: '燃油消耗', unit: ' L', data: d.fuelTrend, color: '#ed8b24' }
-              : { key: 'mHourlyFuel', label: useEnergy ? '平均每小时能耗' : '平均每小时油耗', unit: isElectric ? ' kWh/h' : ' L/h', data: d.fuelTrend.map((fuel, i) => Number((fuel / (isFuelWidebody ? d.totalWorkH[i] : (d.workH[i] || 1))).toFixed(2))), color: '#ff862d' },
+              : isFuelWidebody
+              ? {
+                  key: 'mAvgFuel100Km',
+                  label: '平均油耗趋势',
+                  unit: ' L/100km',
+                  data: (d.rows || []).map((r) => calcPer100Km(r.fuel, r.mileage)),
+                  color: '#ff862d',
+                }
+              : {
+                  key: 'mHourlyFuel',
+                  label: useEnergy ? '平均每小时能耗' : '平均每小时油耗',
+                  unit: isElectric ? ' kWh/h' : ' L/h',
+                  data: d.fuelTrend.map((fuel, i) => Number((fuel / (isFuelWidebody ? d.totalWorkH[i] : (d.workH[i] || 1))).toFixed(2))),
+                  color: '#ff862d',
+                },
           ]}
           labels={monthLabels}
           tooltipLabels={tooltipLabels}
-          yUnit={isPaver ? 'L' : (isElectric ? 'kWh/h' : 'L/h')}
+          yUnit={isPaver ? 'L' : (isFuelWidebody ? 'L/100km' : (isElectric ? 'kWh/h' : 'L/h'))}
         />
         {isPaver && <div className="mt-2 flex items-center justify-center gap-1 text-[10px] text-[#666]"><span className="inline-block h-2 w-2 rounded-sm bg-[#ed8b24]" />燃油消耗(L)</div>}
       </div>

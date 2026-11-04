@@ -5,6 +5,32 @@ export const ratio = (a, b, digits = 2) => (
     ? round(a / b, digits) : null
 );
 
+function parseValidNumeric(val) {
+  if (typeof val === 'number') {
+    return Number.isFinite(val) ? val : null;
+  }
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (trimmed === '') return null;
+    const num = Number(trimmed);
+    return Number.isFinite(num) ? num : null;
+  }
+  return null;
+}
+
+export function calcPer100Km(consumption, mileage, digits = 2) {
+  const c = parseValidNumeric(consumption);
+  const m = parseValidNumeric(mileage);
+  if (c == null || m == null || m <= 0 || c < 0) {
+    return null;
+  }
+  if (c === 0 && m > 0) return 0;
+  const raw = (c / m) * 100;
+  if (!Number.isFinite(raw)) return null;
+  const rounded = round(raw, digits);
+  return Number.isFinite(rounded) ? rounded : null;
+}
+
 export function completeDay(row, electric) {
   if (!row) return row;
   const date = row.date || row.dateStr;
@@ -31,9 +57,13 @@ export function completeDay(row, electric) {
     utilizationRate: ratio(drivingHours * 100, totalHours, 1),
     hourlyEnergy: ratio(energy, totalHours), payloadPerTrip: ratio(weight, trips),
     ...(electric ? {
-      energy, avgEnergy: ratio(energy, row.mileage), chargingEnergy, accumulatedCharge,
+      energy, avgEnergy: calcPer100Km(energy, row.mileage), chargingEnergy, accumulatedCharge,
       recoveryEnergy: recovered, recoveryRate: ratio(recovered * 100, chargingEnergy),
-    } : { fuel: energy, avgHourlyFuel: ratio(energy, totalHours, 1) }),
+    } : {
+      fuel: energy,
+      avgHourlyFuel: ratio(energy, totalHours, 1),
+      avgFuel: calcPer100Km(energy, row.mileage),
+    }),
   };
 }
 
@@ -53,15 +83,18 @@ export function summarizeDays(rows, electric) {
     result.recoveryEnergy = result.accumulatedCharge == null || result.chargingEnergy == null
       ? null : round(result.accumulatedCharge - result.chargingEnergy, 3);
     result.recoveryRate = ratio(result.recoveryEnergy == null ? null : result.recoveryEnergy * 100, result.chargingEnergy);
-    result.avgEnergy = ratio(result.energy, result.mileage);
-  } else result.avgHourlyFuel = ratio(result.fuel, result.workingHours, 1);
+    result.avgEnergy = calcPer100Km(result.energy, result.mileage);
+  } else {
+    result.avgHourlyFuel = ratio(result.fuel, result.workingHours, 1);
+    result.avgFuel = calcPer100Km(result.fuel, result.mileage);
+  }
   return result;
 }
 
 export const formatMetric = (value, digits = 2) => Number.isFinite(value)
   ? String(round(value, digits)) : '—';
 
-function detailMetrics(data, electric) {
+export function detailMetrics(data, electric) {
   const energyUnit = electric ? 'kWh' : 'L';
   const fields = [
     ['workingHours', '工作时长', 'h'], ['operatingHours', '运转时长', 'h'],
@@ -71,7 +104,7 @@ function detailMetrics(data, electric) {
     ['hourlyEnergy', electric ? '每小时能耗' : '每小时油耗', `${energyUnit}/h`],
     ...(electric ? [
       ['chargingEnergy', '充电桩能耗', 'kWh'], ['recoveryEnergy', '回收能量', 'kWh'],
-      ['recoveryRate', '回收能量百分比', '%'], ['avgEnergy', '平均电耗', 'kWh/km'],
+      ['recoveryRate', '回收能量百分比', '%'], ['avgEnergy', '平均能耗', 'kWh/100km'],
       ['chargeDuration', '充电时长', 'h'],
     ] : [['runningFuel', '运行功耗', 'L'], ['idleFuel', '空闲功耗', 'L']]),
     ['payloadPerTrip', '单趟载重', 't/趟'],

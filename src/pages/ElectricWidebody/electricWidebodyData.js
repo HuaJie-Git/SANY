@@ -124,7 +124,7 @@ function basegetDailyVehicleStats(dateInput) {
       energy: 210,
       trips: 6,
       weight: 72.5,
-      avgEnergy: 4.32,
+      avgEnergy: 432.1,
       chargeDuration: 1.2,
       recoveryEnergy: 24.5,
       workHours,
@@ -143,7 +143,7 @@ function basegetDailyVehicleStats(dateInput) {
   const energy = parseFloat((170 + (seed % 70) + (seed % 7) * 0.1).toFixed(1));
   const trips = 4 + (seed % 5);
   const weight = parseFloat((trips * 12 + (seed % 10) * 0.5).toFixed(1));
-  const avgEnergy = mileage > 0 ? parseFloat((energy / mileage).toFixed(2)) : null;
+  const avgEnergy = (mileage > 0 && energy != null) ? (energy === 0 ? 0 : parseFloat(((energy / mileage) * 100).toFixed(2))) : null;
   const chargeDuration = parseFloat((0.8 + (seed % 8) * 0.1).toFixed(1));
   const recoveryEnergy = parseFloat((16 + (seed % 12) + (seed % 5) * 0.1).toFixed(1));
   const workHours = parseFloat((3.8 + (seed % 4) * 0.4).toFixed(1));
@@ -1262,7 +1262,7 @@ export function getTrackDataByRange(startDate, startTime, endDate, endTime) {
       energy: `${seg1Kwh.toFixed(1)} kWh`,
       avgSpeed: '21.0 km/h',
       status: '重载行驶',
-      note: '重载上行，电耗平稳',
+      note: '重载上行，能耗平稳',
     },
     {
       id: 2,
@@ -1295,7 +1295,7 @@ export function getTrackDataByRange(startDate, startTime, endDate, endTime) {
       energy: `${seg4Kwh.toFixed(1)} kWh`,
       avgSpeed: '29.8 km/h',
       status: '空载行驶',
-      note: '空载平路匀速，电耗极优',
+      note: '空载平路匀速，能耗极优',
     },
   ];
 
@@ -1330,13 +1330,13 @@ export function getTrackDataByRange(startDate, startTime, endDate, endTime) {
   };
 }
 
-// 电耗客观分析数据 (FIX-005: 移除未经授权的评分与节费数值)
+// 能耗客观分析数据 (FIX-005: 移除未经授权的评分与节费数值)
 export const ELECTRIC_ENERGY_METRICS = {
   drivingEnergy: '161.9',
   idleEnergy: '24.5',
   chargingEnergy: '210.0',
   recoveryEnergy: '24.5',
-  avgEnergyPer100Km: '383.5',
+  avgEnergyPer100Km: '432.1',
 };
 
 // 驾驶行为客观统计 (FIX-005: 移除未经授权的 96 分与安全等级结论)

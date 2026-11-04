@@ -334,11 +334,11 @@ export default function ElectricDataReport({ device, onBack }) {
                     </div>
                   )}
 
-                  {/* 平均电耗趋势 (同一白卡内嵌入，noCard=true) */}
+                  {/* 平均能耗趋势 (同一白卡内嵌入，noCard=true) */}
                   <ElectricSingleLineChart
                     noCard
-                    title="平均电耗趋势"
-                    unit="kWh/km"
+                    title="平均能耗趋势"
+                    unit="kWh/100km"
                     data={reportData.avgEnergyTrend}
                     labels={reportData.days.map((d) => d.name)}
                     color="#2377f3"
@@ -454,11 +454,11 @@ export default function ElectricDataReport({ device, onBack }) {
                     </div>
                   )}
 
-                  {/* 月度平均电耗走势 (同一白卡内嵌入，noCard=true) */}
+                  {/* 月度平均能耗趋势 (同一白卡内嵌入，noCard=true) */}
                   <ElectricSingleLineChart
                     noCard
-                    title="平均电耗走势"
-                    unit="kWh/km"
+                    title="平均能耗趋势"
+                    unit="kWh/100km"
                     data={reportData.avgEnergyTrend}
                     labels={reportData.days.map((d) => `${d.day}日`)}
                     color="#2377f3"
