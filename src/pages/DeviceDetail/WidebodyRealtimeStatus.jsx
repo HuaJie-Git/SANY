@@ -533,7 +533,7 @@ export default function WidebodyRealtimeStatus({ device }) {
         { label: '设备状态', value: formatValue(realtime['设备状态']) },
         { label: '车速', value: formatValue(realtime['车速']) },
         { label: '油位', value: formatValue(realtime['油位']) },
-        { label: '行驶档位', value: formatValue(realtime['齿轮模式']) },
+        { label: '档位', value: formatValue(realtime['齿轮模式']) },
         { label: '运输重量', value: formatValue(realtime['运输重量']) },
       ];
 
