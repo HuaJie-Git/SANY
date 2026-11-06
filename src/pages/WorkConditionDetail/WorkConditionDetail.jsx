@@ -7,6 +7,7 @@ import EscEventPage from '../EscEvent/EscEventPage';
 import ElectricWorkConditionDetail from '../ElectricWidebody/ElectricWorkConditionDetail';
 import { isElectricWidebody } from '../ElectricWidebody/electricWidebodyData';
 import { getFuelDayStats, getDailyWorkDistribution } from '../ElectricWidebody/fuelWidebodyData';
+import { resolveCumulativeMetrics } from './cumulativeMetrics.js';
 
 const PURE_ELECTRIC_MIXER_DATA = {
   supportsTrajectory: true,
@@ -278,7 +279,7 @@ const MACHINE_DATA = {
       ['运载趟数', '0', '趟'],
       ['油位', '74', '%'],
       ['油门深度', '0', '%'],
-      ['行驶档位', '2档'],
+      ['档位', '2档'],
     ],
     today: [
       ['里程', '2.4', 'km'],
@@ -316,7 +317,7 @@ const MACHINE_DATA = {
       ['运载趟数', '0', '趟'],
       ['油位', '74', '%'],
       ['油门深度', '0', '%'],
-      ['行驶档位', '2档'],
+      ['档位', '2档'],
     ],
     today: [
       ['里程', '2.4', 'km'],
@@ -354,7 +355,7 @@ const MACHINE_DATA = {
       ['运载趟数', '0', '趟'],
       ['油位', '74', '%'],
       ['油门深度', '0', '%'],
-      ['行驶档位', '2档'],
+      ['档位', '2档'],
     ],
     today: [
       ['里程', '2.4', 'km'],
@@ -778,10 +779,7 @@ const WorkConditionDetailInner = ({
       ['当日总工时', String(device?.todayHours || '0').replace(/[^\d.]/g, ''), 'h'],
       ['当日总能耗', String(device?.todayEnergy || '0').replace(/[^\d.]/g, ''), String(device?.todayEnergy || '').includes('kWh') ? 'kWh' : 'L'],
     ],
-    cumulative: [
-      ['设备编号', device?.code || '-'],
-      ['待处理异常', String(device?.auditCounts?.exception || 0), '条'],
-    ],
+    cumulative: resolveCumulativeMetrics(device, MACHINE_DATA),
   };
 
   const isExcavator = ['挖掘机', '三一挖掘机', 'SY014CF', 'SY014CF0113D8'].includes(device?.name) || device?.code?.startsWith('SY014CF');
@@ -973,7 +971,11 @@ const WorkConditionDetailInner = ({
         {/* 累计数据 */}
         <section className="rounded-[14px] bg-white px-4 py-5 shadow-[0_1px_2px_rgba(31,41,55,0.035)]">
           <h2 className="text-[16px] font-semibold">累计数据</h2>
-          <div className="mt-7 grid grid-cols-2 gap-x-5 gap-y-7">{data.cumulative.map((item) => <Metric key={item[0]} item={item} />)}</div>
+          {data.cumulative.length > 0 ? (
+            <div className="mt-7 grid grid-cols-2 gap-x-5 gap-y-7">{data.cumulative.map((item) => (
+              <div key={item[0]} className="min-w-0 overflow-x-auto"><Metric item={item} /></div>
+            ))}</div>
+          ) : <div className="py-8 text-center text-[13px] text-[#999]">暂无数据</div>}
         </section>
 
       </main>

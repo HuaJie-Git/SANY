@@ -13,6 +13,7 @@ import {
   getCommentsByPostId,
 } from './communityData';
 import ViewCountBadge from './ViewCountBadge';
+import { buildPostLinkPayload, openWhatsAppLink, shareLinkWithSystem } from './postLinkShare';
 
 const COMMENT_MAX_LENGTH = 500;
 
@@ -346,17 +347,118 @@ const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, tar
 
   // 分享状态管理（使用本地持久计数，避免直接改动 post props）
   const [shareCount, setShareCount] = useState(() => calculateInitialShareCount(post));
+  const [showShareSheet, setShowShareSheet] = useState(false);
   const [showPosterPreview, setShowPosterPreview] = useState(false);
   const [posterDataUrl, setPosterDataUrl] = useState('');
   const [previewQrUrl, setPreviewQrUrl] = useState('');
-  const [isSharing, setIsSharing] = useState(false);
-  const [shareFailureInfo, setShareFailureInfo] = useState(null);
+  const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
+  const [isSavingImage, setIsSavingImage] = useState(false);
+  const [posterFailureInfo, setPosterFailureInfo] = useState(null);
+  const [showPosterFailureAlert, setShowPosterFailureAlert] = useState(false);
+  const [copyFailureInfo, setCopyFailureInfo] = useState(null);
+  const [channelAlert, setChannelAlert] = useState('');
+  const channelAlertTimerRef = useRef(null);
+
+  // 状态隔离令牌（REVIEW-005）：生成海报、链接/渠道分享、保存图片相互解耦
+  const posterGenAttemptRef = useRef(0);
+  const linkShareAttemptRef = useRef(0);
+  const saveImageAttemptRef = useRef(0);
+  const previewSessionRef = useRef(0);
+
+  const channelShareBusyRef = useRef(false);
+  const copyBusyRef = useRef(false);
+  const isSavingImageRef = useRef(false);
+  const shareTriggerRef = useRef(null);
+  const posterDialogRef = useRef(null);
+  const posterCloseBtnRef = useRef(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const detailRootRef = useRef(null);
 
+  const showChannelAlert = (msg) => {
+    if (channelAlertTimerRef.current) clearTimeout(channelAlertTimerRef.current);
+    setChannelAlert(msg);
+    if (msg) {
+      channelAlertTimerRef.current = window.setTimeout(() => {
+        setChannelAlert('');
+      }, 4000);
+    }
+  };
+
   useEffect(() => {
     setActiveImageIndex(0);
+    previewSessionRef.current += 1;
+    posterGenAttemptRef.current += 1;
+    linkShareAttemptRef.current += 1;
+    saveImageAttemptRef.current += 1;
+    channelShareBusyRef.current = false;
+    copyBusyRef.current = false;
+    isSavingImageRef.current = false;
+    setIsGeneratingPoster(false);
+    setIsSavingImage(false);
+    setPosterFailureInfo(null);
+    setShowPosterFailureAlert(false);
+    setCopyFailureInfo(null);
+    setChannelAlert('');
+    if (channelAlertTimerRef.current) clearTimeout(channelAlertTimerRef.current);
+    setShowShareSheet(false);
+    setShowPosterPreview(false);
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+      setToastMessage('');
+    }
+    return () => {
+      previewSessionRef.current += 1;
+      posterGenAttemptRef.current += 1;
+      linkShareAttemptRef.current += 1;
+      saveImageAttemptRef.current += 1;
+      if (channelAlertTimerRef.current) clearTimeout(channelAlertTimerRef.current);
+    };
   }, [post?.id]);
+
+  // 当海报预览打开时锁定背景滚动并恢复原样式，支持 Escape 键关闭与 Tab 循环焦点陷阱
+  useEffect(() => {
+    if (!showPosterPreview) return;
+    const target = detailRootRef.current?.closest('[data-phone-screen]') || (typeof document !== 'undefined' ? document.body : null);
+    if (!target) return;
+    const originalOverflow = target.style.overflow;
+    target.style.overflow = 'hidden';
+
+    // 聚焦于关闭/返回按钮
+    posterCloseBtnRef.current?.focus({ preventScroll: true });
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        handleCloseShare();
+        return;
+      }
+      if (e.key === 'Tab') {
+        const dialogEl = posterDialogRef.current;
+        if (!dialogEl) return;
+        const focusable = dialogEl.querySelectorAll('button:not([disabled]), input:not([disabled]), a[href]');
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      target.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showPosterPreview]);
 
   // 内部异常模式触发（URL参数 ?mockShare=copy_fail / ?mockShare=image_fail 等）
   const getActiveMockScenario = () => {
@@ -421,15 +523,47 @@ const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, tar
     });
   };
 
-  // 点击分享：直接全屏海报预览，无中间选择弹层（V1.4：整屏连续排版）
-  const handleShareClick = async () => {
+  // 点击分享：直接进入海报预览并异步生成海报与二维码（SHARE-UX-005 / SHARE-UX-006）
+  const handleShareClick = () => {
     if (!isPostShareable) {
       showToast('该帖子暂不可分享（待审核/未通过或已删除）');
       return;
     }
-    if (isSharing) return;
-    setIsSharing(true);
-    setShareFailureInfo(null);
+    previewSessionRef.current += 1;
+    posterGenAttemptRef.current += 1;
+    linkShareAttemptRef.current += 1;
+    saveImageAttemptRef.current += 1;
+    channelShareBusyRef.current = false;
+    copyBusyRef.current = false;
+    isSavingImageRef.current = false;
+    setIsGeneratingPoster(false);
+    setIsSavingImage(false);
+    setPosterFailureInfo(null);
+    setShowPosterFailureAlert(false);
+    setCopyFailureInfo(null);
+    setChannelAlert('');
+    if (channelAlertTimerRef.current) clearTimeout(channelAlertTimerRef.current);
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+      setToastMessage('');
+    }
+    setShowShareSheet(false);
+    setShowPosterPreview(true);
+    startPosterGeneration();
+  };
+
+  // 异步生成用于页面内预览的真实二维码及下载用海报（链接类操作立即可用，不被阻塞；带独立失效令牌）
+  const startPosterGeneration = async () => {
+    if (!isPostShareable) return;
+    const targetPostId = post?.id;
+    const currentSession = previewSessionRef.current;
+    const attempt = ++posterGenAttemptRef.current;
+
+    setIsGeneratingPoster(true);
+    setPreviewQrUrl('');
+    setPosterDataUrl('');
+    setPosterFailureInfo(null);
+    setShowPosterFailureAlert(false);
 
     const shareUrl = getPostShareUrl(post.id);
     const mockScenario = getActiveMockScenario();
@@ -439,37 +573,122 @@ const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, tar
         throw new Error('模拟海报生成受限');
       }
 
-      // 生成用于页面内预览的真实二维码（提升清晰度匹配更大视口）
+      // 生成用于页面内预览的真实二维码
       const qrDataUrl = await QRCode.toDataURL(shareUrl, {
         margin: 1,
         width: 200,
         errorCorrectionLevel: 'M',
       });
+      if (attempt !== posterGenAttemptRef.current || post?.id !== targetPostId || previewSessionRef.current !== currentSession) return;
       setPreviewQrUrl(qrDataUrl);
 
       // 预生成海报用于下载
       const dataUrl = await generatePostPoster(post, shareUrl);
+      if (attempt !== posterGenAttemptRef.current || post?.id !== targetPostId || previewSessionRef.current !== currentSession) return;
       setPosterDataUrl(dataUrl);
 
-      setShowPosterPreview(true);
-      setIsSharing(false);
+      setIsGeneratingPoster(false);
     } catch {
-      setIsSharing(false);
-      // 海报生成失败时在当前页面提供复制链接恢复入口，不能只给 Toast
-      setShareFailureInfo({
-        message: '海报生成受限，可直接复制帖子链接进行分享',
+      if (attempt !== posterGenAttemptRef.current || post?.id !== targetPostId || previewSessionRef.current !== currentSession) return;
+      setIsGeneratingPoster(false);
+      setPosterFailureInfo({
+        message: '图片生成失败，请重试',
         manualUrl: shareUrl,
-        canCopyFallback: true,
+        canRetryPoster: true,
       });
-      showToast('海报生成受限，请复制链接');
+      setShowPosterFailureAlert(true);
+      showToast('图片生成失败，请重试');
     }
   };
 
-  // 复制链接：真实剪贴板成功才递增本地持久计数 +1，失败可重试/手动复制
+  const handleCloseShare = () => {
+    previewSessionRef.current += 1;
+    posterGenAttemptRef.current += 1;
+    linkShareAttemptRef.current += 1;
+    saveImageAttemptRef.current += 1;
+    channelShareBusyRef.current = false;
+    copyBusyRef.current = false;
+    isSavingImageRef.current = false;
+    setIsGeneratingPoster(false);
+    setIsSavingImage(false);
+    setShowShareSheet(false);
+    setShowPosterPreview(false);
+    setPosterFailureInfo(null);
+    setShowPosterFailureAlert(false);
+    setCopyFailureInfo(null);
+    setChannelAlert('');
+    if (channelAlertTimerRef.current) clearTimeout(channelAlertTimerRef.current);
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+      setToastMessage('');
+    }
+    // 恢复焦点至分享触发点（使用 preventScroll 避免背景滚动跳跃）
+    if (shareTriggerRef.current && typeof shareTriggerRef.current.focus === 'function') {
+      try {
+        shareTriggerRef.current.focus({ preventScroll: true });
+      } catch {
+        /* ignore focus failure */
+      }
+    }
+  };
+
+  const handleGeneratePosterClick = () => {
+    setShowShareSheet(false);
+    setShowPosterPreview(true);
+    startPosterGeneration();
+  };
+
+  // 渠道分享（SHARE-UX-006：简洁友好、可消失或关闭、不挤压海报、不显示裸链接）
+  const handleChannelShare = async (channel) => {
+    if (!isPostShareable) {
+      showToast('该帖子暂不可分享（待审核/未通过或已删除）');
+      return;
+    }
+    if (channelShareBusyRef.current || copyBusyRef.current || isSavingImage) return;
+    const targetPostId = post?.id;
+    const currentSession = previewSessionRef.current;
+    const payload = buildPostLinkPayload(post, getPostShareUrl(post.id));
+    const attempt = ++linkShareAttemptRef.current;
+    channelShareBusyRef.current = true;
+
+    if (channel === 'whatsapp') {
+      const result = openWhatsAppLink(payload, window.open.bind(window));
+      if (attempt !== linkShareAttemptRef.current || post?.id !== targetPostId || previewSessionRef.current !== currentSession) {
+        channelShareBusyRef.current = false;
+        return;
+      }
+      if (result === 'opened') {
+        showChannelAlert('');
+      } else {
+        showChannelAlert('暂时无法分享到 WhatsApp，可复制链接或保存图片后分享。');
+      }
+    } else {
+      const result = await shareLinkWithSystem(payload, navigator);
+      if (attempt !== linkShareAttemptRef.current || post?.id !== targetPostId || previewSessionRef.current !== currentSession) {
+        channelShareBusyRef.current = false;
+        return;
+      }
+      if (result === 'unsupported' || result === 'failed') {
+        showChannelAlert('暂时无法分享到微信，可复制链接或保存图片后分享。');
+      } else if (result === 'cancelled') {
+        showChannelAlert('');
+        // 取消系统分享不显示误导提示，不报错，不增加计数
+      } else {
+        // returned
+        showChannelAlert('');
+      }
+    }
+    channelShareBusyRef.current = false;
+  };
+
+  // 复制链接：真实剪贴板成功才递增本地持久计数 +1，失败仍提供手动复制链接及重试（SHARE-UX-006）
   const handleCopyLink = async () => {
-    if (isSharing) return;
-    setIsSharing(true);
-    setShareFailureInfo(null);
+    if (channelShareBusyRef.current || copyBusyRef.current || isSavingImage) return;
+    const targetPostId = post?.id;
+    const currentSession = previewSessionRef.current;
+    const attempt = ++linkShareAttemptRef.current;
+    copyBusyRef.current = true;
+    setCopyFailureInfo(null);
 
     const shareUrl = getPostShareUrl(post.id);
     const mockScenario = getActiveMockScenario();
@@ -486,42 +705,57 @@ const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, tar
       }
     }
 
-    if (!writeSucceeded) {
-      setIsSharing(false);
-      setShareFailureInfo({
-        message: '复制链接失败，请重试或手动复制链接',
-        manualUrl: shareUrl,
-        canRetry: true,
-      });
+    copyBusyRef.current = false;
+    // 迟到保护：若用户已关闭、切换帖子或重开新会话，不执行关闭与重复操作
+    if (attempt !== linkShareAttemptRef.current || post?.id !== targetPostId || previewSessionRef.current !== currentSession) {
       return;
     }
 
+    if (!writeSucceeded) {
+      setCopyFailureInfo({
+        message: '复制链接失败，请重试或手动复制链接',
+        manualUrl: shareUrl,
+        canRetryCopy: true,
+      });
+      showToast('复制链接失败，请重试或手动复制链接');
+      return;
+    }
+
+    setCopyFailureInfo(null);
     incrementShareCount();
-    setIsSharing(false);
     showToast('帖子链接已复制');
   };
 
-  // 保存图片：只导出 PNG、不增加分享计数（0）
+  // 保存图片：仅在 posterDataUrl 已就绪时启用，防重复提交并具备明确忙态判定（REVIEW-006）
   const handleSaveImage = async () => {
+    if (!posterDataUrl || isGeneratingPoster || isSavingImage || isSavingImageRef.current) return;
+    const targetPostId = post?.id;
+    const currentSession = previewSessionRef.current;
+    const attempt = ++saveImageAttemptRef.current;
+    isSavingImageRef.current = true;
+    setIsSavingImage(true);
+
     try {
-      let dataUrl = posterDataUrl;
-      if (!dataUrl) {
-        const shareUrl = getPostShareUrl(post.id);
-        dataUrl = await generatePostPoster(post, shareUrl);
-        setPosterDataUrl(dataUrl);
-      }
       const link = document.createElement('a');
       link.download = `SanVIST-Post-${post.id}.png`;
-      link.href = dataUrl;
+      link.href = posterDataUrl;
       document.body.appendChild(link);
       link.click();
       link.remove();
-      showToast('图片已保存');
+      if (attempt === saveImageAttemptRef.current && post?.id === targetPostId && previewSessionRef.current === currentSession) {
+        showToast('图片已保存');
+      }
     } catch {
-      showToast('保存图片失败，请稍后重试');
+      if (attempt === saveImageAttemptRef.current && post?.id === targetPostId && previewSessionRef.current === currentSession) {
+        showToast('保存图片失败，请重试');
+      }
+    } finally {
+      if (attempt === saveImageAttemptRef.current && post?.id === targetPostId && previewSessionRef.current === currentSession) {
+        isSavingImageRef.current = false;
+        setIsSavingImage(false);
+      }
     }
   };
-
 
   const handleLike = () => {
     if (demoMode) {
@@ -848,43 +1082,48 @@ const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, tar
           </div>
         )}
 
-        {/* 海报生成失败时的当前页面恢复入口（不能只给 Toast） */}
-        {shareFailureInfo && !showPosterPreview && (
+        {/* 海报生成失败或复制链接失败时的当前页面恢复入口（不能只给 Toast） */}
+        {(posterFailureInfo || copyFailureInfo) && !showPosterPreview && !showShareSheet && (
           <div className="mx-4 my-2.5 rounded-xl border border-amber-200 bg-amber-50/90 p-3 text-[12px] text-amber-900 shadow-sm" role="alert">
             <div className="flex items-start justify-between gap-2">
-              <span className="font-medium text-amber-900">{shareFailureInfo.message}</span>
+              <span className="font-medium text-amber-900">
+                {(posterFailureInfo || copyFailureInfo).message}
+              </span>
               <button
                 type="button"
                 className="p-1 text-amber-600 hover:text-amber-800"
                 aria-label="关闭恢复提示"
-                onClick={() => setShareFailureInfo(null)}
+                onClick={() => {
+                  setPosterFailureInfo(null);
+                  setCopyFailureInfo(null);
+                }}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
               </button>
             </div>
-            {shareFailureInfo.manualUrl && (
+            {copyFailureInfo?.manualUrl && (
               <input
                 type="text"
                 readOnly
-                value={shareFailureInfo.manualUrl}
+                value={copyFailureInfo.manualUrl}
                 onClick={(event) => event.target.select()}
                 aria-label="帖子链接，可手动复制"
-                className="mt-2 w-full rounded border border-amber-300 bg-white px-2 py-1.5 text-[11px] text-gray-700 select-all"
+                className="mt-2 w-full rounded border border-amber-300 bg-white px-2 py-1.5 text-[11px] text-gray-700 select-all font-mono"
               />
             )}
             <div className="mt-2.5 flex items-center gap-2.5">
               <button
                 type="button"
                 onClick={handleCopyLink}
-                disabled={isSharing}
+                disabled={channelShareBusyRef.current || copyBusyRef.current || isSavingImage}
                 className="rounded-lg bg-brand-red px-3 py-1.5 text-[12px] font-medium text-white shadow-sm active:bg-red-700 disabled:opacity-50"
               >
                 复制帖子链接
               </button>
               <button
                 type="button"
-                onClick={handleShareClick}
-                disabled={isSharing}
+                onClick={handleGeneratePosterClick}
+                disabled={isGeneratingPoster || isSavingImage}
                 className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-[12px] font-medium text-amber-900 active:bg-amber-100 disabled:opacity-50"
               >
                 重试生成海报
@@ -919,6 +1158,7 @@ const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, tar
 
           {/* 分享 - 紧随评论，与点赞、评论同级并列 */}
           <div
+            ref={shareTriggerRef}
             role="button"
             tabIndex={0}
             aria-label={isPostShareable ? '分享帖子' : '该帖子暂不可分享'}
@@ -1260,33 +1500,41 @@ const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, tar
         </div>
       )}
 
-      {/* 整屏“分享”页面（V1.4：通过 portal 挂载到手机屏幕容器 data-phone-screen，覆盖红色顶栏与游客提示，白底全宽连续排版） */}
+      {/* 整屏“分享”页面（SHARE-UX-005：直达海报预览 + 底部单排四操作，通过 portal 挂载到手机屏幕容器） */}
       {showPosterPreview && (() => {
         const portalNode = detailRootRef.current?.closest('[data-phone-screen]') || (typeof document !== 'undefined' ? document.body : null);
         if (!portalNode) return null;
 
         return createPortal(
           <div
+            ref={posterDialogRef}
             className="absolute inset-0 z-[75] flex flex-col bg-white overflow-hidden text-gray-900"
             role="dialog"
             aria-modal="true"
             aria-labelledby="share-page-title"
           >
-            {/* 顶栏只写“分享”并可关闭（几何居中） */}
-            <div className="flex-shrink-0 grid grid-cols-[32px_minmax(0,1fr)_32px] items-center px-4 pt-4 pb-2.5 bg-white border-b border-gray-100">
-              <div className="w-8 h-8" aria-hidden="true" />
+            {/* 顶栏：返回原帖 + 标题“分享”（SHARE-UX-006） + 关闭按钮 */}
+            <div className="flex-shrink-0 grid grid-cols-[36px_minmax(0,1fr)_36px] items-center px-4 pt-4 pb-2.5 bg-white border-b border-gray-100 relative z-10">
+              <button
+                type="button"
+                onClick={handleCloseShare}
+                aria-label="返回原帖"
+                className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-gray-900 active:bg-gray-100 rounded-full transition-colors"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
               <h2 id="share-page-title" className="text-[17px] font-semibold text-gray-900 text-center min-w-0 break-words">
                 分享
               </h2>
               <div className="flex justify-end">
                 <button
+                  ref={posterCloseBtnRef}
                   type="button"
                   aria-label="关闭分享"
                   className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 active:text-gray-900 rounded-full transition-colors"
-                  onClick={() => {
-                    setShowPosterPreview(false);
-                    setShareFailureInfo(null);
-                  }}
+                  onClick={handleCloseShare}
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M18 6L6 18M6 6l12 12" />
@@ -1295,31 +1543,120 @@ const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, tar
               </div>
             </div>
 
-            {/* 复制失败或异常提示 */}
-            {shareFailureInfo && (
-              <div className="mx-4 mt-3 rounded-xl bg-amber-50 border border-amber-200 p-3 text-[12px] text-amber-800" role="alert" dir="auto">
-                <div className="font-medium">{shareFailureInfo.message}</div>
-                {shareFailureInfo.manualUrl && (
-                  <input
-                    type="text"
-                    readOnly
-                    value={shareFailureInfo.manualUrl}
-                    onClick={(event) => event.target.select()}
-                    aria-label="帖子链接，可手动复制"
-                    className="mt-1.5 w-full rounded border border-amber-300 bg-white px-2.5 py-1 text-[11px] text-gray-800 select-all"
-                  />
-                )}
-                {shareFailureInfo.canRetry && (
+            {/* 中间区域悬浮提示集合容器（SHARE-UX-007 / REVIEW-007：对齐截图位置约70%文字与二维码交界，居中呈现，限制最大高度可滚动，多提示不重叠且不遮挡底部操作，适配窄屏与RTL） */}
+            <div
+              className="absolute top-[70%] -translate-y-1/2 max-h-[34%] left-3.5 right-3.5 z-40 flex flex-col items-center gap-2.5 pointer-events-none overflow-y-auto scrollbar-none"
+              dir="auto"
+            >
+              {/* 轻提示 Toast（复制成功 / 保存成功 / 保存失败等） */}
+              {toastMessage && (
+                <div
+                  role="status"
+                  className="pointer-events-auto max-w-[90%] px-4 py-2 bg-black/85 text-white text-[12px] rounded-full shadow-2xl transition-all duration-200 text-center break-words backdrop-blur-sm ring-1 ring-white/10"
+                  dir="auto"
+                >
+                  {toastMessage}
+                </div>
+              )}
+
+              {/* 渠道调用提示（可消失或关闭、不显示裸链接、文案友好） */}
+              {channelAlert && (
+                <div
+                  className="pointer-events-auto w-full max-w-[340px] rounded-xl bg-gray-900/90 text-white shadow-xl px-3.5 py-2.5 text-[12px] flex items-center justify-between gap-2.5 backdrop-blur-xs transition-opacity duration-200"
+                  role="alert"
+                  dir="auto"
+                >
+                  <span className="flex-1 leading-snug">{channelAlert}</span>
                   <button
                     type="button"
-                    onClick={handleCopyLink}
-                    className="mt-1.5 inline-block font-medium text-brand-red underline active:text-red-700"
+                    onClick={() => {
+                      if (channelAlertTimerRef.current) clearTimeout(channelAlertTimerRef.current);
+                      setChannelAlert('');
+                    }}
+                    aria-label="关闭提示"
+                    className="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-white rounded-full transition-colors flex-shrink-0 cursor-pointer"
                   >
-                    重试复制链接
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
                   </button>
-                )}
-              </div>
-            )}
+                </div>
+              )}
+
+              {/* 复制失败提示（保留手动复制选中文本框与重试按钮，可关闭） */}
+              {copyFailureInfo && (
+                <div
+                  className="pointer-events-auto w-full max-w-[340px] rounded-xl bg-amber-50/95 border border-amber-200 p-3 text-[12px] text-amber-900 shadow-xl backdrop-blur-xs"
+                  role="alert"
+                  dir="auto"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="font-medium text-amber-900">{copyFailureInfo.message}</span>
+                    <button
+                      type="button"
+                      onClick={() => setCopyFailureInfo(null)}
+                      aria-label="关闭提示"
+                      className="w-5 h-5 flex items-center justify-center text-amber-600 hover:text-amber-900 rounded-full flex-shrink-0 cursor-pointer"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  {copyFailureInfo.manualUrl && (
+                    <input
+                      type="text"
+                      readOnly
+                      value={copyFailureInfo.manualUrl}
+                      onClick={(event) => event.target.select()}
+                      aria-label="帖子链接，可手动复制"
+                      className="mt-2 w-full rounded border border-amber-300 bg-white px-2.5 py-1 text-[11px] text-gray-800 select-all font-mono"
+                    />
+                  )}
+                  <div className="mt-2 flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleCopyLink}
+                      className="inline-block font-medium text-brand-red underline active:text-red-700 cursor-pointer"
+                    >
+                      重试复制链接
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 图片生成失败提示（关闭仅收起此浮层，不清除真实失败状态，重试入口始终保留） */}
+              {showPosterFailureAlert && posterFailureInfo && (
+                <div
+                  className="pointer-events-auto w-full max-w-[340px] rounded-xl bg-amber-50/95 border border-amber-200 p-3 text-[12px] text-amber-800 shadow-xl backdrop-blur-xs"
+                  role="alert"
+                  dir="auto"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="font-medium text-amber-800">{posterFailureInfo.message}</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowPosterFailureAlert(false)}
+                      aria-label="关闭提示"
+                      className="w-5 h-5 flex items-center justify-center text-amber-600 hover:text-amber-800 rounded-full flex-shrink-0 cursor-pointer"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="mt-2 flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={startPosterGeneration}
+                      className="inline-block font-medium text-brand-red underline active:text-red-700 cursor-pointer"
+                    >
+                      重试生成图片
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* 白色内容全宽连续排版，自适应填满高度，长内容可滚动 */}
             <div className="min-h-0 flex-1 overflow-y-auto flex flex-col justify-between">
@@ -1384,7 +1721,7 @@ const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, tar
                   </div>
                 </div>
 
-                {/* 真实二维码：约 92px，去掉 rounded-xl/shadow/border 保持整栏平直 */}
+                {/* 真实二维码：约 92px，去掉 rounded-xl/shadow/border 保持整栏平直；失败呈现明确不可用状态且内置重试入口（REVIEW-006） */}
                 <div className="flex-shrink-0 w-[92px] h-[92px] bg-white p-1 flex items-center justify-center">
                   {previewQrUrl ? (
                     <img
@@ -1392,6 +1729,17 @@ const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, tar
                       alt="帖子二维码"
                       className="w-full h-full object-contain"
                     />
+                  ) : posterFailureInfo ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-[10px] text-amber-800 bg-amber-50 p-1 text-center leading-tight rounded">
+                      <span className="font-medium">二维码不可用</span>
+                      <button
+                        type="button"
+                        onClick={startPosterGeneration}
+                        className="mt-1 text-[10px] text-brand-red font-medium underline active:text-red-700 cursor-pointer"
+                      >
+                        重试
+                      </button>
+                    </div>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400">
                       加载中…
@@ -1401,35 +1749,106 @@ const PostDetail = ({ post, onBack, onTopicClick, onDelete, targetCommentId, tar
               </div>
             </div>
 
-            {/* 底部固定“保存图片/复制链接”操作栏 */}
-            <div className="flex-shrink-0 flex gap-3 bg-white px-4 py-3 border-t border-gray-100 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
-              <button
-                type="button"
-                onClick={handleSaveImage}
-                className="flex-1 rounded-xl border border-gray-200 bg-white py-2.5 text-[14px] font-medium text-gray-900 active:bg-gray-50 transition-colors shadow-xs"
-              >
-                保存图片
-              </button>
-              <button
-                type="button"
-                onClick={handleCopyLink}
-                disabled={isSharing}
-                className="flex-1 rounded-xl bg-brand-red py-2.5 text-[14px] font-medium text-white active:bg-red-700 transition-colors shadow-xs disabled:opacity-50"
-              >
-                复制链接
-              </button>
+            {/* 底部固定操作栏：微信好友、WhatsApp、保存图片、复制链接（SHARE-UX-005） */}
+            <div
+              className="flex-shrink-0 bg-white border-t border-gray-100 shadow-[0_-2px_10px_rgba(0,0,0,0.03)] px-3 pt-3"
+              style={{ paddingBottom: 'max(14px, env(safe-area-inset-bottom, 14px))' }}
+            >
+              <div className="overflow-x-auto scrollbar-none">
+                <div className="flex items-start justify-between min-w-full gap-1.5 px-0.5">
+                  {/* 微信好友 */}
+                  <button
+                    type="button"
+                    onClick={() => handleChannelShare('wechat')}
+                    disabled={channelShareBusyRef.current || copyBusyRef.current || isSavingImage}
+                    aria-label="微信好友"
+                    className="group flex flex-col items-center gap-1.5 focus:outline-none disabled:opacity-50 cursor-pointer flex-1 min-w-[62px] max-w-[76px] shrink-0"
+                  >
+                    <div className="w-[52px] h-[52px] rounded-full bg-[#07c160] flex items-center justify-center text-white shadow-xs group-active:scale-95 transition-transform">
+                      <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24">
+                        <path
+                          d="M9 3C4.6 3 1 5.8 1 9.3c0 2 1.2 3.8 3.1 5l-.7 2.5 2.9-1.5c.9.3 1.8.4 2.7.4 4.4 0 8-2.9 8-6.4S13.4 3 9 3Z"
+                          fill="white"
+                        />
+                        <circle cx="6.3" cy="8" r="1.1" fill="#07c160" />
+                        <circle cx="11.7" cy="8" r="1.1" fill="#07c160" />
+                        <path
+                          d="M22.9 15c0-3-3-5.4-6.6-5.4-3.7 0-6.7 2.4-6.7 5.4s3 5.4 6.7 5.4c.7 0 1.5-.1 2.2-.3l2.4 1.2-.6-2.1c1.6-1 2.6-2.5 2.6-4.2Z"
+                          fill="white"
+                          stroke="#07c160"
+                          strokeWidth="0.8"
+                        />
+                        <circle cx="14" cy="14" r=".9" fill="#07c160" />
+                        <circle cx="18.5" cy="14" r=".9" fill="#07c160" />
+                      </svg>
+                    </div>
+                    <span className="text-[12px] text-gray-700 text-center leading-tight break-words max-w-full">
+                      微信好友
+                    </span>
+                  </button>
+
+                  {/* WhatsApp */}
+                  <button
+                    type="button"
+                    onClick={() => handleChannelShare('whatsapp')}
+                    disabled={channelShareBusyRef.current || copyBusyRef.current || isSavingImage}
+                    aria-label="WhatsApp"
+                    className="group flex flex-col items-center gap-1.5 focus:outline-none disabled:opacity-50 cursor-pointer flex-1 min-w-[62px] max-w-[76px] shrink-0"
+                  >
+                    <div className="w-[52px] h-[52px] rounded-full bg-[#25D366] flex items-center justify-center text-white shadow-xs group-active:scale-95 transition-transform">
+                      <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 11.7a9 9 0 0 1-13.2 8L3 21l1.3-4.6A9 9 0 1 1 21 11.7Z" />
+                        <path d="M8.1 7.2c-.8.3-1.1 1.4-.7 2.7 1 3.1 3.8 5.7 6.7 6.3 1.2.3 2.4-.4 2.6-1.3l-2.6-1.4-1.1 1c-1.6-.7-2.9-2-3.6-3.6l1-1.1-1.3-2.6Z" strokeLinejoin="round" />
+                      </svg>
+                    </div>
+                    <span className="text-[12px] text-gray-700 text-center leading-tight break-words max-w-full" dir="ltr">
+                      WhatsApp
+                    </span>
+                  </button>
+
+                  {/* 保存图片：仅在 posterDataUrl 就绪时启用（REVIEW-006） */}
+                  <button
+                    type="button"
+                    onClick={handleSaveImage}
+                    disabled={!posterDataUrl || isGeneratingPoster || isSavingImage}
+                    aria-label="保存图片"
+                    className="group flex flex-col items-center gap-1.5 focus:outline-none disabled:opacity-50 cursor-pointer flex-1 min-w-[62px] max-w-[76px] shrink-0"
+                  >
+                    <div className="w-[52px] h-[52px] rounded-full bg-brand-red flex items-center justify-center text-white shadow-xs group-active:scale-95 transition-transform">
+                      <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                      </svg>
+                    </div>
+                    <span className="text-[12px] text-gray-700 text-center leading-tight break-words max-w-full">
+                      {isSavingImage ? '保存中…' : isGeneratingPoster ? '生成中…' : '保存图片'}
+                    </span>
+                  </button>
+
+                  {/* 复制链接 */}
+                  <button
+                    type="button"
+                    onClick={handleCopyLink}
+                    disabled={channelShareBusyRef.current || copyBusyRef.current || isSavingImage}
+                    aria-label="复制链接"
+                    className="group flex flex-col items-center gap-1.5 focus:outline-none disabled:opacity-50 cursor-pointer flex-1 min-w-[62px] max-w-[76px] shrink-0"
+                  >
+                    <div className="w-[52px] h-[52px] rounded-full bg-[#f3f4f6] border border-gray-200/60 flex items-center justify-center text-gray-700 shadow-xs group-active:scale-95 group-active:bg-gray-200 transition-all">
+                      <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                      </svg>
+                    </div>
+                    <span className="text-[12px] text-gray-700 text-center leading-tight break-words max-w-full">
+                      复制链接
+                    </span>
+                  </button>
+                </div>
+              </div>
             </div>
 
-            {/* 分享 Toast 在 portal 内展示 */}
-            {toastMessage && (
-              <div
-                role="status"
-                className="absolute bottom-20 left-1/2 -translate-x-1/2 z-[85] max-w-[85%] px-4 py-2 bg-black/85 text-white text-[12px] rounded-full shadow-2xl pointer-events-none transition-all duration-200 text-center break-words backdrop-blur-sm ring-1 ring-white/10"
-                dir="auto"
-              >
-                {toastMessage}
-              </div>
-            )}
+
           </div>,
           portalNode
         );
