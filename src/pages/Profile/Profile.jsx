@@ -4,6 +4,8 @@ const Profile = ({ onFeedback, demoMode = false, onRequireLogin, onNavigate }) =
   // 「解锁专属服务」自动弹窗暂时停用。
 
   const handleFeatureClick = (name) => {
+    if (name === '积分商城') return onNavigate?.('pointsMall');
+    if (name === '代金券') return onNavigate?.('vouchers');
     if (name === '设备预警') return onNavigate?.('auditList');
     if (name === '机群报表') return onNavigate?.('usageReport');
     if (name === '自助服务') return onNavigate?.('selfService');
@@ -23,6 +25,7 @@ const Profile = ({ onFeedback, demoMode = false, onRequireLogin, onNavigate }) =
     { id: 6, name: '收藏中心', icon: '收藏', color: '#FFF3E0', iconColor: '#FF9800' },
     { id: 7, name: 'APP反馈', icon: '反馈', color: '#E3F2FD', iconColor: '#2196F3' },
     { id: 8, name: '地址管理', icon: '地址', color: '#E8F5E9', iconColor: '#4CAF50' },
+    { id: 9, name: '代金券', icon: '代金券', color: '#FFF3E0', iconColor: '#FF9800' },
   ];
 
   // 星星积分数据
@@ -66,6 +69,12 @@ const Profile = ({ onFeedback, demoMode = false, onRequireLogin, onNavigate }) =
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={item.iconColor} strokeWidth="2">
             <circle cx="12" cy="12" r="3"/>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        );
+      case '代金券':
+        return (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={item.iconColor} strokeWidth="2">
+            <path d="M3 6h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4V6z"/><path d="M9 9h6M9 15h6"/>
           </svg>
         );
       case '商城':
@@ -140,14 +149,21 @@ const Profile = ({ onFeedback, demoMode = false, onRequireLogin, onNavigate }) =
   };
 
   return (
-    <div className="h-full bg-gray-100 overflow-y-auto">
+    <div className="h-full bg-[#F3F4F8] overflow-y-auto">
       {/* 星星积分区域 - 顶上去，不再有用户信息区域 */}
       <div className="bg-white mx-4 mt-2 rounded-xl p-4 shadow-md relative z-10">
         <div className="flex items-center justify-between mb-4">
-          <div className="text-base text-gray-900">
+          <div
+            className="text-base text-gray-900 cursor-pointer active:opacity-80 transition-opacity"
+            onClick={() => onNavigate?.('starDetails')}
+          >
             我的星星 <span className="text-orange-500 font-bold text-lg">172</span> ≈ Rp <span className="text-orange-500 font-bold text-lg">31.132,-</span>
           </div>
-          <button type="button" onClick={() => demoMode && onRequireLogin?.()} className="text-xs text-orange-500 border border-orange-500 rounded-full px-3 py-1.5 hover:bg-orange-50">
+          <button
+            type="button"
+            onClick={() => onNavigate?.('starDetails')}
+            className="text-xs text-[#00A9E8] border border-[#00A9E8] rounded-full px-3 py-1.5 hover:bg-blue-50 active:scale-95 transition-all"
+          >
             立即查看 &gt;
           </button>
         </div>
@@ -171,8 +187,8 @@ const Profile = ({ onFeedback, demoMode = false, onRequireLogin, onNavigate }) =
           ))}
         </div>
 
-        {/* 领取按钮 */}
-        <button type="button" onClick={() => demoMode && onRequireLogin?.()} className="w-full py-3.5 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-xl text-sm font-medium shadow-sm hover:shadow-md transition-shadow">
+        {/* 领取按钮 - 蓝色渐变 */}
+        <button type="button" onClick={() => demoMode && onRequireLogin?.()} className="w-full py-3.5 bg-gradient-to-r from-[#00A9E8] to-[#009EF0] text-white rounded-xl text-sm font-medium shadow-sm hover:shadow-md transition-shadow active:scale-[0.99]">
           一键领取 10 颗星星
         </button>
       </div>

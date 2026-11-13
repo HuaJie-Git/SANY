@@ -237,11 +237,11 @@ const Asset = ({ onDeviceClick, onUnavailable, navigationContext, demoMode = fal
   });
 
   return (
-    <div className="h-full flex flex-col bg-gray-50">
+    <div className="h-full flex flex-col bg-[#F3F4F8]">
       {/* 顶部固定区域 - Tab和搜索框 */}
-      <div className="flex-shrink-0">
+      <div className="flex-shrink-0 bg-white border-b border-gray-100/70">
         {/* Tab切换 */}
-        <div className="bg-white px-4 py-3 flex items-center gap-2">
+        <div className="px-4 py-3 flex items-center gap-2 overflow-x-auto">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -252,15 +252,15 @@ const Asset = ({ onDeviceClick, onUnavailable, navigationContext, demoMode = fal
                 }
                 setActiveTab(tab.id);
               }}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
                 activeTab === tab.id
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-gray-100 text-gray-600'
+                  ? 'bg-[#181C27] text-white shadow-xs'
+                  : 'bg-[#F4F3F8] text-[#8D929C] hover:text-gray-700'
               }`}
             >
               {tab.name}
               {tabCounts[tab.id] > 0 && (
-                <span className={`ml-1 ${activeTab === tab.id ? 'text-white' : 'text-gray-500'}`}>
+                <span className={`ml-1 ${activeTab === tab.id ? 'text-white' : 'text-[#8D929C]'}`}>
                   ({tabCounts[tab.id]})
                 </span>
               )}
@@ -269,9 +269,9 @@ const Asset = ({ onDeviceClick, onUnavailable, navigationContext, demoMode = fal
         </div>
 
         {/* 搜索框 */}
-        <div className="bg-white px-4 py-3">
-          <div className="flex items-center bg-gray-100 rounded-lg px-3 py-2.5">
-            <svg className="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="px-4 pb-3 pt-1">
+          <div className="flex items-center bg-[#F3F4F8] rounded-xl px-3.5 py-2">
+            <svg className="w-4 h-4 text-gray-400 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
             <input
@@ -279,11 +279,11 @@ const Asset = ({ onDeviceClick, onUnavailable, navigationContext, demoMode = fal
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="搜索"
-              className="flex-1 bg-transparent text-sm focus:outline-none"
+              className="flex-1 bg-transparent text-xs text-gray-800 placeholder-gray-400 focus:outline-none"
             />
             <button
               type="button"
-              className="ml-2"
+              className="ml-2 flex-shrink-0"
               aria-label="快速筛选设备"
               onClick={() => {
                 if (demoMode) {
@@ -293,7 +293,7 @@ const Asset = ({ onDeviceClick, onUnavailable, navigationContext, demoMode = fal
                 setActiveTab((current) => current === 'all' ? 'online' : current === 'online' ? 'offline' : 'all');
               }}
             >
-              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
               </svg>
             </button>
@@ -304,7 +304,7 @@ const Asset = ({ onDeviceClick, onUnavailable, navigationContext, demoMode = fal
       {/* 设备列表 - 可滑动区域 */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
         {devices.map((device) => {
-          const cardClass = `bg-white rounded-xl p-3 flex items-center shadow-sm transition-transform ${device.detailAvailable === false ? 'opacity-90' : 'cursor-pointer active:scale-[0.99]'}`;
+          const cardClass = `bg-white rounded-2xl p-3.5 flex items-center shadow-2xs border border-gray-100 transition-transform ${device.detailAvailable === false ? 'opacity-90' : 'cursor-pointer active:scale-[0.99]'}`;
           return (
             <div
               key={device.id}

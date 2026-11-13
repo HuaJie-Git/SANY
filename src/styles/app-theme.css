@@ -1,0 +1,18 @@
+/**
+ * SanVIST APP 蓝色换肤主题 Token
+ * 需求：SKIN-001 (R-001 / R-002)
+ * 主蓝建议 #00A9E8，主按钮 #009EF0
+ * 首页渐变由青 #09BFE2 至蓝 #009FFF，背景 #F3F4F8，白卡，主文字 #1D232B，次文字 #8D929C
+ */
+:root {
+  --app-primary: #00A9E8;
+  --app-primary-hover: #009EF0;
+  --app-gradient-start: #09BFE2;
+  --app-gradient-end: #009FFF;
+  --app-bg: #F3F4F8;
+  --app-card: #FFFFFF;
+  --app-text-primary: #1D232B;
+  --app-text-secondary: #8D929C;
+  --app-border: #E5E7EB;
+  --app-border-light: #F1F2F6;
+}

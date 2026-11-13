@@ -15,6 +15,9 @@ import PartsOrder from '../PartsOrder/PartsOrder';
 import ServiceRequest from '../ServiceRequest/ServiceRequest';
 import DeviceMaintenance from '../DeviceMaintenance/DeviceMaintenance';
 import Profile from '../Profile/Profile';
+import PointsMall, { Vouchers, StarDetails, PrizeRedeem } from '../PointsMall/PointsMall';
+import CouponDetail from '../PointsMall/CouponDetail';
+import CouponReminder from '../../components/CouponReminder';
 import Audit from '../Audit/Audit';
 import Asset from '../Asset/Asset';
 import AIAssistant from '../AIAssistant/AIAssistant';
@@ -165,6 +168,7 @@ const Home = () => {
   const [showQuickLogin, setShowQuickLogin] = useState(false);
   const [openSearchWithScanner, setOpenSearchWithScanner] = useState(false);
   const [currentPage, setCurrentPage] = useState(null); // 当前显示的功能页面
+  const [pageHistory, setPageHistory] = useState([]); // 页面导航栈历史
   const [selectedDevice, setSelectedDevice] = useState(null); // 选中的设备详情
   const [selectedWorkCondition, setSelectedWorkCondition] = useState(null); // 资产工况详情
   const [dataReportDevice, setDataReportDevice] = useState(null); // 数据报表设备
@@ -627,6 +631,8 @@ const Home = () => {
       case 'productCenter':
       case 'serviceCenter':
       case 'survey':
+      case 'couponDetail':
+      case 'vouchers':
         setCurrentPage(action.target);
         break;
       case 'taskList':
@@ -684,7 +690,31 @@ const Home = () => {
     }
   };
 
+  const navigateToPage = (target, context = null) => {
+    const actualTarget = typeof target === 'object' && target?.target ? target.target : target;
+    const actualContext = typeof target === 'object'
+      ? (target.context || (target.couponId ? { couponId: target.couponId } : context))
+      : context;
+    if (currentPage) {
+      setPageHistory((prev) => [...prev, { page: currentPage, context: pageContext }]);
+    }
+    setCurrentPage(actualTarget);
+    setPageContext(actualContext);
+  };
+
+  const handlePageBack = () => {
+    if (pageHistory.length > 0) {
+      const prev = pageHistory[pageHistory.length - 1];
+      setPageHistory((prevStack) => prevStack.slice(0, -1));
+      setCurrentPage(prev.page);
+      setPageContext(prev.context);
+    } else {
+      closeCurrentPage();
+    }
+  };
+
   const closeCurrentPage = () => {
+    setPageHistory([]);
     setCurrentPage(null);
     restoreNavigationSource();
   };
@@ -1167,8 +1197,20 @@ const Home = () => {
 
   // 如果显示功能页面
   if (currentPage) {
+    const activePageKey = typeof currentPage === 'object' && currentPage?.target ? currentPage.target : currentPage;
+    const activeContext = typeof currentPage === 'object' && currentPage?.context ? { ...currentPage.context, ...pageContext } : pageContext;
     const renderPage = () => {
-      switch (currentPage) {
+      switch (activePageKey) {
+        case 'pointsMall':
+          return <PointsMall onBack={handlePageBack} onNavigate={navigateToPage} />;
+        case 'starDetails':
+          return <StarDetails onBack={handlePageBack} onNavigate={navigateToPage} />;
+        case 'prizeRedeem':
+          return <PrizeRedeem onBack={handlePageBack} onNavigate={navigateToPage} />;
+        case 'vouchers':
+          return <Vouchers onBack={handlePageBack} onNavigate={navigateToPage} onRequireLogin={requireLogin} />;
+        case 'couponDetail':
+          return <CouponDetail couponId={activeContext?.couponId || pageContext?.couponId} onBack={handlePageBack} onRequireLogin={requireLogin} />;
         case 'parts':
           return <PartsOrder onBack={closeCurrentPage} initialQuery={pageContext?.query} initialItem={pageContext?.item} />;
         case 'productCenter':
@@ -1186,7 +1228,7 @@ const Home = () => {
       }
     };
 
-    const isDarkHeader = currentPage === 'serviceCenter';
+    const isDarkHeader = activePageKey === 'serviceCenter';
     return (
       <PhoneFrame
         topNav={null}
@@ -1244,6 +1286,9 @@ const Home = () => {
   if (activeTab === 'asset') {
     return (
       <PhoneFrame
+        hideGradient={true}
+        headerBackground="#FFFFFF"
+        statusBarTheme="dark"
         experienceMode={experienceMode}
         showFeedback={experienceMode}
         showServiceRail={experienceMode}
@@ -1258,7 +1303,7 @@ const Home = () => {
         topNav={
           <div className="h-[60px] px-4 flex items-center justify-between">
             {/* 绑定设备按钮 - 左边 */}
-            <button onClick={experienceMode ? requireLogin : undefined} className="flex items-center px-3 py-1.5 border border-white/40 rounded-full text-xs text-white">
+            <button onClick={experienceMode ? requireLogin : undefined} className="flex items-center px-3 py-1.5 border border-[#1D232B] rounded-full text-xs text-[#1D232B]">
               <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/>
               </svg>
@@ -1271,10 +1316,10 @@ const Home = () => {
                 setDivisionToast('地图模式已打开');
                 window.setTimeout(() => setDivisionToast(''), 1800);
               }}
-              className="w-8 h-8 flex items-center justify-center bg-white/30 rounded-full"
+              className="w-8 h-8 flex items-center justify-center bg-[#F3F4F8] rounded-full"
               aria-label="地图模式"
             >
-              <svg width="18" height="18" viewBox="0 0 1024 1024" fill="white">
+              <svg width="18" height="18" viewBox="0 0 1024 1024" fill="#1D232B">
                 <path d="M85.333333 469.717333C85.333333 451.829333 99.658667 437.333333 117.333333 437.333333s32 14.506667 32 32.384V786.133333c0 5.962667 4.778667 10.794667 10.666667 10.794667a10.56 10.56 0 0 0 5.045333-1.28l154.848-84.021333a73.898667 73.898667 0 0 1 72.853334 1.290666l252.544 148.842667a10.56 10.56 0 0 0 10.122666 0.341333l213.333334-107.264c3.626667-1.824 5.92-5.568 5.92-9.664V469.717333C874.666667 451.829333 888.992 437.333333 906.666667 437.333333s32 14.506667 32 32.384V745.173333c0 28.682667-16.053333 54.890667-41.44 67.658667l-213.333334 107.264a73.898667 73.898667 0 0 1-70.805333-2.378667L360.533333 768.896a10.56 10.56 0 0 1-10.410666-0.192l-154.848 84.032a73.973333 73.973333 0 0 1-35.285334 8.96c-41.237333 0-74.666667-33.813333-74.666666-75.552V469.717333z m672-132.266666c0 87.808-73.173333 192.917333-217.056 320.288a42.666667 42.666667 0 0 1-56.554666 0C339.829333 530.378667 266.666667 425.258667 266.666667 337.450667 266.666667 203.968 376.64 96 512 96s245.333333 107.968 245.333333 241.450667z m-426.666666 0c0 61.514667 59.712 149.557333 181.333333 259.701333 121.621333-110.144 181.333333-198.186667 181.333333-259.701333C693.333333 239.584 612.277333 160 512 160s-181.333333 79.573333-181.333333 177.450667zM512 405.333333a64 64 0 1 1 0-128 64 64 0 0 1 0 128z"/>
               </svg>
             </button>
@@ -1415,11 +1460,13 @@ const Home = () => {
         showLoginPrompt={showLoginPrompt}
         onCloseLogin={() => setShowLoginPrompt(false)}
         onLogin={handleLogin}
+        headerBackground="#F3F4F8"
+        statusBarTheme="dark"
         topNav={
           <div className="h-[60px] px-4 py-2 flex items-center">
             {/* 用户头像 */}
-            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mr-2.5 relative shadow-md">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#BC000F" strokeWidth="1.5">
+            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mr-2.5 relative shadow-xs border border-gray-200/80">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D232B" strokeWidth="1.5">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                 <circle cx="12" cy="7" r="4"/>
               </svg>
@@ -1434,21 +1481,21 @@ const Home = () => {
 
             {/* 用户名和身份 */}
             <div className="flex-1">
-              <div className="text-base font-semibold text-white">{experienceMode ? '游客' : '三一'}</div>
-              <div className="inline-block px-2 py-0.5 bg-white/20 rounded-full text-[10px] text-white mt-0.5">{experienceMode ? '游客模式' : '个体户'}</div>
+              <div className="text-base font-bold text-[#1D232B]">{experienceMode ? '游客' : '三一'}</div>
+              <div className="inline-block px-2 py-0.5 bg-black/5 rounded-full text-[10px] text-[#8D929C] mt-0.5">{experienceMode ? '游客模式' : '个体户'}</div>
             </div>
 
             {/* 右上角图标 */}
             <div className="flex items-center gap-2">
-              {/* 客服图标 - 用户提供的SVG */}
-              <button type="button" onClick={() => setShowCustomerVoice(true)} className="w-7 h-7 flex items-center justify-center bg-white/20 rounded-full hover:bg-white/30 transition-colors" aria-label="在线客服">
-                <svg width="16" height="16" viewBox="0 0 1024 1024" fill="white">
+              {/* 客服图标 */}
+              <button type="button" onClick={() => setShowCustomerVoice(true)} className="w-7 h-7 flex items-center justify-center bg-black/5 rounded-full hover:bg-black/10 transition-colors" aria-label="在线客服">
+                <svg width="16" height="16" viewBox="0 0 1024 1024" fill="#1D232B">
                   <path d="M448 917.376C448 917.333333 576 917.333333 576 917.333333c0.085333 0 0-42.709333 0-42.709333C576 874.666667 448 874.666667 448 874.666667c-0.085333 0 0 42.709333 0 42.709333z m371.349333-173.034667C809.6 745.877333 799.573333 746.666667 789.333333 746.666667a21.333333 21.333333 0 0 1-21.333333-21.333334V384a21.333333 21.333333 0 0 1 21.333333-21.333333 191.146667 191.146667 0 0 1 92.373334 23.637333C828.202667 234.517333 681.045333 128 511.296 128 341.290667 128 193.749333 234.816 140.458667 387.328A191.125333 191.125333 0 0 1 234.666667 362.666667a21.333333 21.333333 0 0 1 21.333333 21.333333v341.333333a21.333333 21.333333 0 0 1-21.333333 21.333334 192 192 0 0 1-148.906667-313.216 21.269333 21.269333 0 0 1 0.042667-8.682667C127.36 228.288 304.469333 85.333333 511.274667 85.333333c209.706667 0 388.544 146.944 427.008 347.093334l0.213333 1.344A191.210667 191.210667 0 0 1 981.333333 554.666667c0 70.4-37.909333 131.968-94.421333 165.397333-57.642667 100.693333-154.752 174.762667-268.778667 204.074667A42.517333 42.517333 0 0 1 576 960h-128c-23.573333 0-42.666667-19.157333-42.666667-42.624v-42.752c0-23.552 18.922667-42.624 42.666667-42.624h128c23.573333 0 42.666667 19.157333 42.666667 42.624v5.141333a392.810667 392.810667 0 0 0 200.682666-135.424zM85.333333 554.666667c0.298667 133.589333 128 148.949333 128 148.949333V406.144s-128.298667 14.933333-128 148.522667z m853.333334 0c0.298667-133.589333-128-148.522667-128-148.522667v297.472s127.701333-15.36 128-148.949333z"/>
                 </svg>
               </button>
               {/* 设置图标 */}
-              <button type="button" onClick={experienceMode ? requireLogin : () => setShowSettingsPage(true)} className="w-7 h-7 flex items-center justify-center bg-white/20 rounded-full hover:bg-white/30 transition-colors" aria-label="设置">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+              <button type="button" onClick={experienceMode ? requireLogin : () => setShowSettingsPage(true)} className="w-7 h-7 flex items-center justify-center bg-black/5 rounded-full hover:bg-black/10 transition-colors" aria-label="设置">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D232B" strokeWidth="2">
                   <circle cx="12" cy="12" r="3"/>
                   <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                 </svg>
@@ -1460,6 +1507,7 @@ const Home = () => {
           <BottomNav activeTab={activeTab} onTabChange={handleTabChange} showProfileDot={!userRole} demoMode={experienceMode} />
         }
       >
+        <CouponReminder onNavigate={(action) => handleBusinessNavigate(action, 'reminder')} />
         <Profile
           userRole={userRole}
           demoMode={experienceMode}
@@ -1467,6 +1515,10 @@ const Home = () => {
           onFeedback={() => setShowCustomerVoice(true)}
           onRequireLogin={requireLogin}
           onNavigate={(target) => {
+            if (target === 'pointsMall' || target === 'vouchers' || target === 'starDetails' || target === 'prizeRedeem') {
+              navigateToPage(target);
+              return;
+            }
             if (target === 'auditList') handleBusinessNavigate({ target: 'auditList' });
             if (target === 'usageReport') handleBusinessNavigate({ target: 'usageReport', item: experienceMode ? GUEST_DEMO_DEVICES[0] : undefined });
             if (target === 'content') openHomeSection('content');
@@ -1484,7 +1536,8 @@ const Home = () => {
     <PhoneFrame
       experienceMode={experienceMode}
       showExperienceNotice={experienceMode && !showDivisionSwitcher}
-      headerBackground={experienceMode ? 'linear-gradient(180deg, #181e29 0%, #181e29 24%, #690815 58%, #d40014 100%)' : undefined}
+      headerBackground="linear-gradient(135deg, #09BFE2 0%, #009FFF 100%)"
+      statusBarTheme="dark"
       statusTime={experienceMode ? '7:46' : '9:41'}
       showStatusProfile={experienceMode}
       batteryPercent={experienceMode ? '75' : undefined}
@@ -1544,7 +1597,7 @@ const Home = () => {
         // 发布按钮：底部导航在 home + 非发布流程 + ContentFeed 上报社区可发布
         activeTab === 'home' && !showPublishPage && isCommunityPublishEligible && isCommunityPublishViewportActive ? (
           <div
-            className="w-[56px] h-[56px] bg-brand-red rounded-full flex items-center justify-center shadow-lg cursor-pointer"
+            className="w-[56px] h-[56px] bg-[#009EF0] rounded-full flex items-center justify-center shadow-lg cursor-pointer active:scale-95 transition-transform"
             onClick={experienceMode ? requireLogin : handlePublishClick}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1556,6 +1609,7 @@ const Home = () => {
       }
     >
       <>
+        <CouponReminder onNavigate={(action) => handleBusinessNavigate(action, 'reminder')} />
         {/* 中间内容区域 - 可滚动 */}
         <div
           ref={contentRef}

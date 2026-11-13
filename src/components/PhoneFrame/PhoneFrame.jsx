@@ -11,8 +11,8 @@ const PhoneFrame = ({ topNav, bottomNav, children, hideGradient = false, headerB
         <div className="w-[393px] h-[852px] bg-black rounded-[55px] p-[12px] shadow-2xl">
           {/* 屏幕 */}
           <div data-phone-screen className="w-full h-full bg-white rounded-[43px] overflow-hidden relative flex flex-col [transform:translateZ(0)]">
-            {/* 顶部区域 - 整体渐变：底部红色往上渐变成黑色 */}
-            <div className="flex-shrink-0 relative z-20" style={hideGradient ? (headerBackground ? { background: headerBackground } : {}) : { background: headerBackground || 'linear-gradient(180deg, #000000 0%, #BC000F 100%)' }}>
+            {/* 顶部区域 - 整体渐变：青蓝渐变 #09BFE2 至 #009FFF */}
+            <div className="flex-shrink-0 relative z-20" style={hideGradient ? (headerBackground ? { background: headerBackground } : {}) : { background: headerBackground || 'linear-gradient(135deg, #09BFE2 0%, #009FFF 100%)' }}>
               {/* 状态栏 */}
               {!hideStatusBar && <div className="w-full h-[44px] flex items-center justify-between px-7 pt-1" style={{ color: statusColor }}>
                 {/* 时间 */}

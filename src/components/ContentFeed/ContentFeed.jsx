@@ -29,7 +29,7 @@ const UnavailablePost = ({ message, onBack }) => (
       </span>
       <h2 className="mt-4 text-[16px] font-semibold text-gray-900">帖子暂不可查看</h2>
       <p className="mt-2 text-[13px] leading-5 text-gray-500">{message}</p>
-      <button type="button" onClick={onBack} className="mt-6 rounded-full bg-brand-red px-5 py-2 text-[13px] font-medium text-white">返回社区</button>
+      <button type="button" onClick={onBack} className="mt-6 rounded-full bg-[#009EF0] px-5 py-2 text-[13px] font-medium text-white">返回社区</button>
     </div>
   </div>
 );
@@ -449,7 +449,7 @@ const BaselineContentFeed = forwardRef(({
           <div className="p-2">
             {item.topicId && (() => {
               const t = getTopicById(item.topicId, demoMode);
-              return t ? <div className="text-[11px] text-brand-red mb-0.5 truncate">{t.name}</div> : null;
+              return t ? <div className="text-[11px] text-[#00A9E8] mb-0.5 truncate">{t.name}</div> : null;
             })()}
             <div className="text-[13px] font-medium text-text-primary leading-[1.35] line-clamp-2 break-words mb-1">{item.title}</div>
             <div className="flex items-center justify-between text-[11px] text-text辅助 mb-2">
@@ -610,7 +610,7 @@ const BaselineContentFeed = forwardRef(({
                 tab.length <= 2 ? 'px-2' : 'px-3'
               } ${
                 activeTab === tab
-                  ? 'text-brand-red font-medium border-b-2 border-brand-red'
+                  ? 'text-[#009EF0] font-medium border-b-2 border-[#009EF0]'
                   : 'text-text辅助'
               }`}
               onClick={() => handleTabClick(tab)}
@@ -702,7 +702,7 @@ const BaselineContentFeed = forwardRef(({
                       trackLeadIntent.serviceEntryClick('ad_inquiry', 'homepage_ad_banner');
                       onInquiry({ campaign: adItems[currentAd].title });
                     }}
-                    className="absolute bottom-2 right-3 flex h-7 items-center gap-1 rounded-md bg-brand-red px-2.5 text-[11px] font-medium text-white"
+                    className="absolute bottom-2 right-3 flex h-7 items-center gap-1 rounded-md bg-[#009EF0] px-2.5 text-[11px] font-medium text-white"
                   >
                     我要询价 <span aria-hidden="true">›</span>
                   </button>

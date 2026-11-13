@@ -149,7 +149,7 @@ const MyTasksSummary = ({ tenantType = 'enterprise', onTaskListClick, onTaskClic
             </svg>
           </div>
           <div className="text-sm text-gray-500 mb-3">暂无待处理任务</div>
-          <div className="text-sm text-red-500 cursor-pointer" onClick={onTaskListClick}>查看任务</div>
+          <div className="text-sm text-[#00A9E8] cursor-pointer" onClick={onTaskListClick}>查看任务</div>
         </div>
       ) : (
         <div className="divide-y divide-gray-100">
@@ -190,7 +190,7 @@ const MyTasksSummary = ({ tenantType = 'enterprise', onTaskListClick, onTaskClic
 
           {/* 任务查看全部/更多 */}
           {demoMode ? (
-            <div className="text-center text-sm text-red-500 cursor-pointer py-2" onClick={onTaskListClick}>
+            <div className="text-center text-sm text-[#00A9E8] cursor-pointer py-2" onClick={onTaskListClick}>
               还有 {total - tasks.length} 个任务，查看全部
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="inline-block ml-1">
                 <path d="M9 18l6-6-6-6" />
@@ -198,7 +198,7 @@ const MyTasksSummary = ({ tenantType = 'enterprise', onTaskListClick, onTaskClic
             </div>
           ) : (
             total > 3 && (
-              <div className="text-center text-sm text-red-500 cursor-pointer py-2" onClick={onTaskListClick}>
+              <div className="text-center text-sm text-[#00A9E8] cursor-pointer py-2" onClick={onTaskListClick}>
                 还有 {total - 3} 个任务，查看全部
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="inline-block ml-1">
                   <path d="M9 18l6-6-6-6" />

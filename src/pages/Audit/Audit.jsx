@@ -555,7 +555,7 @@ const BaselineAudit = ({ onDeviceClick, initialTab, navigationContext, searchQue
   }));
 
   return (
-    <div className="h-full bg-gray-50 overflow-y-auto">
+    <div className="h-full bg-[#F3F4F8] overflow-y-auto">
       {/* Tab切换 - 顶上去 */}
       <div className="bg-white px-4 py-3 relative">
         <div className="flex items-center gap-2 overflow-x-auto pr-8" style={{ WebkitOverflowScrolling: 'touch' }}>
@@ -606,7 +606,7 @@ const BaselineAudit = ({ onDeviceClick, initialTab, navigationContext, searchQue
           <button
             onClick={() => setGroupByDevice(!groupByDevice)}
             className={`w-12 h-6 rounded-full relative transition-colors ${
-              groupByDevice ? 'bg-red-500' : 'bg-gray-300'
+              groupByDevice ? 'bg-[#009EF0]' : 'bg-gray-300'
             }`}
           >
             <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform shadow-sm ${
@@ -988,7 +988,7 @@ const GuestAudit = ({ onDeviceClick, initialTab, navigationContext, searchQuery 
               type="button"
               onClick={handleToggleGroupByDevice}
               className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 ease-in-out cursor-pointer ${
-                groupByDevice ? 'bg-[#E60012]' : 'bg-gray-300'
+                groupByDevice ? 'bg-[#009EF0]' : 'bg-gray-300'
               }`}
               aria-label="按设备分组开关"
             >

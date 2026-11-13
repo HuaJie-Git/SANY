@@ -180,7 +180,7 @@ const QuickAccess = ({
             <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect x="3" y="3" width="18" height="18" rx="2" stroke="#181C26" strokeWidth="2"/>
               <path d="M7 8h10M7 12h6M7 16h8" stroke="#181C26" strokeWidth="2" strokeLinecap="round"/>
-              <circle cx="18" cy="16" r="3" fill="#E60012"/>
+              <circle cx="18" cy="16" r="3" fill="#00A9E8"/>
               <path d="M17 15l2 2M17 17l2-2" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           );
@@ -189,7 +189,7 @@ const QuickAccess = ({
             <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect x="3" y="3" width="18" height="18" rx="2" stroke="#181C26" strokeWidth="2"/>
               <path d="M8 12h8M12 8v8" stroke="#181C26" strokeWidth="2" strokeLinecap="round"/>
-              <circle cx="18" cy="16" r="3" fill="#E60012"/>
+              <circle cx="18" cy="16" r="3" fill="#00A9E8"/>
               <path d="M17 16h2M18 15v2" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           );
@@ -199,7 +199,7 @@ const QuickAccess = ({
               <rect x="3" y="3" width="18" height="18" rx="2" stroke="#181C26" strokeWidth="2"/>
               <path d="M8 8h8v8H8z" stroke="#181C26" strokeWidth="2"/>
               <path d="M12 11v2M11 12h2" stroke="#181C26" strokeWidth="2" strokeLinecap="round"/>
-              <circle cx="18" cy="16" r="3" fill="#E60012"/>
+              <circle cx="18" cy="16" r="3" fill="#00A9E8"/>
               <path d="M17 15l2 2M17 17l2-2" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           );
@@ -209,7 +209,7 @@ const QuickAccess = ({
               <rect x="3" y="3" width="18" height="18" rx="2" stroke="#181C26" strokeWidth="2"/>
               <circle cx="12" cy="12" r="4" stroke="#181C26" strokeWidth="2"/>
               <circle cx="12" cy="12" r="1" fill="#FF7316"/>
-              <circle cx="18" cy="16" r="3" fill="#E60012"/>
+              <circle cx="18" cy="16" r="3" fill="#00A9E8"/>
               <path d="M17 15l2 2M17 17l2-2" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           );
@@ -219,7 +219,7 @@ const QuickAccess = ({
               <rect x="3" y="3" width="18" height="18" rx="2" stroke="#181C26" strokeWidth="2"/>
               <rect x="6" y="12" width="3" height="6" fill="#181C26"/>
               <rect x="10.5" y="8" width="3" height="10" fill="#FF7316"/>
-              <rect x="15" y="10" width="3" height="8" fill="#E60012"/>
+              <rect x="15" y="10" width="3" height="8" fill="#00A9E8"/>
             </svg>
           );
         case '维修':
@@ -227,7 +227,7 @@ const QuickAccess = ({
             <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect x="3" y="3" width="18" height="18" rx="2" stroke="#181C26" strokeWidth="2"/>
               <path d="M8 8l8 8M16 8l-8 8" stroke="#181C26" strokeWidth="2" strokeLinecap="round"/>
-              <circle cx="18" cy="16" r="3" fill="#E60012"/>
+              <circle cx="18" cy="16" r="3" fill="#00A9E8"/>
               <path d="M17 15l2 2M17 17l2-2" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           );
@@ -237,7 +237,7 @@ const QuickAccess = ({
               <rect x="3" y="3" width="18" height="18" rx="2" stroke="#181C26" strokeWidth="2"/>
               <circle cx="12" cy="12" r="5" stroke="#181C26" strokeWidth="2"/>
               <path d="M12 9v3l2 2" stroke="#181C26" strokeWidth="2" strokeLinecap="round"/>
-              <circle cx="18" cy="16" r="3" fill="#E60012"/>
+              <circle cx="18" cy="16" r="3" fill="#00A9E8"/>
               <path d="M17 15l2 2M17 17l2-2" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           );
@@ -247,7 +247,7 @@ const QuickAccess = ({
               <rect x="3" y="3" width="18" height="18" rx="2" stroke="#181C26" strokeWidth="2"/>
               <circle cx="12" cy="8" r="3" stroke="#181C26" strokeWidth="2"/>
               <path d="M6 18v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke="#181C26" strokeWidth="2"/>
-              <circle cx="18" cy="16" r="3" fill="#E60012"/>
+              <circle cx="18" cy="16" r="3" fill="#00A9E8"/>
               <path d="M17 15l2 2M17 17l2-2" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           );
@@ -256,7 +256,7 @@ const QuickAccess = ({
             <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect x="3" y="3" width="18" height="18" rx="2" stroke="#181C26" strokeWidth="2"/>
               <path d="M7 7h10M7 11h10M7 15h6" stroke="#181C26" strokeWidth="2" strokeLinecap="round"/>
-              <circle cx="18" cy="16" r="3" fill="#E60012"/>
+              <circle cx="18" cy="16" r="3" fill="#00A9E8"/>
               <path d="M17 15l2 2M17 17l2-2" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           );
@@ -266,7 +266,7 @@ const QuickAccess = ({
               <rect x="3" y="3" width="18" height="18" rx="2" stroke="#181C26" strokeWidth="2"/>
               <path d="M12 6v6l4 2" stroke="#181C26" strokeWidth="2" strokeLinecap="round"/>
               <circle cx="12" cy="12" r="2" fill="#FF7316"/>
-              <circle cx="18" cy="16" r="3" fill="#E60012"/>
+              <circle cx="18" cy="16" r="3" fill="#00A9E8"/>
               <path d="M17 15l2 2M17 17l2-2" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           );
@@ -276,7 +276,7 @@ const QuickAccess = ({
               <rect x="3" y="3" width="18" height="18" rx="2" stroke="#181C26" strokeWidth="2"/>
               <rect x="6" y="6" width="12" height="8" rx="1" stroke="#181C26" strokeWidth="2"/>
               <path d="M9 18v2M15 18v2" stroke="#181C26" strokeWidth="2" strokeLinecap="round"/>
-              <circle cx="18" cy="16" r="3" fill="#E60012"/>
+              <circle cx="18" cy="16" r="3" fill="#00A9E8"/>
               <path d="M17 15l2 2M17 17l2-2" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           );
@@ -285,7 +285,7 @@ const QuickAccess = ({
             <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect x="3" y="3" width="18" height="18" rx="2" stroke="#181C26" strokeWidth="2"/>
               <path d="M8 8h8M8 12h6M8 16h4" stroke="#181C26" strokeWidth="2" strokeLinecap="round"/>
-              <circle cx="18" cy="16" r="3" fill="#E60012"/>
+              <circle cx="18" cy="16" r="3" fill="#00A9E8"/>
               <path d="M17 15l2 2M17 17l2-2" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           );
@@ -294,15 +294,15 @@ const QuickAccess = ({
             <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect x="3" y="4" width="18" height="16" rx="2" stroke="#181C26" strokeWidth="2" />
               <path d="M7 9h10M7 13h6" stroke="#181C26" strokeWidth="2" strokeLinecap="round" />
-              <path d="M16 16h.01" stroke="#E60012" strokeWidth="3" strokeLinecap="round" />
+              <path d="M16 16h.01" stroke="#00A9E8" strokeWidth="3" strokeLinecap="round" />
             </svg>
           );
         case '心声':
           return (
             <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect x="3" y="3" width="18" height="18" rx="2" stroke="#181C26" strokeWidth="2"/>
-              <path d="M12 6c-2.5 0-4.5 2-4.5 4.5 0 4.5 4.5 7.5 4.5 7.5s4.5-3 4.5-7.5c0-2.5-2-4.5-4.5-4.5z" stroke="#E60012" strokeWidth="2" fill="#E60012"/>
-              <circle cx="18" cy="16" r="3" fill="#E60012"/>
+              <path d="M12 6c-2.5 0-4.5 2-4.5 4.5 0 4.5 4.5 7.5 4.5 7.5s4.5-3 4.5-7.5c0-2.5-2-4.5-4.5-4.5z" stroke="#00A9E8" strokeWidth="2" fill="#00A9E8"/>
+              <circle cx="18" cy="16" r="3" fill="#00A9E8"/>
               <path d="M17 15l2 2M17 17l2-2" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           );
@@ -312,7 +312,7 @@ const QuickAccess = ({
               <rect x="4" y="4" width="16" height="17" rx="2" stroke="#181C26" strokeWidth="2"/>
               <path d="M9 3h6v2H9z" fill="#181C26"/>
               <path d="m8 13 2.5 2.5 5.5-5.5" stroke="#181C26" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <circle cx="18" cy="17" r="3" fill="#E60012"/>
+              <circle cx="18" cy="17" r="3" fill="#00A9E8"/>
             </svg>
           );
         case '车队':
@@ -322,7 +322,7 @@ const QuickAccess = ({
               <path d="M15 8h4l3 4v4h-7V8z" stroke="#181C26" strokeWidth="2"/>
               <circle cx="5" cy="18" r="2.5" fill="#181C26"/>
               <circle cx="17" cy="18" r="2.5" fill="#181C26"/>
-              <circle cx="18" cy="16" r="3" fill="#E60012"/>
+              <circle cx="18" cy="16" r="3" fill="#00A9E8"/>
             </svg>
           );
         case '二手机':
@@ -331,7 +331,7 @@ const QuickAccess = ({
               <rect x="3" y="4" width="18" height="16" rx="2" stroke="#181C26" strokeWidth="2"/>
               <path d="M7 8h10M7 12h6" stroke="#181C26" strokeWidth="2" strokeLinecap="round"/>
               <path d="m14 15 2 2 4-4" stroke="#181C26" strokeWidth="1.8" strokeLinecap="round"/>
-              <circle cx="18" cy="16" r="3" fill="#E60012"/>
+              <circle cx="18" cy="16" r="3" fill="#00A9E8"/>
             </svg>
           );
         case '计算':
@@ -344,7 +344,7 @@ const QuickAccess = ({
               <circle cx="16" cy="12" r="1.2" fill="#181C26"/>
               <circle cx="8" cy="16" r="1.2" fill="#181C26"/>
               <circle cx="12" cy="16" r="1.2" fill="#181C26"/>
-              <circle cx="18" cy="16" r="3" fill="#E60012"/>
+              <circle cx="18" cy="16" r="3" fill="#00A9E8"/>
             </svg>
           );
         case '绑定':
@@ -352,7 +352,7 @@ const QuickAccess = ({
             <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect x="3" y="3" width="18" height="18" rx="2" stroke="#181C26" strokeWidth="2"/>
               <path d="M12 7v10M7 12h10" stroke="#181C26" strokeWidth="2" strokeLinecap="round"/>
-              <circle cx="18" cy="16" r="3" fill="#E60012"/>
+              <circle cx="18" cy="16" r="3" fill="#00A9E8"/>
             </svg>
           );
         case '全部':
@@ -360,8 +360,8 @@ const QuickAccess = ({
             <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect x="3" y="3" width="18" height="18" rx="2" stroke="#181C26" strokeWidth="2"/>
               <rect x="6" y="6" width="5" height="5" rx="1" fill="#181C26"/>
-              <rect x="13" y="6" width="5" height="5" rx="1" fill="#E60012"/>
-              <rect x="6" y="13" width="5" height="5" rx="1" fill="#E60012"/>
+              <rect x="13" y="6" width="5" height="5" rx="1" fill="#00A9E8"/>
+              <rect x="6" y="13" width="5" height="5" rx="1" fill="#00A9E8"/>
               <rect x="13" y="13" width="5" height="5" rx="1" fill="#181C26"/>
             </svg>
           );
@@ -443,8 +443,8 @@ const QuickAccess = ({
 
       {/* 滚动点 */}
       <div className="flex justify-center gap-1.5 mt-1">
-        <div className={`w-[6px] h-[6px] rounded-full transition-colors ${currentScreen === 0 ? 'bg-brand-red' : 'bg-gray-300'}`}></div>
-        <div className={`w-[6px] h-[6px] rounded-full transition-colors ${currentScreen === 1 ? 'bg-brand-red' : 'bg-gray-300'}`}></div>
+        <div className={`w-[6px] h-[6px] rounded-full transition-colors ${currentScreen === 0 ? 'bg-[#00A9E8]' : 'bg-gray-300'}`}></div>
+        <div className={`w-[6px] h-[6px] rounded-full transition-colors ${currentScreen === 1 ? 'bg-[#00A9E8]' : 'bg-gray-300'}`}></div>
       </div>
     </div>
   );

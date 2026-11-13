@@ -17,7 +17,7 @@ const GuestTopNav = ({ onLoginClick, onSearchClick, onScanClick, onNotificationC
       </button>
 
       {/* 搜索胶囊：高度收敛至 34px，精致内嵌搜索与扫码 */}
-      <div className="flex h-[34px] min-w-0 flex-1 items-center rounded-full bg-black/35 shadow-inner">
+      <div className="flex h-[34px] min-w-0 flex-1 items-center rounded-full bg-white/20">
         <button
           type="button"
           className="flex h-full min-w-0 flex-1 items-center gap-2 pl-3 pr-1 text-left rtl:text-right active:opacity-75 transition-opacity"

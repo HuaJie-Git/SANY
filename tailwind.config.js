@@ -8,6 +8,13 @@ export default {
     extend: {
       colors: {
         'brand-red': '#E60012',
+        'brand-blue': '#00A9E8',
+        'brand-blue-hover': '#009EF0',
+        'theme-cyan': '#09BFE2',
+        'theme-blue': '#009FFF',
+        'app-bg': '#F3F4F8',
+        'text-dark': '#1D232B',
+        'text-muted': '#8D929C',
         'bg-gray': '#F2F2F7',
         'card-white': '#FFFFFF',
         'text-primary': '#333333',

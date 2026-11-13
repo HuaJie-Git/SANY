@@ -19,8 +19,8 @@ const DeviceStartup = ({
   // 选中/高亮的时段索引（例如第13小时）
   const highlightedIndex = 13;
   // 颜色规范
-  const normalColor = '#FFB43D'; // 未选中状态
-  const highlightedColor = '#FF8412'; // 选中/高亮状态
+  const normalColor = '#BEE7F9'; // 未选中状态（浅蓝）
+  const highlightedColor = '#009EF0'; // 选中/高亮状态（主蓝）
 
   const displayLocation = demoMode ? (location === '美国·纽约州-希恩街880号' ? '中国' : (location || '中国')) : location;
   const displayReportTime = demoMode ? (reportTime === '2024-12-28 18:03 (GMT+8)' ? '2026-09-23 08:30 (UTC+8)' : (reportTime || '2026-09-23 08:30 (UTC+8)')) : reportTime;

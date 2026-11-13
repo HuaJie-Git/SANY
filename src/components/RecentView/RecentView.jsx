@@ -192,7 +192,7 @@ const RecentView = ({ onNavigate, demoMode = false }) => {
           >
             {cardContent}
             {/* 状态角标 - 右上角 */}
-            <div className="absolute top-0 right-0 bg-brand-red text-white text-[10px] px-2 py-0.5 rounded-bl-lg">
+            <div className="absolute top-0 right-0 bg-[#00A9E8] text-white text-[10px] px-2 py-0.5 rounded-bl-lg">
               {item.status}
             </div>
             {cardInfo}
@@ -217,7 +217,7 @@ const RecentView = ({ onNavigate, demoMode = false }) => {
             {cardContent}
             {/* 推荐角标 */}
             {item.isRecommended && (
-              <div className="absolute top-0 right-0 bg-brand-red text-white text-[10px] px-2 py-0.5 rounded-bl-lg">
+              <div className="absolute top-0 right-0 bg-[#00A9E8] text-white text-[10px] px-2 py-0.5 rounded-bl-lg">
                 推荐
               </div>
             )}

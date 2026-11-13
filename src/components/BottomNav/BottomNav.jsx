@@ -15,7 +15,7 @@ const BottomNav = ({ activeTab, onTabChange, isScrolled, onScrollToTop, showProf
   ];
 
   const renderIcon = (icon, isActive) => {
-    const color = isActive ? '#E60012' : '#999999';
+    const color = isActive ? '#00A9E8' : '#1D232B';
 
     switch (icon) {
       case 'home':
@@ -78,7 +78,7 @@ const BottomNav = ({ activeTab, onTabChange, isScrolled, onScrollToTop, showProf
         >
           {tab.isSpecial ? (
             <div className="flex flex-col items-center -mt-4">
-              <div className="w-[60px] h-[60px] bg-[#E60012] rounded-full flex items-center justify-center shadow-lg" style={{ border: '3px solid white' }}>
+              <div className="w-[60px] h-[60px] bg-gradient-to-tr from-[#09BFE2] to-[#009FFF] rounded-full flex items-center justify-center shadow-lg" style={{ border: '3px solid white' }}>
                 <svg width="40" height="40" viewBox="0 0 1024 1024" fill="white">
                   <path d="M523.878 148.48a60.954 60.954 0 0 1 40.674 106.342l-0.041 56.203h152.381c64.553-0.005 117.919 50.314 121.708 114.754l0.2 7.153v325.084c0.004 64.553-50.315 117.919-114.755 121.702l-7.153 0.205H310.538c-64.553 0.005-117.918-50.314-121.702-114.754l-0.205-7.153V432.932c-0.005-64.553 50.314-117.919 114.755-121.703l7.152-0.204h172.698v-56.162a60.954 60.954 0 0 1 40.642-106.383z m50.79 487.629H452.763a40.637 40.637 0 0 0-4.757 80.988l4.757 0.282h121.907a40.637 40.637 0 1 0 0-81.27zM401.972 473.564c-33.669 0-60.959 27.29-60.959 60.954s27.29 60.953 60.954 60.953 60.954-27.29 60.954-60.953c0-33.664-27.29-60.954-60.954-60.954z m243.81 0c-33.665 0-60.954 27.29-60.954 60.954s27.29 60.953 60.953 60.953c33.664 0 60.954-27.29 60.954-60.953 0-33.664-27.29-60.954-60.954-60.954z m-518.104 0a40.637 40.637 0 0 1 40.346 35.881l0.287 4.757v162.544a40.637 40.637 0 0 1-80.983 4.752l-0.287-4.752V514.202a40.637 40.637 0 0 1 40.637-40.638z m772.076 0a40.632 40.632 0 0 1 40.35 35.881l0.287 4.757v162.544a40.637 40.637 0 0 1-80.988 4.752l-0.281-4.752V514.202a40.632 40.632 0 0 1 40.632-40.638z"/>
                 </svg>
@@ -93,7 +93,7 @@ const BottomNav = ({ activeTab, onTabChange, isScrolled, onScrollToTop, showProf
                   <div className="absolute -top-1 -right-1 w-2 h-2 bg-brand-red rounded-full"></div>
                 )}
               </div>
-              <span className={`text-[10px] mt-1 ${activeTab === tab.id ? 'text-brand-red font-medium' : 'text-gray-500'}`}>
+              <span className={`text-[10px] mt-1 ${activeTab === tab.id ? 'text-[#00A9E8] font-medium' : 'text-[#8D929C]'}`}>
                 {tab.id === 'home' && isScrolled ? '回顶部' : tab.name}
               </span>
             </>
