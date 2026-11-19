@@ -5,7 +5,7 @@ const Profile = ({ onFeedback, demoMode = false, onRequireLogin, onNavigate }) =
 
   const handleFeatureClick = (name) => {
     if (name === '积分商城') return onNavigate?.('pointsMall');
-    if (name === '代金券') return onNavigate?.('vouchers');
+    if (name === '权益中心' || name === '代金券') return onNavigate?.('vouchers');
     if (name === '设备预警') return onNavigate?.('auditList');
     if (name === '机群报表') return onNavigate?.('usageReport');
     if (name === '自助服务') return onNavigate?.('selfService');
@@ -25,7 +25,7 @@ const Profile = ({ onFeedback, demoMode = false, onRequireLogin, onNavigate }) =
     { id: 6, name: '收藏中心', icon: '收藏', color: '#FFF3E0', iconColor: '#FF9800' },
     { id: 7, name: 'APP反馈', icon: '反馈', color: '#E3F2FD', iconColor: '#2196F3' },
     { id: 8, name: '地址管理', icon: '地址', color: '#E8F5E9', iconColor: '#4CAF50' },
-    { id: 9, name: '代金券', icon: '代金券', color: '#FFF3E0', iconColor: '#FF9800' },
+    { id: 9, name: '权益中心', icon: '代金券', color: '#FFF3E0', iconColor: '#FF9800' },
   ];
 
   // 星星积分数据

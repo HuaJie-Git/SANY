@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
-import { getCouponById, formatAmount } from '../../data/coupons';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import QRCode from 'qrcode';
+import { getCouponById, formatAmount, generateMockDynamicCode } from '../../data/coupons';
 
 /**
  * 优惠券详情原型组件
@@ -17,10 +18,12 @@ export default function CouponDetail({ couponId: rawCouponId, context, onBack, o
   // 1. 未知 couponId 不能 fallback 首张券，必须为资源不存在态
   const isCouponNotFound = !targetCoupon;
   const baseCoupon = targetCoupon;
+  const couponId = baseCoupon?.id || null;
+  const couponStatus = baseCoupon?.status || null;
 
-  const isAvailable = baseCoupon?.status === 'available';
-  const isInvalid = baseCoupon?.status === 'invalid';
-  const isUsed = baseCoupon?.status === 'used';
+  const isAvailable = couponStatus === 'available';
+  const isInvalid = couponStatus === 'invalid';
+  const isUsed = couponStatus === 'used';
   const amountLabel = isAvailable ? '可使用额度' : '优惠券总额度';
 
   // DEC-010: 可使用状态标可使用额度，缺失不回退总额；未激活/暂停/失效标优惠券总额度
@@ -91,6 +94,144 @@ export default function CouponDetail({ couponId: rawCouponId, context, onBack, o
     });
     return texts;
   }, [baseCoupon, instructionsText]);
+
+  // COUPON-013: 动态码状态（仅可使用状态有效；模拟来自上游，基于绝对到期时间自动轮换新码）
+  const [dynamicCodeData, setDynamicCodeData] = useState(null);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [qrError, setQrError] = useState(null);
+
+  // 异步二维码生成竞态序列号与当前动态码 ref，防止旧异步结果覆盖新码
+  const generationSeqRef = useRef(0);
+  const codeDataRef = useRef(null);
+
+  // 稳定刷新动态码函数（依赖原始基本类型 couponId 与 couponStatus，不依赖易变对象引用）
+  const refreshDynamicCode = useCallback((targetId) => {
+    const idToUse = targetId || couponId;
+    if (!idToUse || couponStatus !== 'available') {
+      generationSeqRef.current += 1;
+      codeDataRef.current = null;
+      setDynamicCodeData(null);
+      setQrCodeDataUrl('');
+      setIsGenerating(false);
+      setQrError(null);
+      return;
+    }
+
+    // 立即递增序列号，使尚未完成的旧异步请求失效
+    const currentSeq = ++generationSeqRef.current;
+
+    // 过期码/旧码不能继续显示，立即隐藏
+    setQrCodeDataUrl('');
+    setIsGenerating(true);
+    setQrError(null);
+
+    const mockData = generateMockDynamicCode(idToUse);
+    codeDataRef.current = mockData;
+    setDynamicCodeData(mockData);
+
+    QRCode.toDataURL(mockData.dynamicCode, {
+      width: 170,
+      margin: 1,
+      color: {
+        dark: '#1e293b',
+        light: '#ffffff',
+      },
+      errorCorrectionLevel: 'M',
+    })
+      .then((url) => {
+        // 换券/卸载/发起新一轮请求后，旧异步结果直接丢弃
+        if (currentSeq !== generationSeqRef.current) return;
+        setQrCodeDataUrl(url);
+        setIsGenerating(false);
+      })
+      .catch((err) => {
+        if (currentSeq !== generationSeqRef.current) return;
+        console.error('Failed to generate QR code:', err);
+        setQrError('动态码生成失败');
+        setIsGenerating(false);
+      });
+  }, [couponId, couponStatus]);
+
+  // 基于绝对到期时间的校验与过期轮换
+  const checkAndRotateIfExpired = useCallback(() => {
+    if (!couponId || couponStatus !== 'available') return;
+    const currentData = codeDataRef.current;
+    if (!currentData) {
+      refreshDynamicCode();
+      return;
+    }
+
+    const now = Date.now();
+    if (now >= currentData.expiresAt) {
+      // 已过绝对到期时间：立即隐藏过期码并获取新码
+      setQrCodeDataUrl('');
+      refreshDynamicCode();
+    }
+  }, [couponId, couponStatus, refreshDynamicCode]);
+
+  // 后台休眠/页面恢复可见时立即校验并隐藏过期码、获取新码
+  useEffect(() => {
+    if (!couponId || couponStatus !== 'available') return;
+
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === 'visible') {
+        checkAndRotateIfExpired();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+    window.addEventListener('focus', handleVisibilityOrFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+    };
+  }, [couponId, couponStatus, checkAndRotateIfExpired]);
+
+  // 基于绝对时间的定时校验轮换
+  useEffect(() => {
+    if (!couponId || couponStatus !== 'available') return;
+
+    const timer = setInterval(() => {
+      checkAndRotateIfExpired();
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [couponId, couponStatus, checkAndRotateIfExpired]);
+
+  // 换券/状态变化与组件卸载处理：失效旧请求并重置状态
+  useEffect(() => {
+    if (!couponId || couponStatus !== 'available') {
+      generationSeqRef.current += 1;
+      codeDataRef.current = null;
+      setDynamicCodeData(null);
+      setQrCodeDataUrl('');
+      return;
+    }
+
+    refreshDynamicCode();
+
+    return () => {
+      generationSeqRef.current += 1;
+      codeDataRef.current = null;
+      setQrCodeDataUrl('');
+    };
+  }, [couponId, couponStatus, refreshDynamicCode]);
+
+  // COUPON-013: 使用明细（只读展示上游提供的每次使用时间和金额；空态/失败态支持）
+  const hasUsageError = Boolean(
+    baseCoupon?.usedRecordsError ||
+    context?.usedRecordsError ||
+    baseCoupon?.usedRecordsStatus === 'error'
+  );
+
+  const usedRecords = useMemo(() => {
+    if (Array.isArray(baseCoupon?.usedRecords)) {
+      return baseCoupon.usedRecords;
+    }
+    return [];
+  }, [baseCoupon?.usedRecords]);
 
   return (
     <div className="relative flex flex-col h-full bg-[#F3F4F8] text-gray-900 select-none overflow-hidden">
@@ -178,27 +319,31 @@ export default function CouponDetail({ couponId: rawCouponId, context, onBack, o
                   </div>
                 </div>
 
-                {/* 状态徽标 */}
-                <div className="shrink-0">
+                {/* 状态徽标（COUPON-012/013更正：可使用且即将到期的券仅显示一个“即将到期”标签，不与“可使用”并列；底层状态仍为可用） */}
+                <div className="shrink-0 flex items-center gap-1.5 flex-wrap justify-end">
                   {baseCoupon.status === 'available' && (
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
-                      baseCoupon.isExpiringSoon ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                    }`}>
-                      {baseCoupon.isExpiringSoon ? '即将到期' : (baseCoupon.statusText || '可使用')}
-                    </span>
+                    baseCoupon.isExpiringSoon ? (
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-600 border border-amber-200 whitespace-nowrap">
+                        即将到期
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 whitespace-nowrap">
+                        {baseCoupon.statusText && baseCoupon.statusText !== '即将到期' ? baseCoupon.statusText : '可使用'}
+                      </span>
+                    )
                   )}
                   {baseCoupon.status === 'inactive' && (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-[#089ded] border border-blue-200">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-[#089ded] border border-blue-200 whitespace-nowrap">
                       未激活
                     </span>
                   )}
                   {baseCoupon.status === 'suspended' && (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-orange-50 text-orange-600 border border-orange-200">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-orange-50 text-orange-600 border border-orange-200 whitespace-nowrap">
                       暂停使用
                     </span>
                   )}
                   {baseCoupon.status === 'invalid' && (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-500 border border-red-100">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-500 border border-red-100 whitespace-nowrap">
                       {baseCoupon.statusText || '已失效'}
                     </span>
                   )}
@@ -218,6 +363,47 @@ export default function CouponDetail({ couponId: rawCouponId, context, onBack, o
                 </span>
               </div>
             </div>
+
+            {/* COUPON-013: 动态二维码展示区（仅可使用状态展示，过期自动轮换新码） */}
+            {baseCoupon.status === 'available' && (
+              <div className="rounded-2xl bg-white border border-gray-100 p-4 shadow-2xs text-center">
+                {/* 二维码容器 */}
+                <div className="flex flex-col items-center justify-center">
+                  <div className="relative p-2.5 bg-white rounded-xl border border-gray-100 shadow-2xs">
+                    {qrCodeDataUrl ? (
+                      <img
+                        src={qrCodeDataUrl}
+                        alt="二维码"
+                        className="w-40 h-40 object-contain block mx-auto"
+                      />
+                    ) : (
+                      <div className="w-40 h-40 flex flex-col items-center justify-center bg-gray-50 text-gray-400 text-xs rounded-lg">
+                        {isGenerating ? (
+                          <>
+                            <svg className="animate-spin h-5 w-5 text-[#089ded] mb-1.5" viewBox="0 0 24 24" fill="none">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                            </svg>
+                            <span>正在获取新码...</span>
+                          </>
+                        ) : qrError ? (
+                          <span className="text-red-500">{qrError}</span>
+                        ) : (
+                          <span>暂无有效码</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 轮换码展示（明确轮换码而非券ID，LTR方向） */}
+                  {dynamicCodeData?.dynamicCode && (
+                    <div className="mt-2.5 flex items-center justify-center gap-1.5 font-mono text-xs font-semibold text-gray-700 select-all" dir="ltr">
+                      <span>{dynamicCodeData.dynamicCode}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* 额度分层明细卡片（DEC-006：部分使用或锁定才显示对应金额明细） */}
             {(baseCoupon.lockedAmount > 0 || baseCoupon.usedAmount > 0) && (
@@ -247,6 +433,69 @@ export default function CouponDetail({ couponId: rawCouponId, context, onBack, o
                 </div>
               </div>
             )}
+
+            {/* COUPON-013: 使用明细卡片（只读展示上游提供的每次使用时间和金额） */}
+            <div className="rounded-2xl bg-white border border-gray-100 p-4 shadow-2xs space-y-3 text-xs">
+              <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+                <span className="font-bold text-gray-800">使用明细</span>
+              </div>
+
+              {/* 1. 失败状态（失败有提示且无重试；接口未定不假称接通） */}
+              {hasUsageError ? (
+                <div className="py-3 px-3 rounded-xl bg-amber-50/70 border border-amber-200/60 text-amber-800 flex items-start gap-2">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="shrink-0 mt-0.5 text-amber-600">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-amber-900">使用明细获取失败</div>
+                    <div className="text-[11px] text-amber-700/90 mt-0.5 leading-relaxed">
+                      记录接口未定（原型示例，不假称接通；无重试操作）
+                    </div>
+                  </div>
+                </div>
+              ) : usedRecords.length > 0 ? (
+                /* 2. 有记录展示列表（两笔各10000虚构记录，日期时间/金额/币种按实际上游字段展示，缺失不编造） */
+                <div className="divide-y divide-gray-100">
+                  {usedRecords.map((record, idx) => {
+                    const hasRecAmount = record.amount !== null && record.amount !== undefined && record.amount !== '' && !Number.isNaN(Number(record.amount));
+                    const formattedAmount = hasRecAmount ? formatAmount(record.amount) : '—';
+                    // 币种严格以每笔记录自身 currency 字段为准，缺失时绝不回退假定 baseCoupon.currency
+                    const recCurrency = record.currency ? record.currency : null;
+                    const recTime = typeof record.time === 'string' && record.time.trim() ? record.time.trim() : '—';
+
+                    return (
+                      <div key={record.id || idx} className="py-2.5 flex items-start justify-between text-xs gap-3">
+                        <div className="min-w-0 flex-1 text-gray-500 text-[12px] font-mono break-words leading-relaxed" dir="ltr">
+                          {recTime}
+                        </div>
+                        <div className="shrink-0 max-w-[50%] text-right font-semibold text-gray-800 font-mono text-xs break-words leading-relaxed ml-auto" dir="ltr">
+                          {hasRecAmount ? (
+                            <span>
+                              {recCurrency ? `${recCurrency} ` : ''}-{formattedAmount}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                /* 3. 空记录空态 */
+                <div className="py-5 flex flex-col items-center justify-center text-center text-gray-400">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="mb-1.5 opacity-50">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                  </svg>
+                  <span className="text-xs">暂无使用明细</span>
+                </div>
+              )}
+            </div>
 
             {/* 失效原因提示（仅自然过期等确认场景显示，额度用完或未定义原因不自造解释） */}
             {baseCoupon.status === 'invalid' && baseCoupon.invalidReason && (

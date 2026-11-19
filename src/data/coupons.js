@@ -78,7 +78,7 @@ export const INITIAL_COUPONS = [
     issueTime: '2026.10.15 08:30:00',
     effectiveTime: '2026.10.15 09:00:00',
     validFrom: '2026.10.15',
-    validTo: '2026.11.15',
+    validTo: '2026.11.30',
     stackRule: null,
     relatedCustomer: null,
     contractCode: null,
@@ -121,7 +121,20 @@ export const INITIAL_COUPONS = [
     scope: null,
     scopeDescription: null,
     instructions: null,
-    usedRecords: [],
+    usedRecords: [
+      {
+        id: 'REC-20261105-01',
+        time: '2026.11.05 14:20:00',
+        amount: 10000,
+        currency: '￥',
+      },
+      {
+        id: 'REC-20261108-02',
+        time: '2026.11.08 10:15:00',
+        amount: 10000,
+        currency: '￥',
+      },
+    ],
     suspendedReason: null,
     invalidReason: null,
   },
@@ -417,9 +430,11 @@ export const readStoredCoupons = () => {
       const isVoidedDemo = item.id === 'CPN-VOIDED-003';
       // CPN-USED-004 限定迁移至额度用完已失效（不把已使用设为优惠券独立状态）
       const isUsedDemo = item.id === 'CPN-USED-004';
+      // CPN-EXPIRING-002 仅对旧演示日期（2026.11.15）定点迁移至 2026.11.30，其他值（null、未提供、自定义日期）原样保留
+      const isExpiringOldDemo = item.id === 'CPN-EXPIRING-002' && item.validTo === '2026.11.15';
 
       if (isLegacyDemo) {
-        // 早期小额活动券的遗留演示版本迁移：清洗为新版业务名称与标准面额；已知 CPN-USED-004 兼容迁移至已失效
+        // 早期小额活动券的遗留演示版本迁移：清洗为新版业务名称与标准面额；已知 CPN-USED-004 兼容迁移至已失效；CPN-EXPIRING-002 定点旧日期迁移与保真
         return {
           ...defaultItem,
           ...item,
@@ -432,11 +447,15 @@ export const readStoredCoupons = () => {
           remainingAmount: defaultItem.remainingAmount,
           lockedAmount: defaultItem.lockedAmount,
           minSpend: null,
+          ...(item.id === 'CPN-EXPIRING-002' ? {
+            validTo: isExpiringOldDemo ? '2026.11.30' : (item.validTo ?? null),
+          } : {}),
           ...(isUsedDemo ? {
             status: 'invalid',
             statusText: '已失效',
             invalidReason: null,
           } : {}),
+          usedRecords: item.usedRecords !== undefined ? item.usedRecords : null,
         };
       }
 
@@ -463,8 +482,10 @@ export const readStoredCoupons = () => {
         currency: item.currency ?? null,
         minSpend: null,
         balance: item.balance ?? null,
-        // 日期与原因：未提供或为 null 均保持 null 缺失，CPN-VOIDED-003 迁移至标准过期样例；保护非本轮目标存量既有日期/原因
-        validTo: isVoidedDemo ? defaultItem.validTo : (item.validTo ?? null),
+        // 日期与原因：未提供或为 null 均保持 null 缺失，CPN-VOIDED-003 迁移至标准过期样例；仅当 CPN-EXPIRING-002 且旧日期为 2026.11.15 时定点迁移至 2026.11.30，其他值（null、未提供、不同日期）原样保留
+        validTo: isVoidedDemo
+          ? defaultItem.validTo
+          : (isExpiringOldDemo ? '2026.11.30' : (item.validTo ?? null)),
         validFrom: item.validFrom ?? null,
         issueTime: item.issueTime ?? null,
         effectiveTime: item.effectiveTime ?? null,
@@ -478,7 +499,8 @@ export const readStoredCoupons = () => {
         relatedCustomer: item.relatedCustomer ?? null,
         contractCode: item.contractCode ?? null,
         source: item.source ?? null,
-        usedRecords: Array.isArray(item.usedRecords) ? item.usedRecords : [],
+        usedRecords: item.usedRecords !== undefined ? item.usedRecords : null,
+        usedRecordsError: item.usedRecordsError ?? false,
       };
     });
 
@@ -498,4 +520,33 @@ export const getCouponById = (id) => {
   if (id === LONG_TEXT_COUPON.id) return LONG_TEXT_COUPON;
   const coupons = readStoredCoupons();
   return coupons.find((c) => c.id === id) || null;
+};
+
+/**
+ * COUPON-013: 原型示例动态码生成工具（模拟来自上游）
+ * 说明：
+ * 1. 仅限“可使用”状态券出示；
+ * 2. 真实上游接口、有效时长未给出，本函数提供本地模拟数据，明确标注为原型示例；
+ * 3. 绝不可称真实可用或核销；
+ * 4. 轮换动态码而非静态券 ID；
+ * 5. 未确认时长（原型演示默认 60 秒轮换倒计时）。
+ */
+export const generateMockDynamicCode = (couponId) => {
+  const cleanId = typeof couponId === 'string'
+    ? couponId.replace(/[^A-Za-z0-9]/g, '')
+    : 'COUPON';
+  // 生成轮换随机码（非券ID自身，含时间戳片段与随机防伪串）
+  const timeFragment = Math.floor(Date.now() / 1000).toString(36).toUpperCase();
+  const randomFragment = Math.random().toString(36).substring(2, 6).toUpperCase();
+  const dynamicCode = `DYN-${cleanId}-${timeFragment}-${randomFragment}`;
+  // 模拟上游有效时长（未确认时长，原型演示设为 60 秒）
+  const durationSeconds = 60;
+  const expiresAt = Date.now() + durationSeconds * 1000;
+
+  return {
+    dynamicCode,
+    durationSeconds,
+    expiresAt,
+    isPrototypeMock: true,
+  };
 };

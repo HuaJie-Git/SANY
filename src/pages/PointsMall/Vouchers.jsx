@@ -14,7 +14,7 @@ import { readStoredCoupons, COUPON_SOURCE_TABS, COUPON_STATUS_FILTERS, formatAmo
  */
 
 let lastVoucherSourceTab = 'all';
-let lastVoucherStatusFilter = 'all';
+let lastVoucherStatusFilter = 'available';
 
 export default function Vouchers({ onBack, onNavigate, onRequireLogin: _onRequireLogin }) {
   const rawCoupons = readStoredCoupons();
@@ -26,10 +26,10 @@ export default function Vouchers({ onBack, onNavigate, onRequireLogin: _onRequir
     );
   }, [rawCoupons]);
 
-  // 根据当前一级来源分类动态确定可用的二级状态筛选：
+  // 根据当前一级来源分类动态确定可用的二级状态筛选（COUPON-013最新更正：恢复“全部状态”第一、“可用”第二）：
   // 1. 星星兑换 / 满额返利：保留原有筛选逻辑（包含全部状态、可用、未激活、暂停使用、已使用、已失效）
   // 2. 优惠券分类：严格对齐上游文档4类状态，不把“已使用”设为独立状态（隐藏“已使用”）
-  // 3. 全部来源：若当前全是优惠券或无非优惠券已使用旧数据，则隐藏“已使用”；仅当全部来源中有非优惠券实际数据并需其旧筛选时才保留
+  // 3. 全部来源：若当前全都是优惠券或无非优惠券已使用旧数据，则隐藏“已使用”；仅当全部来源中有非优惠券实际数据并需其旧筛选时才保留
   const getSupportedStatusFilters = useCallback((sourceTab) => {
     if (sourceTab === 'stars' || sourceTab === 'rebate') {
       return COUPON_STATUS_FILTERS;
@@ -160,6 +160,9 @@ export default function Vouchers({ onBack, onNavigate, onRequireLogin: _onRequir
     return records;
   }, [rawCoupons]);
 
+  // COUPON-013: 全部和优惠券来源分类隐藏底栏，星星兑换、满额返利保留入口及原行为
+  const isBottomBarHidden = activeSourceTab === 'all' || activeSourceTab === 'coupon';
+
   return (
     <div className="relative flex flex-col h-full bg-white text-gray-900 select-none overflow-hidden">
       {/* 顶部导航栏 */}
@@ -185,13 +188,13 @@ export default function Vouchers({ onBack, onNavigate, onRequireLogin: _onRequir
             </svg>
           </button>
           <h1 className="text-base font-bold text-gray-900 truncate ml-1">
-            代金券
+            权益中心
           </h1>
         </div>
       </header>
 
       {/* 一级来源选项卡栏：全部、优惠券、星星兑换、满额返利 */}
-      <nav aria-label="代金券分类" className="flex border-b border-gray-100 px-3 bg-white shrink-0 overflow-x-auto no-scrollbar gap-1">
+      <nav aria-label="权益中心分类" className="flex border-b border-gray-100 px-3 bg-white shrink-0 overflow-x-auto no-scrollbar gap-1">
         {COUPON_SOURCE_TABS.map((tab) => {
           const isActive = activeSourceTab === tab.key;
           const count = sourceTabCounts[tab.key] ?? 0;
@@ -241,7 +244,9 @@ export default function Vouchers({ onBack, onNavigate, onRequireLogin: _onRequir
       </div>
 
       {/* 主视图内容区域 */}
-      <main className="flex-1 overflow-y-auto p-4 bg-[#F3F4F8] space-y-3 pb-24">
+      <main className={`flex-1 overflow-y-auto p-4 bg-[#F3F4F8] space-y-3 ${
+        isBottomBarHidden ? 'pb-8' : 'pb-24'
+      }`}>
         {/* 1. 空状态（匹配截图 IMG-001 或分类无券） */}
         {filteredCoupons.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -328,34 +333,36 @@ export default function Vouchers({ onBack, onNavigate, onRequireLogin: _onRequir
                       </div>
                     </div>
 
-                    {/* 状态徽标 */}
-                    <div className="shrink-0">
+                    {/* 状态徽标（COUPON-012/013更正：可使用且即将到期的券仅显示一个“即将到期”标签，不与“可使用”并列；底层状态仍为可用） */}
+                    <div className="shrink-0 flex items-center gap-1.5 flex-wrap justify-end">
                       {coupon.status === 'available' && (
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                          coupon.isExpiringSoon
-                            ? 'bg-amber-50 text-amber-600 border border-amber-200'
-                            : 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                        }`}>
-                          {coupon.isExpiringSoon ? '即将到期' : (coupon.statusText || '可使用')}
-                        </span>
+                        coupon.isExpiringSoon ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-600 border border-amber-200 whitespace-nowrap">
+                            即将到期
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 whitespace-nowrap">
+                            {coupon.statusText && coupon.statusText !== '即将到期' ? coupon.statusText : '可使用'}
+                          </span>
+                        )
                       )}
                       {coupon.status === 'inactive' && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-[#089ded] border border-blue-200">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-[#089ded] border border-blue-200 whitespace-nowrap">
                           未激活
                         </span>
                       )}
                       {coupon.status === 'suspended' && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-orange-50 text-orange-600 border border-orange-200">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-orange-50 text-orange-600 border border-orange-200 whitespace-nowrap">
                           暂停使用
                         </span>
                       )}
                       {coupon.status === 'used' && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-600 border border-gray-200 whitespace-nowrap">
                           已失效
                         </span>
                       )}
                       {coupon.status === 'invalid' && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-50 text-red-500 border border-red-100">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-50 text-red-500 border border-red-100 whitespace-nowrap">
                           {coupon.statusText || '已失效'}
                         </span>
                       )}
@@ -437,32 +444,34 @@ export default function Vouchers({ onBack, onNavigate, onRequireLogin: _onRequir
         )}
       </main>
 
-      {/* 底部按钮栏（固定吸底，完全对齐截图 IMG-001） */}
-      <footer className="sticky bottom-0 z-20 border-t border-gray-100 bg-white px-4 py-3 pb-6 flex items-center gap-3 shrink-0 shadow-sm">
-        {/* 左侧浅灰按钮：代金券使用记录 */}
-        <button
-          type="button"
-          onClick={() => {
-            if (usageHistory.length > 0) {
-              setShowHistoryModal(true);
-            } else {
-              showToast('暂无代金券使用记录');
-            }
-          }}
-          className="flex-1 min-w-0 py-3 px-3 rounded-full bg-[#f6f7f9] hover:bg-gray-100 active:scale-[0.99] text-[#374151] text-xs sm:text-sm font-semibold transition-all text-center truncate shadow-2xs"
-        >
-          代金券使用记录
-        </button>
+      {/* 底部按钮栏（固定吸底，完全对齐截图 IMG-001；COUPON-013：在“全部”和“优惠券”分类均隐藏底栏，星星兑换与满额返利保留入口及原行为） */}
+      {!isBottomBarHidden && (
+        <footer className="sticky bottom-0 z-20 border-t border-gray-100 bg-white px-4 py-3 pb-6 flex items-center gap-3 shrink-0 shadow-sm">
+          {/* 左侧浅灰按钮：代金券使用记录 */}
+          <button
+            type="button"
+            onClick={() => {
+              if (usageHistory.length > 0) {
+                setShowHistoryModal(true);
+              } else {
+                showToast('暂无代金券使用记录');
+              }
+            }}
+            className="flex-1 min-w-0 py-3 px-3 rounded-full bg-[#f6f7f9] hover:bg-gray-100 active:scale-[0.99] text-[#374151] text-xs sm:text-sm font-semibold transition-all text-center truncate shadow-2xs"
+          >
+            代金券使用记录
+          </button>
 
-        {/* 右侧品牌蓝按钮：获取代金券（保留跳转至奖品兑换） */}
-        <button
-          type="button"
-          onClick={() => onNavigate?.('prizeRedeem')}
-          className="flex-1 min-w-0 py-3 px-3 rounded-full bg-[#089ded] hover:bg-[#0788cf] active:scale-[0.99] text-white text-xs sm:text-sm font-semibold transition-all text-center truncate shadow-xs"
-        >
-          获取代金券
-        </button>
-      </footer>
+          {/* 右侧品牌蓝按钮：获取代金券（保留跳转至奖品兑换） */}
+          <button
+            type="button"
+            onClick={() => onNavigate?.('prizeRedeem')}
+            className="flex-1 min-w-0 py-3 px-3 rounded-full bg-[#089ded] hover:bg-[#0788cf] active:scale-[0.99] text-white text-xs sm:text-sm font-semibold transition-all text-center truncate shadow-xs"
+          >
+            获取代金券
+          </button>
+        </footer>
+      )}
 
       {/* 代金券使用记录只读弹窗 */}
       {showHistoryModal && (

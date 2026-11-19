@@ -56,7 +56,7 @@ export const MESSAGE_ITEMS = [
   },
   {
     id: 'coupon-002', category: 'coupon', title: '优惠券即将到期提醒',
-    summary: '服务采购优惠券 ￥200,000 即将到期（有效截止：2026.11.15），请留意有效期。',
+    summary: '服务采购优惠券 ￥200,000 即将到期（有效截止：2026.11.30），请留意有效期。',
     time: '1 小时前', icon: '期', color: '#d88620', target: 'couponDetail',
     payload: { couponId: 'CPN-EXPIRING-002' },
   },
@@ -65,12 +65,6 @@ export const MESSAGE_ITEMS = [
     summary: '主机购置优惠券 ￥100,000 已完成部分额度抵扣核销，点击可核对当前额度明细。',
     time: '2 小时前', icon: '销', color: '#089ded', target: 'couponDetail',
     payload: { couponId: 'CPN-LOCKED-007' },
-  },
-  {
-    id: 'coupon-007', category: 'coupon', title: '优惠券低余额提醒',
-    summary: '服务采购优惠券 ￥100,000 可使用额度较低（剩余可用 ￥5,000），请查看优惠券详情。',
-    time: '3 小时前', icon: '额', color: '#f59e0b', target: 'couponDetail',
-    payload: { couponId: 'CPN-LOWBALANCE-009' },
   },
   {
     id: 'coupon-003', category: 'coupon', title: '优惠券失效通知',
@@ -121,9 +115,9 @@ export const MESSAGE_GROUPS = [
   },
   {
     id: 'coupon',
-    title: '优惠券通知',
+    title: '权益通知',
     categories: ['coupon'],
-    emptySummary: '暂无优惠券通知',
+    emptySummary: '暂无权益通知',
   },
 ];
 

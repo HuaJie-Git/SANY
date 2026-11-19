@@ -324,12 +324,12 @@ const AggregatedMessageCenter = ({ onBack, onNavigate, onUnreadChange }) => {
     const groupMsgs = getGroupMessages(groupId, effectiveMessages);
     const unreadGroupMsgs = groupMsgs.filter((m) => !realReadIds.includes(m.id));
     if (unreadGroupMsgs.length === 0) {
-      showToast('本类暂无未读消息');
+      showToast(groupId === 'coupon' ? '暂无未读消息' : '本类暂无未读消息');
       return;
     }
     const nextReadIds = Array.from(new Set([...realReadIds, ...unreadGroupMsgs.map((m) => m.id)]));
     setRealReadIds(nextReadIds);
-    showToast('本类已全部标记为已读');
+    showToast(groupId === 'coupon' ? '已全部标记为已读' : '本类已全部标记为已读');
   };
 
   // 点击单条消息跳转目标详情
@@ -353,8 +353,8 @@ const AggregatedMessageCenter = ({ onBack, onNavigate, onUnreadChange }) => {
       className="relative flex h-full w-full flex-col bg-[#F5F6F8] text-[#23272f]"
     >
       {/* 顶部导航 */}
-      <header className="flex h-[50px] flex-shrink-0 items-center justify-between bg-white px-3 border-b border-gray-100">
-        <div className="flex items-center min-w-0">
+      <header className="flex h-[50px] flex-shrink-0 items-center justify-between bg-white px-3 border-b border-gray-100 gap-2">
+        <div className="flex items-center min-w-0 flex-1">
           <button
             type="button"
             onClick={() => {
@@ -367,7 +367,7 @@ const AggregatedMessageCenter = ({ onBack, onNavigate, onUnreadChange }) => {
                 onBack();
               }
             }}
-            className="flex h-10 w-10 items-center justify-center rounded-full active:bg-gray-100 -ml-1"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full active:bg-gray-100 -ml-1"
             aria-label="返回"
           >
             <svg
@@ -379,6 +379,7 @@ const AggregatedMessageCenter = ({ onBack, onNavigate, onUnreadChange }) => {
               strokeWidth="2.2"
               strokeLinecap="round"
               strokeLinejoin="round"
+              className="rtl:rotate-180"
             >
               <path d="M15 19l-7-7 7-7" />
             </svg>
@@ -388,26 +389,52 @@ const AggregatedMessageCenter = ({ onBack, onNavigate, onUnreadChange }) => {
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           {viewMode === 'aggregation' ? (
-            <button
-              type="button"
-              onClick={markAllRead}
-              className={`text-[14px] font-medium pr-2 transition-colors ${
-                currentViewUnreadCount > 0 ? 'text-[#00A9E8] active:text-[#008bd4]' : 'text-gray-400 opacity-60 cursor-default'
-              }`}
-            >
-              全部已读
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={markAllRead}
+                aria-label="全部已读"
+                className={`text-[13px] sm:text-[14px] font-medium px-2 py-1 rounded-md transition-colors whitespace-nowrap ${
+                  currentViewUnreadCount > 0 ? 'text-[#00A9E8] active:text-[#008bd4]' : 'text-gray-400 opacity-60 cursor-default'
+                }`}
+              >
+                全部已读
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowSettings(true)}
+                aria-label="通知设置"
+                title="通知设置"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-gray-500 hover:text-gray-700 active:bg-gray-100 transition-colors"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+              </button>
+            </>
           ) : (
             <button
               type="button"
               onClick={() => markCategoryAllRead(selectedGroupId)}
-              className={`text-[14px] font-medium pr-2 transition-colors ${
+              aria-label={selectedGroupId === 'coupon' ? '全部已读' : '本类已读'}
+              className={`text-[13px] sm:text-[14px] font-medium px-2 py-1 rounded-md transition-colors whitespace-nowrap ${
                 currentGroupUnread > 0 ? 'text-[#00A9E8] active:text-[#008bd4]' : 'text-gray-400 opacity-60 cursor-default'
               }`}
             >
-              本类已读
+              {selectedGroupId === 'coupon' ? '全部已读' : '本类已读'}
             </button>
           )}
         </div>
@@ -513,21 +540,6 @@ const AggregatedMessageCenter = ({ onBack, onNavigate, onUnreadChange }) => {
                   );
                 })}
               </div>
-
-              {/* 底部通知设置入口 */}
-              <div className="pt-3 pb-2 flex justify-center">
-                <button
-                  type="button"
-                  onClick={() => setShowSettings(true)}
-                  className="inline-flex items-center gap-1.5 text-[12px] text-gray-400 hover:text-gray-600 active:text-gray-800 transition-colors py-1 px-3 rounded-full"
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                  </svg>
-                  <span>通知设置</span>
-                </button>
-              </div>
             </>
           ) : (
             /* 具体分类列表页 (保持本组消息与原详情跳转) */
@@ -617,13 +629,13 @@ const AggregatedMessageCenter = ({ onBack, onNavigate, onUnreadChange }) => {
                 ['alert', '设备告警', '故障、离线与位置异常'],
                 ['maintenance', '保养提醒', '临期、逾期与完工通知'],
                 ['service', '服务进度', '召请、工程师与配件状态'],
-                ['coupon', '优惠券提醒', '到账、即将到期与注销通知'],
+                ['coupon', '优惠券提醒', '发放、生效、核销、失效与临期通知'],
                 ['quiet', '夜间免打扰', '22:00–07:00 仅推送严重告警'],
               ].map(([key, title, description]) => (
-                <div key={key} className="flex items-center justify-between py-3.5">
-                  <div>
+                <div key={key} className="flex items-center justify-between py-3.5 gap-3">
+                  <div className="min-w-0 flex-1">
                     <div className="text-[14px] font-medium text-gray-800">{title}</div>
-                    <div className="mt-0.5 text-[11px] text-gray-400">{description}</div>
+                    <div className="mt-0.5 text-[11px] text-gray-400 leading-normal break-words">{description}</div>
                   </div>
                   <Toggle
                     checked={settings[key]}
