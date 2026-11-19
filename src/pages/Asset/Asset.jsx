@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GUEST_DEMO_DEVICES } from '../../data/guestDemoData';
 
-const Asset = ({ onDeviceClick, onUnavailable, navigationContext, demoMode = false, onRequireLogin }) => {
+const Asset = ({ onDeviceClick, onUnavailable, navigationContext, demoMode = false, onRequireLogin, onMountSuccess = null }) => {
+  useEffect(() => {
+    onMountSuccess?.(navigationContext);
+  }, [navigationContext, onMountSuccess]);
+
   const [activeTab, setActiveTab] = useState(
     navigationContext?.kind === 'status' && ['online', 'offline'].includes(navigationContext.value)
       ? navigationContext.value
@@ -223,10 +227,12 @@ const Asset = ({ onDeviceClick, onUnavailable, navigationContext, demoMode = fal
     if (!navigationContext) return true;
     if (navigationContext.kind === 'brand') {
       return navigationContext.value === 'SANY'
-        ? device.name.includes('三一')
+        ? (device.brand === 'SANY' || device.name.includes('三一'))
         : device.brand === navigationContext.value || device.name.includes(navigationContext.value);
     }
-    if (navigationContext.kind === 'type') return device.name.includes(navigationContext.value);
+    if (navigationContext.kind === 'type') {
+      return device.name.includes(navigationContext.value) || (device.type && device.type.includes(navigationContext.value));
+    }
     if (navigationContext.kind === 'group') return deviceIdsByGroup[navigationContext.value]?.includes(device.id) ?? false;
     if (navigationContext.kind === 'status') return device.status === navigationContext.value;
     return true;

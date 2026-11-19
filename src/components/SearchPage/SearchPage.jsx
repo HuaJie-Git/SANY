@@ -1,13 +1,90 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import ScannerPage from '../ScannerPage/ScannerPage';
-import { searchGuestDemoData, GUEST_SEARCH_DEVICES, GUEST_DEMO_DEVICES } from '../../data/guestDemoData';
+import {
+  GUEST_SEARCH_DEVICES,
+  GUEST_DEMO_PRODUCTS,
+  GUEST_DEMO_PARTS,
+} from '../../data/guestDemoData';
+
+/**
+ * 历史搜索存储安全隔离策略：
+ * 原型限制：未接入正式账号中心统一用户ID，为避免跨账号历史串号与手机号外露，
+ * 当前登录态采用会话级安全隔离 (sessionStorage)；
+ * 切换账号、注销或重新登录时重置会话历史，游客态使用专属隔离存储键。
+ */
+export const getSearchHistoryStorageKey = (isGuest) => {
+  return isGuest ? 'sanvist_search_history_guest' : 'sanvist_search_history_session';
+};
+
+export const getStorageEngine = () => {
+  if (typeof window === 'undefined') return null;
+  return window.sessionStorage || window.localStorage;
+};
+
+export const loadSearchHistory = (isGuest) => {
+  const engine = getStorageEngine();
+  if (!engine) return {};
+  try {
+    const raw = engine.getItem(getSearchHistoryStorageKey(isGuest));
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') return parsed;
+    }
+  } catch {}
+  return {};
+};
+
+export const recordSearchHistoryEntry = (tab, item, isGuest) => {
+  if (!tab || !item) return;
+  const engine = getStorageEngine();
+  if (!engine) return;
+  try {
+    const current = loadSearchHistory(isGuest);
+    const list = Array.isArray(current[tab]) ? current[tab] : [];
+    const itemKey = item.code || item.id || item.model || item.name;
+    const deduplicated = list.filter((x) => (x.code || x.id || x.model || x.name) !== itemKey);
+    const nextList = [item, ...deduplicated];
+    const nextMap = { ...current, [tab]: nextList };
+    engine.setItem(getSearchHistoryStorageKey(isGuest), JSON.stringify(nextMap));
+    window.dispatchEvent(new CustomEvent('sanvist_search_history_updated', { detail: { isGuest, nextMap } }));
+  } catch {}
+};
+
+export const resetUserSessionHistory = () => {
+  const engine = getStorageEngine();
+  if (!engine) return;
+  try {
+    engine.removeItem('sanvist_search_history_session');
+    window.dispatchEvent(new CustomEvent('sanvist_search_history_updated', { detail: { isGuest: false, nextMap: {} } }));
+  } catch {}
+};
 
 const filterSearchItems = (items, keyword, keys) => {
   const normalizedKeyword = keyword.trim().toLowerCase();
   if (!normalizedKeyword) return items;
-  return items.filter((item) => (keys ? keys.map((key) => item[key]) : Object.values(item)).some((value) => (
-    typeof value === 'string' && value.toLowerCase().includes(normalizedKeyword)
-  )));
+
+  const matched = items.filter((item) => (
+    (keys ? keys.map((key) => item[key]) : Object.values(item)).some((value) => (
+      typeof value === 'string' && value.toLowerCase().includes(normalizedKeyword)
+    ))
+  ));
+
+  // 编号完整匹配优先于名称、别名等模糊匹配
+  return matched.sort((a, b) => {
+    const aCode = String(a.code || a.model || '').toLowerCase();
+    const bCode = String(b.code || b.model || '').toLowerCase();
+    const aExact = aCode === normalizedKeyword;
+    const bExact = bCode === normalizedKeyword;
+    if (aExact && !bExact) return -1;
+    if (!aExact && bExact) return 1;
+
+    const aPrefix = aCode.startsWith(normalizedKeyword);
+    const bPrefix = bCode.startsWith(normalizedKeyword);
+    if (aPrefix && !bPrefix) return -1;
+    if (!aPrefix && bPrefix) return 1;
+
+    return 0;
+  });
 };
 
 // 与资产列表中当前已绑定设备保持一致，仅按设备类型名称参与搜索。
@@ -24,10 +101,15 @@ const boundDeviceTypes = [
   { id: 10, name: '起重机', deviceCount: 3, image: 'images/审核/起重机.jpg' },
 ];
 
+const SEARCH_TABS = ['资产', '品牌', '设备类型', '产品中心', '配件', '设备分组'];
+
 const searchKeysByTab = {
-  '资产': ['code', 'name', 'brand'],
-  '品牌': ['name'],
+  '资产': ['code', 'name', 'brand', 'deviceType', 'displayName', 'model', 'aliases'],
+  '品牌': ['name', 'code'],
   '设备类型': ['name'],
+  '产品中心': ['name', 'code', 'model', 'spec'],
+  '配件': ['name', 'code', 'model', 'spec'],
+  '设备分组': ['name'],
 };
 
 const HISTORY_PAGE_SIZE = 10;
@@ -52,6 +134,8 @@ const INQUIRY_PRODUCTS = [
   { id: 'inq_22', categoryName: '重卡商用', typeName: '自卸车', name: '自装卸车', model: 'HRZX2331008983', code: 'HRZX2331008983', category: '设备', image: 'images/img_dumptruck.jpg' },
 ];
 
+const DEFAULT_INITIAL_SELECTED = [];
+
 const SearchPage = ({
   onClose,
   onOpenAsset,
@@ -63,25 +147,63 @@ const SearchPage = ({
   initialState,
   onStateChange,
   selectMode = false,
-  initialSelected = [],
+  initialSelected = DEFAULT_INITIAL_SELECTED,
   onConfirmSelection,
 }) => {
+  const tabs = SEARCH_TABS;
+  const defaultTab = guestMode ? '产品中心' : '资产';
+
   const [searchText, setSearchText] = useState(initialState?.searchText || '');
-  const [activeTab, setActiveTab] = useState(initialState?.activeTab || '资产');
+  const [activeTab, setActiveTab] = useState(() => {
+    if (initialState?.activeTab && SEARCH_TABS.includes(initialState.activeTab)) {
+      return initialState.activeTab;
+    }
+    return defaultTab;
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState({});
   const [historyPage, setHistoryPage] = useState(1);
-  const [showScanner, setShowScanner] = useState(initialScannerOpen);
+  const [showScanner, setShowScanner] = useState(initialScannerOpen && !guestMode);
   const scannerOpenedDirectlyRef = useRef(initialScannerOpen);
 
-  // ====== 选择模式专用多选与去重状态 ======
-  const [tempSelected, setTempSelected] = useState(() => initialSelected || []);
+  // ====== 历史搜索真实存储状态（按会话/游客隔离，成功打开结果才生成） ======
+  const [historyMap, setHistoryMap] = useState(() => loadSearchHistory(guestMode));
 
   useEffect(() => {
-    if (initialSelected) {
-      setTempSelected(initialSelected);
+    if (!SEARCH_TABS.includes(activeTab)) {
+      setActiveTab(defaultTab);
     }
-  }, [initialSelected]);
+  }, [guestMode, activeTab, defaultTab]);
+
+  useEffect(() => {
+    setHistoryMap(loadSearchHistory(guestMode));
+  }, [guestMode]);
+
+  useEffect(() => {
+    const handleUpdate = (e) => {
+      if (e?.detail && typeof e.detail.isGuest === 'boolean') {
+        if (e.detail.isGuest === guestMode) {
+          setHistoryMap(e.detail.nextMap || {});
+        }
+      } else {
+        setHistoryMap(loadSearchHistory(guestMode));
+      }
+    };
+    window.addEventListener('sanvist_search_history_updated', handleUpdate);
+    return () => window.removeEventListener('sanvist_search_history_updated', handleUpdate);
+  }, [guestMode]);
+
+  // ====== 选择模式专用多选与去重状态 ======
+  const [tempSelected, setTempSelected] = useState(() => (Array.isArray(initialSelected) ? initialSelected : DEFAULT_INITIAL_SELECTED));
+  const prevInitialSelectedRef = useRef(initialSelected);
+
+  useEffect(() => {
+    if (!selectMode) return;
+    if (prevInitialSelectedRef.current !== initialSelected) {
+      prevInitialSelectedRef.current = initialSelected;
+      setTempSelected(Array.isArray(initialSelected) ? initialSelected : DEFAULT_INITIAL_SELECTED);
+    }
+  }, [selectMode, initialSelected]);
 
   const toggleSelectItem = (item) => {
     const key = item.code || item.model || item.id || item.name;
@@ -141,13 +263,49 @@ const SearchPage = ({
     onClose?.();
   };
 
-  const tabs = ['资产', '品牌', '设备类型', '产品中心', '配件', '设备分组'];
   const inputRef = useRef(null);
   const debounceTimer = useRef(null);
 
+  const lastEmittedStateRef = useRef({
+    searchText: initialState?.searchText || '',
+    activeTab: initialState?.activeTab && SEARCH_TABS.includes(initialState.activeTab) ? initialState.activeTab : defaultTab,
+  });
+
   useEffect(() => {
+    if (
+      lastEmittedStateRef.current.searchText === searchText &&
+      lastEmittedStateRef.current.activeTab === activeTab
+    ) {
+      return;
+    }
+    lastEmittedStateRef.current = { searchText, activeTab };
     onStateChange?.({ searchText, activeTab });
   }, [activeTab, onStateChange, searchText]);
+
+  const prevPropTabRef = useRef(initialState?.activeTab);
+  const prevPropSearchTextRef = useRef(initialState?.searchText);
+
+  useEffect(() => {
+    if (
+      initialState?.activeTab &&
+      SEARCH_TABS.includes(initialState.activeTab) &&
+      initialState.activeTab !== prevPropTabRef.current &&
+      initialState.activeTab !== activeTab
+    ) {
+      prevPropTabRef.current = initialState.activeTab;
+      lastEmittedStateRef.current.activeTab = initialState.activeTab;
+      setActiveTab(initialState.activeTab);
+    }
+    if (
+      typeof initialState?.searchText === 'string' &&
+      initialState.searchText !== prevPropSearchTextRef.current &&
+      initialState.searchText !== searchText
+    ) {
+      prevPropSearchTextRef.current = initialState.searchText;
+      lastEmittedStateRef.current.searchText = initialState.searchText;
+      setSearchText(initialState.searchText);
+    }
+  }, [initialState?.activeTab, initialState?.searchText, activeTab, searchText]);
 
   useEffect(() => {
     setHistoryPage(1);
@@ -157,102 +315,8 @@ const SearchPage = ({
     if (!showScanner) inputRef.current?.focus();
   }, [showScanner]);
 
-  // ====== 游客模式专属状态与本地检索逻辑 (R-GUEST-SRCH-001~005, STATE-SRCH-*) ======
-  const [guestResults, setGuestResults] = useState({ devices: [], all: [], total: 0 });
-  const [guestError, setGuestError] = useState(null);
-  const [guestSimulateError, setGuestSimulateError] = useState(false);
-
-  useEffect(() => {
-    if (!guestMode) return;
-    const clean = searchText.trim();
-    if (!clean) {
-      setGuestResults({ devices: [], all: [], total: 0 });
-      setGuestError(null);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-
-    const timer = setTimeout(() => {
-      try {
-        const res = searchGuestDemoData(clean, { simulateError: guestSimulateError });
-        setGuestResults(res);
-        setGuestError(null);
-      } catch (err) {
-        setGuestError(err?.message || 'DEMO_DATA_LOAD_FAILED');
-      } finally {
-        setIsLoading(false);
-      }
-    }, 180);
-
-    return () => clearTimeout(timer);
-  }, [guestMode, searchText, guestSimulateError]);
-
-  const handleGuestProductClick = (item) => {
-    const target = GUEST_SEARCH_DEVICES.find((d) => d.code === item.code) || GUEST_DEMO_DEVICES.find((d) => d.code === item.code) || item;
-    const productItem = {
-      ...target,
-      name: target.displayName || target.name || item.name,
-      code: target.model || target.code || item.code,
-      image: target.image || item.image,
-    };
-    onNavigate?.({
-      target: 'productCenter',
-      context: {
-        query: productItem.name,
-        item: productItem,
-      },
-    });
-  };
-
-  // ====== 各 Tab 的默认数据（进入搜索页时展示） ======
-  const defaultData = {
-    '资产': [
-      { id: 1, code: 'EX-2024-001', name: 'SANY SY365挖掘机', brand: 'SANY', deviceType: '挖掘机', onlineStatus: '在线', image: 'images/机手社区/挖掘机/挖掘机_01.jpg' },
-      { id: 2, code: 'EX-2025-002', name: 'SANY 起重机', brand: 'SANY', deviceType: '起重机', onlineStatus: '离线', image: 'images/机手社区/三一起重机/三一起重机_01.jpg' },
-      { id: 3, code: 'EX-2024-003', name: 'CAT 挖掘机', brand: 'CAT', deviceType: '挖掘机', onlineStatus: '在线', image: 'images/机手社区/挖掘机/挖掘机_02.jpg' },
-      { id: 4, code: 'EX-2024-004', name: 'SANY 泵车', brand: 'SANY', deviceType: '泵车', onlineStatus: '在线', image: 'images/机手社区/泵车/泵车_04.jpg' },
-      { id: 5, code: 'EX-2024-005', name: 'XCMG 起重机', brand: 'XCMG', deviceType: '起重机', onlineStatus: '离线', image: 'images/机手社区/三一起重机/三一起重机_03.jpg' },
-      { id: 6, code: 'EX-2024-006', name: 'SANY 挖掘机', brand: 'SANY', deviceType: '挖掘机', onlineStatus: '在线', image: 'images/机手社区/挖掘机/挖掘机_03.jpg' },
-    ],
-    '品牌': [
-      { id: 1, name: 'SANY', code: '三一重工', deviceCount: 45 },
-      { id: 2, name: 'CAT', code: '卡特彼勒', deviceCount: 23 },
-      { id: 3, name: 'XCMG', code: '徐工集团', deviceCount: 18 },
-      { id: 4, name: 'BELL', code: 'BELL MINING & CONSTRUCTION', deviceCount: 8 },
-      { id: 5, name: 'DEERE', code: 'JOHN DEERE', deviceCount: 12 },
-      { id: 6, name: 'KOMATSU', code: '小松集团', deviceCount: 15 },
-    ],
-    '设备类型': boundDeviceTypes,
-    '产品中心': [
-      { id: 1, name: '车载混凝土泵', code: 'SYM5180THBES 30C-8', image: 'images/asset-models/sany_pump.jpg' },
-      { id: 2, name: '纯电搅拌车', code: 'SYM5310BEV-8001', image: 'images/审核/搅拌车.jpg' },
-      { id: 3, name: '三一挖掘机', code: 'KT10SESE50393', image: 'images/审核/挖掘机.jpg' },
-      { id: 4, name: '三一起重机', code: 'KT10SESE50394', image: 'images/审核/起重机.jpg' },
-      { id: 5, name: '三一压路机', code: 'SSR260-6012', image: 'images/asset-models/sany_roller.jpg' },
-      { id: 6, name: '三一摊铺机', code: 'SMP130-8015', image: 'images/asset-models/sany_paver.jpg' },
-    ],
-    '配件': [
-      { id: 1, name: '液压油滤芯', code: '10000001', price: '280', stock: '有货', image: 'images/配件/OIP.webp' },
-      { id: 2, name: '空气滤芯', code: '10000002', price: '150', stock: '有货', image: 'images/配件/OIP (1).webp' },
-      { id: 3, name: '机油滤芯', code: '10000003', price: '120', stock: '缺货', image: 'images/配件/OIP (2).webp' },
-      { id: 4, name: '柴油滤芯', code: '10000004', price: '95', stock: '有货', image: 'images/配件/OIP (3).webp' },
-      { id: 5, name: '履带板', code: '10000005', price: '1,200', stock: '有货', image: 'images/配件/OIP (4).webp' },
-      { id: 6, name: '铲斗齿', code: '10000006', price: '350', stock: '有货', image: 'images/配件/OIP (5).webp' },
-    ],
-    '设备分组': [
-      { id: 1, name: '华东组', deviceCount: 3 },
-      { id: 2, name: '华南组', deviceCount: 3 },
-      { id: 3, name: '华北组', deviceCount: 3 },
-      { id: 4, name: '西南组', deviceCount: 3 },
-      { id: 5, name: '华中组', deviceCount: 2 },
-      { id: 6, name: '西北组', deviceCount: 2 },
-    ],
-  };
-
   // ====== 各 Tab 的搜索结果数据 ======
-  const mockSearchResults = {
+  const mockSearchResults = useMemo(() => ({
     '资产': [
       { id: 1, code: 'C0000138', name: 'KOMATSU PC360 LC-11', brand: 'KOMATSU', deviceType: '挖掘机', onlineStatus: '在线', image: 'images/机手社区/挖掘机/挖掘机_05.jpg' },
       { id: 2, code: 'C0000166', name: 'SANY SY215港口机械', brand: 'SANY', deviceType: '港口机械', onlineStatus: '离线', image: 'images/机手社区/港机/港机_01.jpg' },
@@ -260,6 +324,12 @@ const SearchPage = ({
       { id: 4, code: 'C0000199', name: 'SANY SY365C挖掘机', brand: 'SANY', deviceType: '挖掘机', onlineStatus: '在线', image: 'images/机手社区/挖掘机/挖掘机_06.jpg' },
       { id: 5, code: 'C0000266', name: 'CAT 320GC挖掘机', brand: 'CAT', deviceType: '挖掘机', onlineStatus: '离线', image: 'images/机手社区/挖掘机/挖掘机_07.jpg' },
       { id: 6, code: 'BK02766', name: 'XCMG QY50K起重机', brand: 'XCMG', deviceType: '起重机', onlineStatus: '在线', image: 'images/机手社区/三一起重机/三一起重机_05.jpg' },
+      { id: 7, code: 'EX-2024-001', name: 'SANY SY365挖掘机', brand: 'SANY', deviceType: '挖掘机', onlineStatus: '在线', image: 'images/机手社区/挖掘机/挖掘机_01.jpg' },
+      { id: 8, code: 'EX-2025-002', name: 'SANY 起重机', brand: 'SANY', deviceType: '起重机', onlineStatus: '离线', image: 'images/机手社区/三一起重机/三一起重机_01.jpg' },
+      { id: 9, code: 'EX-2024-003', name: 'CAT 挖掘机', brand: 'CAT', deviceType: '挖掘机', onlineStatus: '在线', image: 'images/机手社区/挖掘机/挖掘机_02.jpg' },
+      { id: 10, code: 'EX-2024-004', name: 'SANY 泵车', brand: 'SANY', deviceType: '泵车', onlineStatus: '在线', image: 'images/机手社区/泵车/泵车_04.jpg' },
+      { id: 11, code: 'EX-2024-005', name: 'XCMG 起重机', brand: 'XCMG', deviceType: '起重机', onlineStatus: '离线', image: 'images/机手社区/三一起重机/三一起重机_03.jpg' },
+      { id: 12, code: 'EX-2024-006', name: 'SANY 挖掘机', brand: 'SANY', deviceType: '挖掘机', onlineStatus: '在线', image: 'images/机手社区/挖掘机/挖掘机_03.jpg' },
     ],
     '品牌': [
       { id: 1, name: 'SANY', code: '三一重工', deviceCount: 45 },
@@ -294,11 +364,39 @@ const SearchPage = ({
       { id: 5, name: '华中组', deviceCount: 2 },
       { id: 6, name: '西北组', deviceCount: 2 },
     ],
-  };
+  }), []);
 
-  const searchDataRef = useRef(mockSearchResults);
+  // 游客专属公开演示数据集（复用既有 3 台演示设备及其映射，无设备分组字段不虚构）
+  const guestAssets = useMemo(() => (
+    GUEST_SEARCH_DEVICES.map((dev) => ({
+      ...dev,
+      brand: dev.brand || 'SANY',
+      deviceType: dev.deviceType || dev.type || dev.name,
+      onlineStatus: dev.onlineStatus || (dev.status === 'online' ? '在线' : '离线'),
+      aliases: dev.code === 'SY014CF0113D8' ? '挖机 液压挖掘机' : dev.code === 'AC0250CF0056' ? '起重机 吊车 汽车吊' : '自卸车 矿用自卸车',
+    }))
+  ), []);
 
-  // 搜索逻辑（300ms防抖）
+  const guestBrands = useMemo(() => ([
+    { id: 1, name: 'SANY', code: '三一重工', deviceCount: 3 },
+  ]), []);
+
+  const guestDeviceTypes = useMemo(() => ([
+    { id: 1, name: '挖掘机', deviceCount: 1, image: 'images/审核/挖掘机.jpg' },
+    { id: 2, name: '汽车起重机', deviceCount: 1, image: 'images/审核/起重机.jpg' },
+    { id: 3, name: '自装卸车', deviceCount: 1, image: 'images/img_dumptruck.jpg' },
+  ]), []);
+
+  const guestSearchData = useMemo(() => ({
+    '资产': guestAssets,
+    '品牌': guestBrands,
+    '设备类型': guestDeviceTypes,
+    '产品中心': GUEST_DEMO_PRODUCTS,
+    '配件': GUEST_DEMO_PARTS,
+    '设备分组': [],
+  }), [guestAssets, guestBrands, guestDeviceTypes]);
+
+  // 搜索逻辑（防抖）
   useEffect(() => {
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
@@ -313,55 +411,67 @@ const SearchPage = ({
     setIsLoading(true);
 
     debounceTimer.current = setTimeout(() => {
-      const nextResults = Object.fromEntries(
-        Object.entries(searchDataRef.current).map(([tab, items]) => (
-          [tab, filterSearchItems(items, searchText, searchKeysByTab[tab])]
-        )),
-      );
-      setSearchResults(nextResults);
-      setIsLoading(false);
-    }, 300);
+      try {
+        const sourceData = guestMode ? guestSearchData : mockSearchResults;
+        const nextResults = Object.fromEntries(
+          Object.entries(sourceData).map(([tab, items]) => (
+            [tab, filterSearchItems(items, searchText, searchKeysByTab[tab])]
+          )),
+        );
+        setSearchResults(nextResults);
+      } catch {
+        setSearchResults({});
+      } finally {
+        setIsLoading(false);
+      }
+    }, 200);
 
     return () => {
       if (debounceTimer.current) {
         clearTimeout(debounceTimer.current);
       }
     };
-  }, [searchText]);
+  }, [searchText, guestMode, guestSearchData, mockSearchResults]);
 
   const handleClear = () => {
     setSearchText('');
     inputRef.current?.focus();
   };
 
-  // 高亮关键词（黄色背景，安全转义与首尾去空）
+  // 高亮关键词（非正则安全切分，避免 (, [, ., * 等特殊字符造成崩溃或语义偏差）
   const highlightText = (text, keyword) => {
     if (!keyword || !text) return text;
     const cleanKw = keyword.trim();
     if (!cleanKw) return text;
-    const parts = String(text).split(new RegExp(`(${cleanKw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
-    return parts.map((part, index) =>
-      part.toLowerCase() === cleanKw.toLowerCase() ? (
-        <span key={index} className="bg-yellow-300 font-bold">{part}</span>
-      ) : (
-        <span key={index}>{part}</span>
-      )
-    );
-  };
 
-  // 图片组件
-  const DeviceImage = ({ src, name, size = 'normal', appearance = 'photo' }) => {
-    const sizeClass = size === 'small' ? 'w-[50px] h-[50px]' : 'w-[80px] h-[64px]';
-    const imageClass = appearance === 'icon' ? 'object-contain p-1.5' : 'object-cover';
-    return (
-      <div className={`${sizeClass} rounded-lg overflow-hidden flex-shrink-0 bg-gray-100`}>
-        {src ? (
-          <img src={src} alt={name} className={`h-full w-full ${imageClass}`} />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-300 text-[12px]">暂无图片</div>
-        )}
-      </div>
-    );
+    const source = String(text);
+    const sourceLower = source.toLowerCase();
+    const targetLower = cleanKw.toLowerCase();
+
+    const parts = [];
+    let start = 0;
+    let index = sourceLower.indexOf(targetLower, start);
+
+    if (index === -1) return text;
+
+    while (index !== -1) {
+      if (index > start) {
+        parts.push(source.slice(start, index));
+      }
+      parts.push(
+        <span key={`${index}-${parts.length}`} className="bg-yellow-300 font-bold">
+          {source.slice(index, index + cleanKw.length)}
+        </span>
+      );
+      start = index + cleanKw.length;
+      index = sourceLower.indexOf(targetLower, start);
+    }
+
+    if (start < source.length) {
+      parts.push(source.slice(start));
+    }
+
+    return parts;
   };
 
   // 骨架屏
@@ -390,66 +500,65 @@ const SearchPage = ({
       className="flex-shrink-0"
       aria-hidden="true"
     >
-      {/* 右上方小圆圈 ○ */}
       <circle cx="112" cy="11" r="2" stroke="#1e2648" strokeWidth="1.5" fill="none" />
-
-      {/* 水平横杆（穿过纸张后方） */}
       <line x1="8" y1="31" x2="38" y2="31" stroke="#1e2648" strokeWidth="2.5" strokeLinecap="round" />
       <line x1="94" y1="31" x2="124" y2="31" stroke="#1e2648" strokeWidth="2.5" strokeLinecap="round" />
-
-      {/* 左侧星芒 ✦ */}
       <path
         d="M23 48 C23 50.5 21.5 52 19 52 C21.5 52 23 53.5 23 56 C23 53.5 24.5 52 27 52 C24.5 52 23 50.5 23 48 Z"
         fill="#1e2648"
       />
-
-      {/* 纸张顶部折翻小边 */}
       <path
         d="M39 31V28C39 25.5 41 23.5 43.5 23.5H90.5C93 23.5 95 25.5 95 28V31H39Z"
         fill="#b6c1dd"
       />
-
-      {/* 展开的纸张主体 */}
       <rect x="39" y="31" width="56" height="42" fill="#e7ebee" />
-
-      {/* 纸张上的占位横线 */}
       <line x1="56" y1="46" x2="78" y2="46" stroke="#888693" strokeWidth="2" strokeLinecap="round" />
       <line x1="62" y1="55" x2="76" y2="55" stroke="#888693" strokeWidth="2" strokeLinecap="round" />
-
-      {/* 底部卷轴 */}
       <rect x="35" y="70" width="64" height="12" rx="6" fill="#717581" />
-
-      {/* 放大镜上方 3 条动态线条 */}
       <line x1="98" y1="44" x2="100" y2="39" stroke="#1e2648" strokeWidth="2" strokeLinecap="round" />
       <line x1="105" y1="48" x2="110" y2="44" stroke="#1e2648" strokeWidth="2" strokeLinecap="round" />
       <line x1="108" y1="56" x2="114" y2="56" stroke="#1e2648" strokeWidth="2" strokeLinecap="round" />
-
-      {/* 放大镜（位于右下角，遮挡纸张和卷轴） */}
       <circle cx="89" cy="64" r="14" fill="#ffffff" stroke="#1e2648" strokeWidth="4.5" />
       <path d="M99 74L110 85" stroke="#1e2648" strokeWidth="5.2" strokeLinecap="round" />
     </svg>
   );
 
   // 空状态组件
-  const EmptyState = () => (
+  const EmptyState = ({ isHistory = false, isGuest = false }) => (
     <div className="flex-1 flex flex-col items-center justify-center py-16 text-center" dir="auto">
       <NoResultsIllustration />
-      <div className="text-[14px] text-[#888693] mt-5">无搜索结果</div>
+      <div className="text-[14px] text-[#888693] mt-5">
+        {isGuest ? '暂无数据' : (isHistory ? '暂无数据' : '无搜索结果')}
+      </div>
+      {!isHistory && searchText && !isGuest && (
+        <p className="text-[12px] text-gray-400 mt-2 max-w-[240px]">
+          建议检查输入拼写，或切换其他分类查找
+        </p>
+      )}
     </div>
   );
 
   // ====== 各 Tab 的卡片组件 ======
 
-  // 资产 Tab：横向行卡片（整行浅灰边框独立卡片，左缩略图，右名称与型号/编码）
+  // 资产 Tab：横向行卡片（长文本自然换行，移除 truncate、title 与挤压）
   const AssetCard = ({ item }) => {
     const displayName = item.displayName || item.name || '--';
     const code = item.model || item.code || '--';
+    const brand = item.brand || '--';
+    const deviceType = item.deviceType || '--';
+    const isOnline = item.onlineStatus === '在线';
 
     return (
       <button
         type="button"
-        aria-label={`${displayName}，编码 ${code}`}
-        onClick={() => onNavigate?.({ target: 'assetDetail', item: { ...item, name: item.deviceType || item.name } })}
+        aria-label={`${displayName}，${brand}，${deviceType}，编码 ${code}，${item.onlineStatus || '状态未知'}`}
+        onClick={() => {
+          onNavigate?.({
+            target: 'assetDetail',
+            item: { ...item, name: item.deviceType || item.name },
+            recordSearchHistory: { tab: '资产', item },
+          });
+        }}
         className="mb-3 flex w-full items-center gap-3.5 rounded-xl border border-gray-100 bg-white p-3.5 text-left shadow-2xs transition active:scale-[0.99] active:bg-gray-50"
       >
         <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-100 bg-[#f8f9fa] p-1">
@@ -463,10 +572,32 @@ const SearchPage = ({
           />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[15px] font-semibold text-gray-900" title={displayName}>
-            {searchText ? highlightText(displayName, searchText) : displayName}
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-[15px] font-semibold text-gray-900 break-words break-all leading-snug">
+              {searchText ? highlightText(displayName, searchText) : displayName}
+            </span>
+            {item.onlineStatus && (
+              <span
+                className={`flex-shrink-0 rounded px-1.5 py-0.5 text-[11px] font-medium leading-none ${
+                  isOnline
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    : 'bg-gray-100 text-gray-500 border border-gray-200'
+                }`}
+              >
+                {item.onlineStatus}
+              </span>
+            )}
           </div>
-          <div className="mt-1 truncate text-[13px] text-gray-500 tabular-nums" title={code}>
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-gray-500">
+            <span className="break-words break-all">
+              {searchText ? highlightText(brand, searchText) : brand}
+            </span>
+            <span className="text-gray-300">·</span>
+            <span className="break-words break-all">
+              {searchText ? highlightText(deviceType, searchText) : deviceType}
+            </span>
+          </div>
+          <div className="mt-1 text-[12px] text-gray-400 tabular-nums break-words break-all leading-snug">
             {searchText ? highlightText(code, searchText) : code}
           </div>
         </div>
@@ -483,14 +614,20 @@ const SearchPage = ({
       <button
         type="button"
         aria-label={`${name}，${deviceCount} 台设备`}
-        onClick={() => onNavigate?.({ target: 'assetList', context: { kind: 'brand', value: name, item, label: `${name} · ${deviceCount} 台设备` } })}
+        onClick={() => {
+          onNavigate?.({
+            target: 'assetList',
+            context: { kind: 'brand', value: name, item, label: `${name} · ${deviceCount} 台设备` },
+            recordSearchHistory: { tab: '品牌', item },
+          });
+        }}
         className="flex w-full items-center gap-3 border-b border-gray-100 py-4 text-left transition-colors active:bg-gray-50"
       >
         <span className="flex h-[50px] w-[50px] flex-shrink-0 items-center justify-center rounded-full bg-gray-100 text-[18px] font-bold text-gray-600">
           {name.charAt(0)}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[16px] font-semibold leading-6 text-gray-800" title={name}>
+          <span className="block text-[16px] font-semibold leading-6 text-gray-800 break-words break-all">
             {searchText ? highlightText(name, searchText) : name}
           </span>
           <span className="mt-0.5 block text-[13px] leading-5 text-gray-400">{deviceCount} 台设备</span>
@@ -509,12 +646,20 @@ const SearchPage = ({
       <button
         type="button"
         aria-label={`${name}，${deviceCount} 台设备`}
-        onClick={() => onNavigate?.({ target: 'assetList', context: { kind: 'type', value: name, item, label: `${name} · ${deviceCount} 台设备` } })}
+        onClick={() => {
+          onNavigate?.({
+            target: 'assetList',
+            context: { kind: 'type', value: name, item, label: `${name} · ${deviceCount} 台设备` },
+            recordSearchHistory: { tab: '设备类型', item },
+          });
+        }}
         className="flex w-full items-center gap-3 border-b border-gray-100 py-4 text-left transition-colors active:bg-gray-50"
       >
-        <DeviceImage src={item.image} name={name} size="small" appearance="icon" />
+        <div className="h-[50px] w-[50px] rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 flex items-center justify-center p-1.5">
+          <img src={item.image} alt={name} className="h-full w-full object-contain" />
+        </div>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[16px] font-semibold leading-6 text-gray-800" title={name}>
+          <span className="block text-[16px] font-semibold leading-6 text-gray-800 break-words break-all">
             {searchText ? highlightText(name, searchText) : name}
           </span>
           <span className="mt-0.5 block text-[13px] leading-5 text-gray-400">{deviceCount} 台设备</span>
@@ -524,16 +669,22 @@ const SearchPage = ({
     );
   };
 
-  // 产品中心 Tab：横向行卡片（整行浅灰边框独立卡片，左缩略图，右名称与型号）
+  // 产品中心 Tab (登录态)
   const ProductCenterCard = ({ item }) => {
     const name = item.name || '--';
-    const model = item.model || item.code || '--';
+    const model = item.code || item.model || '--';
 
     return (
       <button
         type="button"
         aria-label={`${name}，型号 ${model}`}
-        onClick={() => onNavigate?.({ target: 'productCenter', context: { query: name, item } })}
+        onClick={() => {
+          onNavigate?.({
+            target: 'productCenter',
+            context: { query: name, item },
+            recordSearchHistory: { tab: '产品中心', item },
+          });
+        }}
         className="mb-3 flex w-full items-center gap-3.5 rounded-xl border border-gray-100 bg-white p-3.5 text-left shadow-2xs transition active:scale-[0.99] active:bg-gray-50"
       >
         <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-100 bg-[#f8f9fa] p-1">
@@ -547,10 +698,10 @@ const SearchPage = ({
           />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[15px] font-semibold text-gray-900" title={name}>
+          <div className="text-[15px] font-semibold text-gray-900 break-words break-all leading-snug">
             {searchText ? highlightText(name, searchText) : name}
           </div>
-          <div className="mt-1 truncate text-[13px] text-gray-500 tabular-nums" title={model}>
+          <div className="mt-1 text-[13px] text-gray-500 tabular-nums break-words break-all leading-snug">
             {searchText ? highlightText(model, searchText) : model}
           </div>
         </div>
@@ -558,38 +709,65 @@ const SearchPage = ({
     );
   };
 
-  // 配件 Tab
-  const AccessoryCard = ({ item }) => {
+  // 配件 Tab (登录态)
+  const PartCard = ({ item }) => {
     const name = item.name || '--';
-    const code = item.code || '--';
-    const price = item.price ? `USD ${item.price} / PC` : '--';
+    const code = item.code || item.model || '--';
+    const price = item.price ? (item.currency ? `${item.currency} ${item.price}` : item.price) : null;
 
     return (
-      <button type="button" onClick={() => onNavigate?.({ target: 'parts', context: { query: item.name, item } })} className="flex w-full items-center gap-3 border-b border-gray-100 py-4 text-left transition-colors active:bg-gray-50">
-        <DeviceImage src={item.image} name={name} size="small" />
+      <button
+        type="button"
+        aria-label={`${name}，编号 ${code}${price ? `，价格 ${price}` : ''}`}
+        onClick={() => {
+          onNavigate?.({
+            target: 'parts',
+            context: { query: item.name, item },
+            recordSearchHistory: { tab: '配件', item },
+          });
+        }}
+        className="flex w-full items-center gap-3 border-b border-gray-100 py-4 text-left transition-colors active:bg-gray-50"
+      >
+        <div className="h-[50px] w-[50px] rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 flex items-center justify-center p-1">
+          <img src={item.image} alt={name} className="h-full w-full object-cover" />
+        </div>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[16px] font-semibold leading-6 text-gray-800" title={name}>
+          <span className="block text-[16px] font-semibold leading-6 text-gray-800 break-words break-all">
             {searchText ? highlightText(name, searchText) : name}
           </span>
-          <span className="mt-0.5 block truncate text-[13px] leading-5 tabular-nums text-gray-400" title={code}>
-            {searchText ? highlightText(code, searchText) : code}
+          <span className="mt-0.5 block text-[13px] leading-5 text-gray-400 break-words break-all">
+            编号：{searchText ? highlightText(code, searchText) : code}
           </span>
-          <span className="mt-0.5 block text-[13px] font-medium leading-5 tabular-nums text-red-500">{price}</span>
+          {price && (
+            <span className="mt-0.5 block text-[13px] font-semibold leading-5 text-red-500 break-words break-all">
+              {price}
+            </span>
+          )}
         </span>
-        <svg className="h-4 w-4 flex-shrink-0 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </button>
     );
   };
 
   // 设备分组 Tab
-  const DeviceGroupCard = ({ item }) => {
+  const GroupCard = ({ item }) => {
     const name = item.name || '--';
     const deviceCount = item.deviceCount ?? 0;
 
     return (
-      <button type="button" aria-label={`${name}，${deviceCount} 台设备`} onClick={() => onNavigate?.({ target: 'assetList', context: { kind: 'group', value: name, item, label: `${name} · ${deviceCount} 台设备` } })} className="flex w-full items-center border-b border-gray-100 py-4 text-left transition-colors active:bg-gray-50">
+      <button
+        type="button"
+        aria-label={`${name}，${deviceCount} 台设备`}
+        onClick={() => {
+          onNavigate?.({
+            target: 'assetList',
+            context: { kind: 'group', value: name, item, label: `${name} · ${deviceCount} 台设备` },
+            recordSearchHistory: { tab: '设备分组', item },
+          });
+        }}
+        className="flex w-full items-center border-b border-gray-100 py-4 text-left transition-colors active:bg-gray-50"
+      >
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[16px] font-semibold leading-6 text-gray-800" title={name}>
+          <span className="block text-[16px] font-semibold leading-6 text-gray-800 break-words break-all">
             {searchText ? highlightText(name, searchText) : name}
           </span>
           <span className="mt-0.5 block text-[13px] leading-5 text-gray-400">{deviceCount} 台设备</span>
@@ -599,37 +777,180 @@ const SearchPage = ({
     );
   };
 
-  // 根据 Tab 渲染卡片
+  // 游客专属公开产品卡片（支持长文本自然换行、公开参数展示）
+  const GuestProductCard = ({ item }) => {
+    const displayName = item.displayName || item.name || '--';
+    const code = item.model || item.code || '--';
+    const spec = item.spec || '--';
+    const isOnline = item.status === 'online';
+
+    return (
+      <button
+        type="button"
+        aria-label={`${displayName}，型号 ${code}`}
+        onClick={() => {
+          onNavigate?.({
+            target: 'productCenter',
+            context: { query: displayName, item },
+            recordSearchHistory: { tab: '产品中心', item },
+          });
+        }}
+        className="mb-3 flex w-full items-center gap-3.5 rounded-xl border border-gray-100 bg-white p-3.5 text-left shadow-2xs transition active:scale-[0.99] active:bg-gray-50"
+      >
+        <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-100 bg-[#f8f9fa] p-1">
+          <img
+            src={item.image}
+            alt={displayName}
+            className="max-h-full max-w-full object-contain"
+            onError={(e) => {
+              e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" fill="%23f3f4f6"/><text x="32" y="36" font-size="12" fill="%239ca3af" text-anchor="middle">SANY</text></svg>';
+            }}
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-[15px] font-semibold text-gray-900 break-words break-all leading-snug">
+              {searchText ? highlightText(displayName, searchText) : displayName}
+            </span>
+            {item.statusText && (
+              <span
+                className={`flex-shrink-0 rounded px-1.5 py-0.5 text-[11px] font-medium leading-none ${
+                  isOnline
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    : 'bg-gray-100 text-gray-500 border border-gray-200'
+                }`}
+              >
+                {item.statusText}
+              </span>
+            )}
+          </div>
+          <div className="mt-1 text-[13px] text-gray-500 break-words break-all leading-snug">
+            {searchText ? highlightText(code, searchText) : code}
+          </div>
+          {spec && (
+            <div className="mt-0.5 text-[12px] text-gray-400 break-words break-all leading-snug">
+              {searchText ? highlightText(spec, searchText) : spec}
+            </div>
+          )}
+        </div>
+      </button>
+    );
+  };
+
+  // 游客专属公开配件卡片
+  const GuestPartCard = ({ item }) => {
+    const name = item.name || '--';
+    const code = item.code || item.model || '--';
+    const price = item.price ? (item.currency ? `${item.currency} ${item.price}` : item.price) : null;
+    const spec = item.spec || null;
+    const stock = item.stock || null;
+
+    return (
+      <button
+        type="button"
+        aria-label={`${name}，编号 ${code}${price ? `，价格 ${price}` : ''}`}
+        onClick={() => {
+          onNavigate?.({
+            target: 'parts',
+            context: { query: name, item },
+            recordSearchHistory: { tab: '配件', item },
+          });
+        }}
+        className="mb-3 flex w-full items-start gap-3.5 rounded-xl border border-gray-100 bg-white p-3.5 text-left shadow-2xs transition active:scale-[0.99] active:bg-gray-50"
+      >
+        <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-100 bg-[#f8f9fa] p-1">
+          <img
+            src={item.image}
+            alt={name}
+            className="max-h-full max-w-full object-contain"
+            onError={(e) => {
+              e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" fill="%23f3f4f6"/><text x="32" y="36" font-size="12" fill="%239ca3af" text-anchor="middle">SANY</text></svg>';
+            }}
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-[15px] font-semibold text-gray-900 break-words break-all leading-snug">
+              {searchText ? highlightText(name, searchText) : name}
+            </span>
+            {stock && (
+              <span className="flex-shrink-0 rounded px-1.5 py-0.5 text-[11px] font-medium leading-none bg-blue-50 text-blue-700 border border-blue-200">
+                {stock}
+              </span>
+            )}
+          </div>
+          <div className="mt-1 text-[13px] text-gray-500 break-words break-all leading-snug">
+            编号：{searchText ? highlightText(code, searchText) : code}
+          </div>
+          {price && (
+            <div className="mt-0.5 text-[12px] text-red-600 font-semibold break-words break-all">
+              {price}
+            </div>
+          )}
+          {spec && (
+            <div className="mt-0.5 text-[12px] text-gray-400 break-words break-all leading-snug">
+              {searchText ? highlightText(spec, searchText) : spec}
+            </div>
+          )}
+        </div>
+      </button>
+    );
+  };
+
   const renderCard = (item) => {
+    if (guestMode) {
+      switch (activeTab) {
+        case '资产':
+          return <AssetCard key={item.code || item.id} item={item} />;
+        case '品牌':
+          return <BrandCard key={item.code || item.id} item={item} />;
+        case '设备类型':
+          return <DeviceTypeCard key={item.id || item.name} item={item} />;
+        case '产品中心':
+          return <GuestProductCard key={item.code || item.id} item={item} />;
+        case '配件':
+          return <GuestPartCard key={item.code || item.id} item={item} />;
+        case '设备分组':
+          return <GroupCard key={item.id || item.name} item={item} />;
+        default:
+          return null;
+      }
+    }
     switch (activeTab) {
-      case '资产': return <AssetCard item={item} />;
-      case '品牌': return <BrandCard item={item} />;
-      case '设备类型': return <DeviceTypeCard item={item} />;
-      case '产品中心': return <ProductCenterCard item={item} />;
-      case '配件': return <AccessoryCard item={item} />;
-      case '设备分组': return <DeviceGroupCard item={item} />;
-      default: return <AssetCard item={item} />;
+      case '资产':
+        return <AssetCard key={item.code || item.id} item={item} />;
+      case '品牌':
+        return <BrandCard key={item.code || item.id} item={item} />;
+      case '设备类型':
+        return <DeviceTypeCard key={item.id || item.name} item={item} />;
+      case '产品中心':
+        return <ProductCenterCard key={item.code || item.id} item={item} />;
+      case '配件':
+        return <PartCard key={item.code || item.id} item={item} />;
+      case '设备分组':
+        return <GroupCard key={item.id || item.name} item={item} />;
+      default:
+        return null;
     }
   };
 
-  // 获取当前 Tab 的数据（有搜索词用搜索结果，无搜索词用默认数据）
+  // 获取当前 Tab 的数据（有搜索词用搜索结果，无搜索词用公开演示或真实历史搜索）
   const hasSearchText = Boolean(searchText.trim());
+  const currentHistoryList = historyMap[activeTab] || [];
   const currentData = hasSearchText
     ? (searchResults[activeTab] || [])
-    : (defaultData[activeTab] || []);
+    : (guestMode ? (guestSearchData[activeTab] || []) : currentHistoryList);
   const historyPageCount = Math.ceil(currentData.length / HISTORY_PAGE_SIZE);
-  const visibleData = hasSearchText
+  const visibleData = hasSearchText || guestMode
     ? currentData
     : currentData.slice((historyPage - 1) * HISTORY_PAGE_SIZE, historyPage * HISTORY_PAGE_SIZE);
 
+  // ====== 选择模式（询价表单）：独立全屏单选/多选逻辑 ======
   if (selectMode) {
-    const cleanSearch = searchText.trim();
-    const hasSearchKeyword = Boolean(cleanSearch);
-
     return (
-      <div className="relative flex h-full w-full flex-col min-h-full bg-white" dir="auto">
-        {/* 顶部搜索条 (参考 IMG-INQ-002 与 IMG-INQ-003) */}
-        <header className="flex items-center px-4 pt-2 pb-3 bg-white gap-3 border-b border-gray-100 flex-shrink-0" dir="auto">
+      <div className="absolute inset-0 bg-white z-50 flex flex-col" dir="auto">
+        {/* 顶部搜索栏 */}
+        <header className="flex items-center px-4 pt-2 pb-3 bg-white gap-3 border-b border-gray-100" dir="auto">
           <div className="flex-1 h-[42px] bg-[#f2f4f7] rounded-full flex items-center px-3.5 gap-2.5 min-w-0">
             <svg className="flex-shrink-0 text-gray-400" width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <circle cx="8.5" cy="8.5" r="6" stroke="currentColor" strokeWidth="1.8"/>
@@ -641,11 +962,11 @@ const SearchPage = ({
               autoFocus
               maxLength={50}
               dir="auto"
-              placeholder="搜索"
+              placeholder="搜索产品或设备名称/型号"
               value={searchText}
               onChange={(e) => setSearchText(e.target.value.slice(0, 50))}
               className="flex-1 bg-transparent outline-none text-[15px] text-gray-900 placeholder:text-gray-400 min-w-0"
-              aria-label="搜索"
+              aria-label="搜索产品或设备"
             />
             {searchText && (
               <button
@@ -661,10 +982,9 @@ const SearchPage = ({
             )}
           </div>
 
-          {/* 右侧关闭按钮 (参考 IMG-INQ-002) */}
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-gray-700 active:bg-gray-100 transition-colors"
             aria-label="关闭搜索"
           >
@@ -675,19 +995,16 @@ const SearchPage = ({
           </button>
         </header>
 
-        {/* 内容展示区域 */}
-        <div className="flex-1 overflow-y-auto bg-white px-4 py-3 flex flex-col">
-          {!hasSearchKeyword ? (
-            /* 未输入关键词，保持白色空内容区 (IMG-INQ-002) */
+        {/* 选择列表区域 */}
+        <div className="flex-1 overflow-y-auto bg-white px-4 py-2 flex flex-col">
+          {!searchText.trim() ? (
             <div className="flex-1 bg-white" />
           ) : selectModeResults.length === 0 ? (
-            /* 输入未命中，展示无搜索结果插画 (IMG-INQ-002) */
             <div className="flex-1 flex flex-col items-center justify-center -mt-12 py-12 text-center" dir="auto">
               <NoResultsIllustration />
               <div className="text-[14px] text-[#888693] mt-5">无搜索结果</div>
             </div>
           ) : (
-            /* 搜索结果列表 (IMG-INQ-003 卡片样式 + 多选状态) */
             <div className="space-y-3 pt-2 pb-4">
               {selectModeResults.map((item) => {
                 const selected = isItemSelected(item);
@@ -718,7 +1035,6 @@ const SearchPage = ({
                         {highlightText(item.model || item.code, searchText)}
                       </div>
                     </div>
-                    {/* 右侧选中状态指示圈 */}
                     <div className="flex-shrink-0 ml-1">
                       {selected ? (
                         <div className="w-5 h-5 rounded-full bg-[#E01923] border-2 border-[#E01923] flex items-center justify-center text-white">
@@ -737,7 +1053,7 @@ const SearchPage = ({
           )}
         </div>
 
-        {/* 底部吸底确认栏 (包含已选数量与确认按钮) */}
+        {/* 底部吸底确认栏 */}
         <footer className="flex-shrink-0 bg-white border-t border-gray-100 px-4 py-3 flex items-center justify-between shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
           <div className="text-[14px] text-gray-700">
             已选 <span className="font-bold text-[#E01923]">{tempSelected.length}</span> 项
@@ -753,152 +1069,6 @@ const SearchPage = ({
             确认
           </button>
         </footer>
-      </div>
-    );
-  }
-
-  if (guestMode) {
-    const cleanSearch = searchText.trim();
-    const hasSearchKeyword = Boolean(cleanSearch);
-
-    return (
-      <div className="relative flex h-full w-full flex-col min-h-full bg-white" dir="auto">
-        {/* 顶部搜索条 (参考 IMG-002) */}
-        <header className="flex items-center px-4 pt-2 pb-3 bg-white gap-3 border-b border-gray-100" dir="auto">
-          <div className="flex-1 h-[42px] bg-[#f2f4f7] rounded-full flex items-center px-3.5 gap-2.5 min-w-0">
-            <svg className="flex-shrink-0 text-gray-400" width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <circle cx="8.5" cy="8.5" r="6" stroke="currentColor" strokeWidth="1.8"/>
-              <path d="m13 13 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-            </svg>
-            <input
-              ref={inputRef}
-              type="text"
-              autoFocus
-              maxLength={50}
-              dir="auto"
-              placeholder="搜索产品和配件"
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value.slice(0, 50))}
-              className="flex-1 bg-transparent outline-none text-[15px] text-gray-900 placeholder:text-gray-400 min-w-0"
-              aria-label="搜索产品和配件"
-            />
-            {searchText && (
-              <button
-                type="button"
-                onClick={handleClear}
-                className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 active:opacity-75 transition-opacity"
-                aria-label="清空搜索"
-              >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm3.5 10.5-1 1L8 9l-2.5 2.5-1-1L7 8 4.5 5.5l1-1L8 7l2.5-2.5 1 1L9 8l2.5 2.5z"/>
-                </svg>
-              </button>
-            )}
-          </div>
-
-          {/* 右侧关闭按钮 (参考 IMG-002) */}
-          <button
-            type="button"
-            onClick={handleClose}
-            className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-gray-700 active:bg-gray-100 transition-colors"
-            aria-label="关闭搜索"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-        </header>
-
-        {/* 状态矩阵展示区域 */}
-        <div className="flex-1 overflow-y-auto bg-white px-4 py-3 flex flex-col">
-          {/* STATE-SRCH-LOCAL-ERROR: 预置数据加载异常 */}
-          {guestError ? (
-            <div className="my-auto flex flex-col items-center justify-center py-12 text-center" dir="auto">
-              <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center text-red-500 mb-3.5">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="12" y1="8" x2="12" y2="12"/>
-                  <line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-              </div>
-              <h3 className="text-[17px] font-semibold text-gray-900 mb-1">演示数据暂时无法加载</h3>
-              <p className="text-[13px] text-gray-500 mb-6 max-w-[280px]">
-                本地预置数据读取异常。重试仍失败时保持错误页，不请求正式接口。
-              </p>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setGuestSimulateError(false);
-                    setGuestError(null);
-                    try {
-                      const res = searchGuestDemoData(cleanSearch, { simulateError: false });
-                      setGuestResults(res);
-                    } catch (e) {
-                      setGuestError(e?.message || 'DEMO_DATA_LOAD_FAILED');
-                    }
-                  }}
-                  className="px-5 py-2 rounded-full bg-[#d40014] text-white text-[14px] font-medium active:opacity-90 shadow-sm"
-                >
-                  重试
-                </button>
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="px-5 py-2 rounded-full border border-gray-300 text-gray-700 text-[14px] font-medium active:bg-gray-100"
-                >
-                  返回首页
-                </button>
-              </div>
-            </div>
-          ) : !hasSearchKeyword ? (
-            /* STATE-SRCH-EMPTY: 首次进入或关键词为空，保持白色空内容区 (IMG-002) */
-            <div className="flex-1 bg-white" />
-          ) : guestResults.total === 0 ? (
-            /* STATE-SRCH-NONE: 输入未命中，展示参考设计图的无搜索结果插画 */
-            <div className="flex-1 flex flex-col items-center justify-center -mt-12 py-12 text-center" dir="auto">
-              <NoResultsIllustration />
-              <div className="text-[14px] text-[#888693] mt-5">无搜索结果</div>
-            </div>
-          ) : (
-            /* STATE-SRCH-RESULT: 商品卡片列表（整行浅灰边框独立卡片，左缩略图，右名称与型号/编码） */
-            <div className="space-y-3 pt-2 pb-6">
-              {guestResults.all.map((item) => {
-                const name = item.displayName || item.name || '--';
-                const model = item.model || item.code || '--';
-
-                return (
-                  <div
-                    key={item.code || item.id}
-                    onClick={() => handleGuestProductClick(item)}
-                    className="flex w-full items-center gap-3.5 rounded-xl border border-gray-100 bg-white p-3.5 text-left shadow-2xs transition active:scale-[0.99] active:bg-gray-50 cursor-pointer"
-                    dir="auto"
-                  >
-                    <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-100 bg-[#f8f9fa] p-1">
-                      <img
-                        src={item.image}
-                        alt={name}
-                        className="max-h-full max-w-full object-contain"
-                        onError={(e) => {
-                          e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" fill="%23f3f4f6"/><text x="32" y="36" font-size="12" fill="%239ca3af" text-anchor="middle">SANY</text></svg>';
-                        }}
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[15px] font-semibold text-gray-900" title={name}>
-                        {searchText ? highlightText(name, searchText) : name}
-                      </div>
-                      <div className="mt-1 truncate text-[13px] text-gray-500 tabular-nums" title={model}>
-                        {searchText ? highlightText(model, searchText) : model}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
       </div>
     );
   }
@@ -919,9 +1089,14 @@ const SearchPage = ({
 
   return (
     <div className="absolute inset-0 bg-white z-50 flex flex-col">
-      {/* 顶部导航栏 */}
+      {/* 顶部搜索栏（不展示扫码图标与语言切换，首页独立扫码入口保留） */}
       <div className="flex items-center px-4 pb-3 pt-6 bg-white">
-        <button type="button" className="mr-3 flex h-8 w-8 items-center justify-center rounded-full active:bg-gray-100" onClick={handleClose} aria-label="关闭全域搜索">
+        <button
+          type="button"
+          className="mr-3 flex h-8 w-8 items-center justify-center rounded-full active:bg-gray-100"
+          onClick={handleClose}
+          aria-label="关闭全域搜索"
+        >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path d="M19 12H5" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M12 19L5 12L12 5" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -935,8 +1110,8 @@ const SearchPage = ({
           <input
             ref={inputRef}
             type="text"
-            aria-label="搜索资产、品牌、设备类型、产品、配件或设备分组"
-            placeholder="搜索资产、产品或配件…"
+            aria-label="搜索资产、品牌、设备类型、产品中心、配件或设备分组"
+            placeholder={guestMode ? '搜索产品中心、配件、资产…' : '搜索资产、产品或配件…'}
             className="flex-1 bg-transparent outline-none text-[16px] text-gray-800"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
@@ -945,7 +1120,7 @@ const SearchPage = ({
           {searchText && (
             <button type="button" className="ml-2 flex-shrink-0" onClick={handleClear} aria-label="清空搜索">
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <circle cx="9" cy="9" r="8" fill="#ccc"/>
+                <circle cx="9" cy="8" r="8" fill="#ccc"/>
                 <path d="M6 6L12 12M12 6L6 12" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
             </button>
@@ -953,7 +1128,7 @@ const SearchPage = ({
         </div>
       </div>
 
-      {/* 分类 Tab */}
+      {/* 分类 Tab（游客态与登录态均呈现 6 分类，支持横向滚动与多语言扩展） */}
       <div className="flex px-4 py-2 gap-2 bg-white overflow-x-auto">
         {tabs.map((tab) => {
           const count = hasSearchText && searchResults[tab] ? searchResults[tab].length : null;
@@ -985,9 +1160,11 @@ const SearchPage = ({
 
       {/* 内容区域 */}
       <div className="flex-1 overflow-y-auto bg-white px-4 py-3">
-        {/* 无搜索词时显示历史搜索 */}
-        {!hasSearchText && (
-          <div className="text-[16px] font-bold text-gray-800 mb-4">历史搜索</div>
+        {/* 无搜索词时：登录态有真实历史展示“历史搜索”；游客态展示“公开[分类]” */}
+        {!hasSearchText && (guestMode || currentData.length > 0) && (
+          <div className="text-[16px] font-bold text-gray-800 mb-3">
+            {guestMode ? `公开${activeTab}` : '历史搜索'}
+          </div>
         )}
         {isLoading ? (
           <div>
@@ -998,23 +1175,38 @@ const SearchPage = ({
         ) : currentData.length > 0 ? (
           <>
             {visibleData.map((item) => (
-              <React.Fragment key={item.id}>
+              <React.Fragment key={item.code || item.id || item.name}>
                 {renderCard(item)}
               </React.Fragment>
             ))}
-            {!hasSearchText && historyPageCount > 1 && (
+            {!hasSearchText && !guestMode && historyPageCount > 1 && (
               <nav className="mt-4 flex items-center justify-center gap-3" aria-label="历史搜索分页">
-                <button type="button" disabled={historyPage === 1} onClick={() => setHistoryPage((page) => Math.max(1, page - 1))} className="rounded-lg border border-gray-200 px-3 py-1.5 text-[13px] text-gray-600 disabled:cursor-not-allowed disabled:opacity-35">上一页</button>
-                <span className="text-[13px] tabular-nums text-gray-500">{historyPage} / {historyPageCount}</span>
-                <button type="button" disabled={historyPage === historyPageCount} onClick={() => setHistoryPage((page) => Math.min(historyPageCount, page + 1))} className="rounded-lg border border-gray-200 px-3 py-1.5 text-[13px] text-gray-600 disabled:cursor-not-allowed disabled:opacity-35">下一页</button>
+                <button
+                  type="button"
+                  disabled={historyPage === 1}
+                  onClick={() => setHistoryPage((page) => Math.max(1, page - 1))}
+                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-[13px] text-gray-600 disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  上一页
+                </button>
+                <span className="text-[13px] tabular-nums text-gray-500">
+                  {historyPage} / {historyPageCount}
+                </span>
+                <button
+                  type="button"
+                  disabled={historyPage === historyPageCount}
+                  onClick={() => setHistoryPage((page) => Math.min(historyPageCount, page + 1))}
+                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-[13px] text-gray-600 disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  下一页
+                </button>
               </nav>
             )}
           </>
         ) : (
-          <EmptyState />
+          <EmptyState isHistory={!hasSearchText} isGuest={guestMode} />
         )}
       </div>
-
     </div>
   );
 };

@@ -1000,11 +1000,17 @@ const WorkConditionDetailInner = ({
   );
 };
 
-const WorkConditionDetail = (props) => {
-  if (isElectricWidebody(props.device)) {
-    return <ElectricWorkConditionDetail {...props} />;
+const WorkConditionDetail = ({ device, onMountSuccess, ...props }) => {
+  useEffect(() => {
+    if (device) {
+      onMountSuccess?.(device);
+    }
+  }, [device, onMountSuccess]);
+
+  if (isElectricWidebody(device)) {
+    return <ElectricWorkConditionDetail device={device} {...props} />;
   }
-  return <WorkConditionDetailInner {...props} />;
+  return <WorkConditionDetailInner device={device} {...props} />;
 };
 
 export default WorkConditionDetail;

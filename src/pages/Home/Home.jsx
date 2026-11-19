@@ -10,7 +10,7 @@ import DeviceStartupList from '../../components/DeviceStartupList/DeviceStartupL
 import AuditEvents from '../../components/AuditEvents/AuditEvents';
 import ContentFeed from '../../components/ContentFeed/ContentFeed';
 import BottomNav from '../../components/BottomNav/BottomNav';
-import SearchPage from '../../components/SearchPage/SearchPage';
+import SearchPage, { recordSearchHistoryEntry, resetUserSessionHistory } from '../../components/SearchPage/SearchPage';
 import PartsOrder from '../PartsOrder/PartsOrder';
 import ServiceRequest from '../ServiceRequest/ServiceRequest';
 import DeviceMaintenance from '../DeviceMaintenance/DeviceMaintenance';
@@ -183,7 +183,10 @@ const Home = () => {
   const [pageContext, setPageContext] = useState(null);
   const [assetNavigationContext, setAssetNavigationContext] = useState(null);
   const [auditNavigationContext, setAuditNavigationContext] = useState(null);
-  const [searchSession, setSearchSession] = useState({ searchText: '', activeTab: '资产' });
+  const [searchSession, setSearchSession] = useState(() => ({
+    searchText: '',
+    activeTab: window.localStorage.getItem('sanvist_experience_mode') === '1' ? '产品中心' : '资产',
+  }));
   const [auditInitialTab, setAuditInitialTab] = useState('exception'); // 审核页面初始Tab
   const [auditSearchQuery, setAuditSearchQuery] = useState('');
   const [isScrolled, setIsScrolled] = useState(false); // 是否滚动到一定位置
@@ -288,6 +291,7 @@ const Home = () => {
 
   const enterExperienceMode = () => {
     setExperienceMode(true);
+    setSearchSession((prev) => ({ ...prev, activeTab: '产品中心' }));
     window.localStorage.setItem('sanvist_experience_mode', '1');
     setShowDivisionSwitcher(false);
     showExperienceModeToast();
@@ -318,6 +322,8 @@ const Home = () => {
   };
 
   const handleLogout = () => {
+    resetUserSessionHistory();
+    setSearchSession((prev) => ({ ...prev, activeTab: '资产' }));
     setShowSettingsPage(false);
     setShowAuthPortal(false);
     setShowRegisterPage(false);
@@ -364,6 +370,8 @@ const Home = () => {
       setShowAuthPortal(true);
       return;
     }
+    resetUserSessionHistory();
+    setSearchSession((prev) => ({ ...prev, activeTab: '资产' }));
     setShowLoginPrompt(false);
     setShowSearchPage(false);
     setShowRegisterPage(false);
@@ -376,6 +384,7 @@ const Home = () => {
   };
 
   const handleRegisterSuccess = (formData) => {
+    resetUserSessionHistory();
     setShowRegisterPage(false);
     setShowAuthPortal(false);
     setExperienceMode(false);
@@ -399,6 +408,7 @@ const Home = () => {
     window.setTimeout(() => setDivisionToast(''), 2000);
   };
   const toggleExperienceMode = () => {
+    resetUserSessionHistory();
     if (experienceMode) {
       setExperienceMode(false);
       window.localStorage.removeItem('sanvist_experience_mode');
@@ -573,6 +583,55 @@ const Home = () => {
     }, 60);
   };
 
+  // 待确认展示的搜索历史记录暂存（等待目标页面真正成功挂载后才执行持久化写入）
+  const pendingSearchHistoryRef = useRef(null);
+
+  const confirmSearchHistoryArrival = (targetKey = null, itemOrContext = null) => {
+    const pending = pendingSearchHistoryRef.current;
+    if (!pending) return;
+
+    // 校验 1：目标页面标识严格匹配，避免无关页面挂载误记
+    if (pending.target && targetKey && pending.target !== targetKey) {
+      return;
+    }
+
+    // 校验 2：校验待写入资源与当前目标页实际成功展示对象匹配
+    if (itemOrContext) {
+      // 2a. 上下文筛选匹配（如品牌、设备类型、设备分组等）
+      if (pending.context?.kind && itemOrContext.kind) {
+        if (
+          pending.context.kind !== itemOrContext.kind ||
+          (pending.context.value && itemOrContext.value && pending.context.value !== itemOrContext.value)
+        ) {
+          return;
+        }
+      }
+
+      // 2b. 实体对象标识匹配（如资产详情、配件、产品型号等）
+      const pendingItem = pending.item;
+      const currentItem = itemOrContext.item || itemOrContext;
+      if (pendingItem && currentItem && typeof currentItem === 'object') {
+        const getIdentifier = (obj) =>
+          obj.code || obj.id || obj.model || obj.name || obj.displayName || null;
+        const pendingKey = getIdentifier(pendingItem);
+        const currentKey = getIdentifier(currentItem);
+        if (pendingKey && currentKey && pendingKey !== currentKey) {
+          return;
+        }
+      }
+    }
+
+    const { tab, item } = pending;
+    if (tab && item) {
+      recordSearchHistoryEntry(tab, item, experienceMode);
+    }
+    pendingSearchHistoryRef.current = null;
+  };
+
+  const cancelPendingSearchHistory = () => {
+    pendingSearchHistoryRef.current = null;
+  };
+
   const handleBusinessNavigate = (incomingAction, source = null) => {
     const action = typeof incomingAction === 'string' ? { target: incomingAction } : incomingAction;
     if (!action?.target) return;
@@ -588,13 +647,28 @@ const Home = () => {
       'boomCalc',
       'bindDevice',
     ];
-    if (experienceMode && LOGIN_REQUIRED_TARGETS.includes(action.target)) {
+    // 游客公开配件浏览权限严格限制在本次授权的搜索路径；首页快捷功能、全部应用等其他入口保留原登录拦截规则
+    const isGuestAuthorizedSearchAccess = experienceMode && source === 'search' && (action.target === 'parts' || action.target === 'productCenter');
+    if (experienceMode && LOGIN_REQUIRED_TARGETS.includes(action.target) && !isGuestAuthorizedSearchAccess) {
+      pendingSearchHistoryRef.current = null;
       requireLogin();
       return;
     }
     hideSourceSurface(source);
     setNavigationSource(source);
     setPageContext(action.context ? { ...action.context, source } : (source ? { source } : null));
+
+    // 仅暂存待确认的搜索历史，不在此刻同步调用 recordSearchHistoryEntry，等待目标页成功挂载回调
+    if (source === 'search' && action.recordSearchHistory) {
+      pendingSearchHistoryRef.current = {
+        target: action.target,
+        tab: action.recordSearchHistory.tab,
+        item: action.recordSearchHistory.item,
+        context: action.context || null,
+      };
+    } else {
+      pendingSearchHistoryRef.current = null;
+    }
 
     switch (action.target) {
       case 'allApps':
@@ -626,9 +700,9 @@ const Home = () => {
         })));
         break;
       case 'parts':
+      case 'productCenter':
       case 'service':
       case 'maintenance':
-      case 'productCenter':
       case 'serviceCenter':
       case 'survey':
       case 'couponDetail':
@@ -672,6 +746,7 @@ const Home = () => {
         window.setTimeout(() => setDivisionToast(''), 1800);
         break;
       default:
+        pendingSearchHistoryRef.current = null;
         setNavigationSource(null);
         break;
     }
@@ -972,9 +1047,11 @@ const Home = () => {
           escEvent={selectedWorkCondition?.code === escEvent.serialNumber ? escEvent : null}
           backLabel={currentPage === 'assetList' ? '返回资产列表' : navigationSource === 'search' ? '返回全域搜索' : '返回'}
           onBack={() => {
+            cancelPendingSearchHistory();
             setSelectedWorkCondition(null);
             if (currentPage !== 'assetList') restoreNavigationSource();
           }}
+          onMountSuccess={(device) => confirmSearchHistoryArrival('assetDetail', device || selectedWorkCondition)}
           onNavigate={(page) => {
             if (page === 'dataReport') setDataReportDevice(selectedWorkCondition);
             if (page === 'dataAnalysis') setDataAnalysisDevice(selectedWorkCondition);
@@ -1058,6 +1135,7 @@ const Home = () => {
             handleBusinessNavigate({ target: 'assetList', context: { label: '扫码识别资产' } }, 'search');
           }}
           onClose={() => {
+            cancelPendingSearchHistory();
             setShowSearchPage(false);
             setOpenSearchWithScanner(false);
             restoreNavigationSource();
@@ -1212,9 +1290,32 @@ const Home = () => {
         case 'couponDetail':
           return <CouponDetail couponId={activeContext?.couponId || pageContext?.couponId} onBack={handlePageBack} onRequireLogin={requireLogin} />;
         case 'parts':
-          return <PartsOrder onBack={closeCurrentPage} initialQuery={pageContext?.query} initialItem={pageContext?.item} />;
+          return (
+            <PartsOrder
+              onBack={() => {
+                cancelPendingSearchHistory();
+                closeCurrentPage();
+              }}
+              initialQuery={pageContext?.query}
+              initialItem={pageContext?.item}
+              demoMode={experienceMode}
+              onRequireLogin={requireLogin}
+              onMountSuccess={(item) => confirmSearchHistoryArrival('parts', item || pageContext?.item)}
+            />
+          );
         case 'productCenter':
-          return <ProductCenter onBack={closeCurrentPage} initialItem={pageContext?.item} demoMode={experienceMode} onRequireLogin={requireLogin} />;
+          return (
+            <ProductCenter
+              onBack={() => {
+                cancelPendingSearchHistory();
+                closeCurrentPage();
+              }}
+              initialItem={pageContext?.item}
+              demoMode={experienceMode}
+              onRequireLogin={requireLogin}
+              onMountSuccess={(item) => confirmSearchHistoryArrival('productCenter', item || pageContext?.item)}
+            />
+          );
         case 'serviceCenter':
           return <ServiceCenter onBack={closeCurrentPage} onInquiry={() => openInquiry('service_center')} />;
         case 'survey':
@@ -1302,13 +1403,27 @@ const Home = () => {
         ) : null}
         topNav={
           <div className="h-[60px] px-4 flex items-center justify-between">
-            {/* 绑定设备按钮 - 左边 */}
-            <button onClick={experienceMode ? requireLogin : undefined} className="flex items-center px-3 py-1.5 border border-[#1D232B] rounded-full text-xs text-[#1D232B]">
-              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/>
-              </svg>
-              绑定设备
-            </button>
+            {/* 绑定设备或返回搜索按钮 - 左边 */}
+            {navigationSource === 'search' ? (
+              <button
+                type="button"
+                onClick={restoreNavigationSource}
+                className="flex items-center px-3 py-1.5 border border-gray-300 rounded-full text-xs font-medium text-gray-700 bg-white active:bg-gray-100"
+                aria-label="返回全域搜索"
+              >
+                <svg className="w-3.5 h-3.5 mr-1 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                返回搜索
+              </button>
+            ) : (
+              <button onClick={experienceMode ? requireLogin : undefined} className="flex items-center px-3 py-1.5 border border-[#1D232B] rounded-full text-xs text-[#1D232B]">
+                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                绑定设备
+              </button>
+            )}
             {/* 地图按钮 - 右边（用户提供的地图SVG） */}
             <button
               type="button"
@@ -1332,6 +1447,7 @@ const Home = () => {
         <Asset
           demoMode={experienceMode}
           navigationContext={assetNavigationContext}
+          onMountSuccess={(ctx) => confirmSearchHistoryArrival('assetList', ctx || assetNavigationContext)}
           onDeviceClick={(device) => setSelectedWorkCondition(device)}
           onUnavailable={(device) => {
             setDivisionToast(`${device.displayName || device.name}详情即将补充`);

@@ -192,9 +192,13 @@ const shouldMockFailure = (explicitMock) => {
 };
 
 // 产品中心（统一游客与登录态浏览体验，保留模式差异）
-const ProductCenter = ({ onBack, initialItem, demoMode = false, onRequireLogin, mockFailure }) => {
+const ProductCenter = ({ onBack, initialItem, demoMode = false, onRequireLogin, mockFailure, onMountSuccess }) => {
   // 视图控制: 'categories' (图1) | 'modelList' (图2) | 'detail' (图3) | 'inquiry' (图4)
   const [currentView, setCurrentView] = useState(initialItem ? 'detail' : 'categories');
+
+  useEffect(() => {
+    onMountSuccess?.(initialItem);
+  }, [initialItem, onMountSuccess]);
 
   // 分类与筛选状态
   const [activeCategory, setActiveCategory] = useState('concrete');
