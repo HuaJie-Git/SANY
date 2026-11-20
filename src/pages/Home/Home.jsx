@@ -10,7 +10,8 @@ import DeviceStartupList from '../../components/DeviceStartupList/DeviceStartupL
 import AuditEvents from '../../components/AuditEvents/AuditEvents';
 import ContentFeed from '../../components/ContentFeed/ContentFeed';
 import BottomNav from '../../components/BottomNav/BottomNav';
-import SearchPage, { recordSearchHistoryEntry, resetUserSessionHistory } from '../../components/SearchPage/SearchPage';
+import SearchPage from '../../components/SearchPage/SearchPage';
+import { recordSearchHistoryEntry, resetUserSessionHistory } from '../../components/SearchPage/searchHistory';
 import PartsOrder from '../PartsOrder/PartsOrder';
 import ServiceRequest from '../ServiceRequest/ServiceRequest';
 import DeviceMaintenance from '../DeviceMaintenance/DeviceMaintenance';
