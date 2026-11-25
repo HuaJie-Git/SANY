@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AUDIT_EVENTS } from '../data/auditEvents';
 import { DEVICES } from '../data/devices';
+import { PARTS } from '../data/parts';
 import { createMaintenanceRows, MAINTENANCE_GROUPS, maintenanceStatus } from '../data/maintenancePlan';
 import { CURRENT_USER } from '../data/session';
 import OperationsOverview from './OperationsOverview';
@@ -65,7 +66,8 @@ const FEATURES = [
   { id: 'workorder-center', label: '工单中心', meta: '查询全部业务工单', icon: 'order', target: 'workorder' },
 ];
 
-const SEARCH_CATEGORIES = ['设备', '品牌', '设备类型', '运行状态', '项目', '审核'];
+const SEARCH_CATEGORIES = ['设备', '品牌', '设备类型', '配件', '项目'];
+const searchCategoryLabel = (category) => category === '设备' ? '资产' : category;
 const HOME_TASK_LIMIT = 3;
 const HOME_AUDIT_EVENT_LIMIT = 3;
 const DEVICE_DETAIL_SHORTCUTS = ['实时状态', '统计报表', '设备档案', '历史轨迹', '保养管理', '预警记录', '报停记录', '参与项目'];
@@ -568,7 +570,6 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
     const facetCatalog = [
       { type: '品牌', key: (device) => device.brand },
       { type: '设备类型', key: (device) => device.type },
-      { type: '运行状态', key: (device) => device.status },
     ].flatMap(({ type, key }) => {
       const groups = new Map();
       DEVICES.forEach((device) => {
@@ -587,13 +588,13 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
         payload: { value, deviceIds: devices.map((device) => device.id) },
       }));
     });
-    const audits = AUDIT_EVENTS.map((event) => ({
-      id: `search-${event.id}`, type: '审核', title: event.type,
-      meta: `${event.device} · ${event.group} · ${event.time}`,
-      keywords: `审核 ${event.id} ${event.type} ${event.device} ${event.group}`,
-      icon: 'inspection', payload: event,
-    }));
-    return [...assets, ...facetCatalog, ...projects, ...audits];
+    const parts = PARTS.map((part) => {
+      const code = part.split(' ').at(-1);
+      const name = part.slice(0, -(code.length + 1));
+      return { id: `search-part-${code}`, type: '配件', title: name, meta: code,
+        keywords: `${name} ${code}`, icon: 'parts', payload: { code } };
+    });
+    return [...assets, ...facetCatalog, ...projects, ...parts];
   }, []);
 
   const searchResults = useMemo(() => {
@@ -804,15 +805,13 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
   };
 
   const openSearchResult = (item) => {
-    if (item.type === '审核') {
-      rememberRecent({ id: item.id, kind: 'audit', refId: item.payload.id, title: item.title, meta: `审核 · ${item.meta}`, icon: 'inspection' });
+    if (item.type === '配件') {
       setSearchOpen(false);
-      onOpenBusiness?.('audit', { eventId: item.payload.id });
-      return;
+      return onOpenBusiness?.('parts-wanted', { query: item.payload.code });
     }
     if (item.type === '设备') return openAsset(item.payload.device, true);
     if (item.type === '项目') return openProject(item.payload, true);
-    if (['品牌', '设备类型', '运行状态'].includes(item.type)) {
+    if (['品牌', '设备类型'].includes(item.type)) {
       rememberRecent({ id: item.id, kind: 'facet', category: item.type, title: item.title, meta: `${item.type} · ${item.meta}`, icon: item.icon });
       setSearchOpen(false);
       return openList(`${item.type} · ${item.title}`, item.payload.deviceIds);
@@ -959,11 +958,11 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
       <div className="hero-grid"/>
       <div className="hero-copy"><h1>{getTimeGreeting(currentTime)}，{previewUser.name}</h1><p>统一掌握设备与运营全局，快速推动关键事项落地。</p></div>
       <div className="global-search-wrap" ref={globalSearchRef}>
-        <div className="global-search"><Icon name="search" size={22}/><input ref={searchInputRef} value={query} onChange={(event) => { setQuery(event.target.value); setSearchOpen(true); }} onFocus={() => setSearchOpen(true)} aria-expanded={searchOpen} aria-controls="global-search-panel" aria-label="全局搜索" placeholder="搜索设备、项目、审核等信息"/><kbd>⌘ K</kbd></div>
+        <div className="global-search"><Icon name="search" size={22}/><input ref={searchInputRef} value={query} onChange={(event) => { setQuery(event.target.value); setSearchOpen(true); }} onFocus={() => setSearchOpen(true)} aria-expanded={searchOpen} aria-controls="global-search-panel" aria-label="全局搜索" placeholder="搜索设备、项目、配件等信息"/><kbd>⌘ K</kbd></div>
         {searchOpen && query && <section id="global-search-panel" className="search-inline-panel" aria-label="全局搜索结果">
           <section className="search-inline-section">
-            <div className="search-category-tabs" role="tablist" aria-label="搜索分类">{SEARCH_CATEGORIES.map((category) => <button key={category} type="button" role="tab" aria-selected={searchCategory === category} className={searchCategory === category ? 'is-active' : ''} onClick={() => setSearchCategory(category)}>{category}<span>{searchCounts[category] || 0}</span></button>)}</div>
-            {searchResults.length ? <div className="search-result-groups">{SEARCH_CATEGORIES.filter((category) => searchCategory === category).map((category) => { const items = searchResults.filter((item) => item.type === category); if (!items.length) return null; return <section className="search-result-group" key={category}><header><strong>{category}</strong></header><div className="search-result-list">{items.slice(0, 4).map((item) => <SearchItem key={item.id} item={item} query={query} onSelect={openSearchResult} onAssetTab={openAssetTab}/>)}</div></section>; })}</div> : <div className="search-empty"><span><Icon name="search" size={22}/></span><strong>没有找到匹配内容</strong><small>可尝试设备编号、品牌、设备类型、运行状态或项目名称。</small></div>}
+            <div className="search-category-tabs" role="tablist" aria-label="搜索分类">{SEARCH_CATEGORIES.map((category) => <button key={category} type="button" role="tab" aria-selected={searchCategory === category} className={searchCategory === category ? 'is-active' : ''} onClick={() => setSearchCategory(category)}>{searchCategoryLabel(category)}<span>{searchCounts[category] || 0}</span></button>)}</div>
+            {searchResults.length ? <div className="search-result-groups">{SEARCH_CATEGORIES.filter((category) => searchCategory === category).map((category) => { const items = searchResults.filter((item) => item.type === category); if (!items.length) return null; return <section className="search-result-group" key={category}><header><strong>{searchCategoryLabel(category)}</strong></header><div className="search-result-list">{items.slice(0, 4).map((item) => <SearchItem key={item.id} item={item} query={query} onSelect={openSearchResult} onAssetTab={openAssetTab}/>)}</div></section>; })}</div> : <div className="search-empty"><span><Icon name="search" size={22}/></span><strong>没有找到匹配内容</strong><small>可尝试设备编号、品牌、设备类型、项目名称或配件编号。</small></div>}
           </section>
         </section>}
       </div>

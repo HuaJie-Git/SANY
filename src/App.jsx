@@ -36,7 +36,7 @@ function readRoute() {
   if (route.startsWith('esc-events/')) return { view: 'esc-event-detail', escEventId: route.slice('esc-events/'.length), deviceIndex: 0 }
   if (route === 'esc-events') return { view: 'esc-events', deviceIndex: 0 }
   if (route.split('?')[0] === 'maintenance') return { view: 'maintenance', deviceIndex: 0 }
-  if (BUSINESS_VIEWS.includes(route)) return { view: route, deviceIndex: 0 }
+  if (BUSINESS_VIEWS.includes(route.split('?')[0])) return { view: route.split('?')[0], deviceIndex: 0 }
   if (route === 'workbench' || route === 'home') return { view: 'workbench', deviceIndex: 0 }
   return { view: 'workbench', deviceIndex: 0 }
 }
@@ -118,7 +118,7 @@ function App() {
     if (BUSINESS_VIEWS.includes(nextView)) {
       setListPreset(null)
       setAuditEventId(nextView === 'audit' ? options.eventId || null : null)
-      const statusQuery = nextView === 'maintenance' && options.status ? `?status=${encodeURIComponent(options.status)}` : ''
+      const statusQuery = nextView === 'maintenance' && options.status ? `?status=${encodeURIComponent(options.status)}` : nextView === 'parts-wanted' && options.query ? `?query=${encodeURIComponent(options.query)}` : ''
       window.location.hash = `/${nextView}${statusQuery}`
       return
     }
