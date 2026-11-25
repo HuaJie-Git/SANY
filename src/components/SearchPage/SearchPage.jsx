@@ -50,7 +50,7 @@ const boundDeviceTypes = [
   { id: 10, name: '起重机', deviceCount: 3, image: 'images/审核/起重机.jpg' },
 ];
 
-const SEARCH_TABS = ['资产', '品牌', '设备类型', '产品中心', '配件', '设备分组'];
+const SEARCH_TABS = ['资产', '品牌', '设备类型', '产品中心', '配件'];
 
 const searchKeysByTab = {
   '资产': ['code', 'name', 'brand', 'deviceType', 'displayName', 'model', 'aliases'],
@@ -1059,7 +1059,7 @@ const SearchPage = ({
           <input
             ref={inputRef}
             type="text"
-            aria-label="搜索资产、品牌、设备类型、产品中心、配件或设备分组"
+            aria-label="搜索资产、品牌、设备类型、产品中心或配件"
             placeholder={guestMode ? '搜索产品中心、配件、资产…' : '搜索资产、产品或配件…'}
             className="flex-1 bg-transparent outline-none text-[16px] text-gray-800"
             value={searchText}
