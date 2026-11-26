@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AUDIT_EVENTS } from '../data/auditEvents';
 import { DEVICES } from '../data/devices';
 import { PARTS } from '../data/parts';
@@ -439,13 +439,11 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
   const [links, setLinks] = useState(() => mergeLinkPreference(readQuickLinkCatalog(previewUser), loadPreference(linkPreferenceKey(previewUser), [])));
   const [recentItems, setRecentItems] = useState(() => loadPreference(RECENT_KEY, DEFAULT_RECENT_ITEMS).filter(isSearchRecent).slice(0, 10));
   const [currentTime, setCurrentTime] = useState(() => new Date());
-  const [recentPanelPosition, setRecentPanelPosition] = useState(null);
   const [query, setQuery] = useState('');
   const [searchCategory, setSearchCategory] = useState('设备');
   const [searchOpen, setSearchOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [editorTab, setEditorTab] = useState('modules');
-  const [recentOpen, setRecentOpen] = useState(false);
   const [workflow, setWorkflow] = useState(null);
   const [robotOpen, setRobotOpen] = useState(false);
   const [todoFilter, setTodoFilter] = useState('待处理');
@@ -469,9 +467,6 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
   const quickActionsRef = useRef(null);
   const searchInputRef = useRef(null);
   const globalSearchRef = useRef(null);
-  const homeDashboardRef = useRef(null);
-  const recentMoreRef = useRef(null);
-  const recentPopoverRef = useRef(null);
   const robotInputRef = useRef(null);
 
   useEffect(() => {
@@ -849,46 +844,6 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
   }, [searchOpen]);
 
   useEffect(() => {
-    if (!recentOpen) return undefined;
-    const closeWhenOutside = (event) => {
-      if (!recentMoreRef.current?.contains(event.target) && !recentPopoverRef.current?.contains(event.target)) setRecentOpen(false);
-    };
-    const closeWithEscape = (event) => {
-      if (event.key === 'Escape') setRecentOpen(false);
-    };
-    document.addEventListener('mousedown', closeWhenOutside);
-    document.addEventListener('keydown', closeWithEscape);
-    return () => {
-      document.removeEventListener('mousedown', closeWhenOutside);
-      document.removeEventListener('keydown', closeWithEscape);
-    };
-  }, [recentOpen]);
-
-  useLayoutEffect(() => {
-    if (!recentOpen) {
-      setRecentPanelPosition(null);
-      return undefined;
-    }
-    const updateRecentPanelPosition = () => {
-      const anchor = recentMoreRef.current?.getBoundingClientRect();
-      const dashboard = homeDashboardRef.current?.getBoundingClientRect();
-      if (!anchor || !dashboard) return;
-      const isRtl = document.documentElement.getAttribute('dir') === 'rtl';
-      setRecentPanelPosition({
-        top: Math.round(anchor.bottom - dashboard.top + 8),
-        insetInlineEnd: Math.round(Math.max(14, isRtl ? anchor.left - dashboard.left : dashboard.right - anchor.right)),
-      });
-    };
-    updateRecentPanelPosition();
-    window.addEventListener('resize', updateRecentPanelPosition);
-    window.addEventListener('scroll', updateRecentPanelPosition, { passive: true });
-    return () => {
-      window.removeEventListener('resize', updateRecentPanelPosition);
-      window.removeEventListener('scroll', updateRecentPanelPosition);
-    };
-  }, [recentOpen]);
-
-  useEffect(() => {
     if (!searchOpen) return undefined;
     const closeWhenOutside = (event) => {
       if (!globalSearchRef.current?.contains(event.target)) setSearchOpen(false);
@@ -937,7 +892,7 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
     </ModuleCard>,
   };
 
-  return <div ref={homeDashboardRef} className="home-dashboard">
+  return <div className="home-dashboard">
     {bindingOpen && <Drawer title="绑定设备" subtitle="输入设备编号，查询设备及绑定状态" onClose={() => setBindingOpen(false)}>
       <form className="home-bind-form" onSubmit={(event) => {
         event.preventDefault();
@@ -967,11 +922,10 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
         </section>}
       </div>
       <div className="hero-recent">
-        <div className="recent-strip"><span className="recent-label">最近访问</span><div className="recent-items">{recentItems.length ? recentItems.slice(0, 4).map((item) => <button type="button" className="recent-chip" key={item.id} title={`${recentDisplayTitle(item)} · ${recentDisplayMeta(item)}`} onClick={() => openRecentItem(item)}><i><Icon name={item.icon || 'link'} size={15}/></i><span><strong>{recentDisplayTitle(item)}</strong><small>{recentDisplayMeta(item)}</small></span></button>) : <span className="recent-empty">暂无数据</span>}</div>{recentItems.length > 4 && <div className="recent-more-wrap"><button ref={recentMoreRef} type="button" className="recent-more" aria-expanded={recentOpen} aria-haspopup="dialog" onClick={() => setRecentOpen((open) => !open)}><Icon name="more" size={17}/><span>更多</span><b>{Math.min(recentItems.length - 4, 6)}</b></button></div>}</div>
+        <div className="recent-strip"><span className="recent-label">最近访问</span><div className="recent-items">{recentItems.length ? recentItems.slice(0, 5).map((item) => <button type="button" className="recent-chip" key={item.id} title={`${recentDisplayTitle(item)} · ${recentDisplayMeta(item)}`} onClick={() => openRecentItem(item)}><span><strong>{recentDisplayTitle(item)}</strong><small>{recentDisplayMeta(item)}</small></span></button>) : <span className="recent-empty">暂无数据</span>}</div></div>
       </div>
     </section>
 
-    {recentOpen && <div ref={recentPopoverRef} className="recent-popover" style={recentPanelPosition ? { top: `${recentPanelPosition.top}px`, insetInlineEnd: `${recentPanelPosition.insetInlineEnd}px` } : undefined} role="dialog" aria-label="更多最近访问"><header><div><strong>更多最近访问</strong><small>最多展示第 5–10 条搜索访问记录</small></div><button type="button" onClick={() => setRecentOpen(false)} aria-label="关闭最近访问"><Icon name="close" size={15}/></button></header><div className="recent-popover-list">{recentItems.slice(4, 10).map((item) => <button type="button" key={item.id} title={`${recentDisplayTitle(item)} · ${recentDisplayMeta(item)}`} onClick={() => { setRecentOpen(false); openRecentItem(item); }}><i><Icon name={item.icon || 'link'} size={16}/></i><span><strong>{recentDisplayTitle(item)}</strong><small>{recentDisplayMeta(item)}</small></span><Icon name="arrow" size={14}/></button>)}</div></div>}
 
     <div className="home-content">
       <section className="quick-actions-section">
