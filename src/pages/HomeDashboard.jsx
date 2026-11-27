@@ -71,7 +71,7 @@ const searchCategoryLabel = (category) => category === '设备' ? '资产' : cat
 const HOME_TASK_LIMIT = 3;
 const HOME_AUDIT_EVENT_LIMIT = 3;
 const DEVICE_DETAIL_SHORTCUTS = ['实时状态', '统计报表', '设备档案', '历史轨迹', '保养管理', '预警记录', '报停记录', '参与项目'];
-const isSearchRecent = (item) => ['asset', 'project', 'audit'].includes(item?.kind) || (item?.kind === 'facet' && SEARCH_CATEGORIES.includes(item.category));
+const isSearchRecent = (item) => ['asset', 'project', 'part'].includes(item?.kind) || (item?.kind === 'facet' && ['品牌', '设备类型'].includes(item.category));
 const recentDisplayTitle = (item) => {
   if (item?.kind !== 'asset') return item?.title;
   const device = DEVICES.find((candidate) => candidate.id === item.refId || candidate.code === item.title);
@@ -776,12 +776,11 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
   };
 
   const openRecentItem = (item) => {
-    if (item.kind === 'audit') {
-      const event = AUDIT_EVENTS.find((entry) => entry.id === item.refId);
-      if (!event) { setAuditNotice('该审核记录已不存在，可进入审核模块查看其他记录。'); return; }
+    if (item.kind === 'part') {
+      const match = searchCatalog.find((entry) => entry.type === '配件' && entry.payload.code === item.refId);
+      if (!match) return;
       rememberRecent(item);
-      onOpenBusiness?.('audit', { eventId: event.id });
-      return;
+      return onOpenBusiness?.('parts-wanted', { query: match.payload.code });
     }
     if (item.kind === 'facet') {
       const match = searchCatalog.find((entry) => entry.type === item.category && entry.title === item.title);
@@ -801,6 +800,7 @@ export default function HomeDashboard({ onOpenDevice, onOpenList, onOpenBusiness
 
   const openSearchResult = (item) => {
     if (item.type === '配件') {
+      rememberRecent({ id: item.id, kind: 'part', refId: item.payload.code, title: item.title, meta: `配件 · ${item.meta}`, icon: 'parts' });
       setSearchOpen(false);
       return onOpenBusiness?.('parts-wanted', { query: item.payload.code });
     }
